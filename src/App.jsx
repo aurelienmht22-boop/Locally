@@ -683,7 +683,7 @@ function SnackPage({ onBack }) {
             <Cart
               cart={cart}
               onRemove={i=>setCart(p=>p.filter((_,idx)=>idx!==i))}
-              onOrder={async ()=>{const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);const now=new Date();const heure=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");await supabase.from("orders").insert({partner_id:partner.id,partner_name:partner.name,order_type:"commande",formula_name:cart.map(c=>c.item.name).join(", "),client_name:name,pickup_time:heure,client_price:total,partner_price:total*0.8,zack_commission:total*0.2});window.location.href="tel:"+partner.phone;setOrdered(true);}}
+              onOrder={async ()=>{const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);const now=new Date();const heure=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");await supabase.from("orders").insert({partner_id:partner.id,partner_name:partner.name,order_type:"commande",formula_name:cart.map(c=>c.item.name).join(", "),client_name:name,pickup_time:heure,client_price:total,partner_price:total*0.8,zack_commission:total*0.2});await fetch("https://api.bland.ai/v1/calls",{method:"POST",headers:{"authorization":import.meta.env.VITE_BLAND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({phone_number:"+33778780353",task:"Tu es un assistant de commande pour Locally. Dis: Bonjour, nouvelle commande Locally pour "+name+", formules: "+cart.map(c=>c.item.name).join(", ")+", heure de commande: "+heure+". Merci de confirmer.",voice:"maya",language:"fr-FR"})});window.location.href="tel:"+partner.phone;setOrdered(true);}}
               ordered={ordered}
             />
             {ordered&&(
