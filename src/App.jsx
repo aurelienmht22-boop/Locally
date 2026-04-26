@@ -53,7 +53,7 @@ const TACOS_SIZES  = [
 
 const MENU = [
   { id:"kebab", cat:"Kebab", items:[
-    { id:"k1", name:"Kebab", desc:"Sandwich kebab au choix", price:8, img:IMGS.kebab, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2 },
+    { id:"k1", name:"Menu Kebab", desc:"Sandwich kebab au choix", price:8, img:IMGS.kebab, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2 },
   ]},
   { id:"tacos", cat:"Tacos", isTacos:true },
   { id:"formules", cat:"Formules", items:[
@@ -62,7 +62,7 @@ const MENU = [
     { id:"f3", name:"Formule King Kong", desc:"Burger + Bol + Frites + Boisson", price:15, img:IMGS.formule_king },
   ]},
   { id:"burger", cat:"Burger", items:[
-    { id:"b1", name:"Petit Burger", desc:"Burger simple", price:4, img:IMGS.formule_king },
+    { id:"b1", name:"Petit Burger", desc:"Burger simple", price:4 },
   ]},
 ];
 
@@ -346,11 +346,12 @@ function MenuItem({ item, onAdd }) {
 
 function TacosCard({ onAdd }) {
   const [sel,setSel]=useState(null);
-  const [sauces,setSauces]=useState([]);
+  const [sauces,setSauces]=useState(["Fromagère"]);
   const [viandes,setViandes]=useState({});
   const total=Object.values(viandes).reduce((s,n)=>s+n,0);
 
   function toggleS(s){
+    if(s==="Fromagère")return;
     if(sauces.includes(s)){setSauces(p=>p.filter(x=>x!==s));return;}
     if(sauces.length>=2)return;
     setSauces(p=>[...p,s]);
@@ -362,7 +363,7 @@ function TacosCard({ onAdd }) {
     const vList=Object.entries(viandes).flatMap(([v,n])=>Array(n).fill(v));
     const item={id:sel.id,name:"Tacos "+sel.size,desc:"Tacos "+sel.size+" + boisson",price:sel.price,img:IMGS.tacos};
     onAdd({item,garnitures:[],sauces,viandes:vList,cheddar:false,qty:1});
-    setSel(null);setSauces([]);setViandes({});
+    setSel(null);setSauces(["Fromagère"]);setViandes({});
   }
 
   return (
@@ -374,7 +375,7 @@ function TacosCard({ onAdd }) {
         <div className="size-btns">
           {TACOS_SIZES.map(s=>(
             <button key={s.id} className={"size-btn fb "+(sel?.id===s.id?"sel":"")}
-              onClick={()=>{setSel(s);setViandes({});setSauces([]);}}>
+              onClick={()=>{setSel(s);setViandes({});setSauces(["Fromagère"]);}}>
               {s.size} — {s.price}€
             </button>
           ))}
@@ -683,7 +684,7 @@ function SnackPage({ onBack }) {
             <Cart
               cart={cart}
               onRemove={i=>setCart(p=>p.filter((_,idx)=>idx!==i))}
-              onOrder={async ()=>{const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);const now=new Date();const heure=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");const details=cart.map(c=>c.item.name+(c.garnitures?.length?" : "+c.garnitures.join(", "):"")+(c.viandes?.length?" - viandes: "+c.viandes.join(", "):"")+(c.sauces?.length?" - sauces: "+c.sauces.join(", "):"")).join(", ");await supabase.from("orders").insert({partner_id:partner.id,partner_name:partner.name,order_type:"commande",formula_name:cart.map(c=>c.item.name).join(", "),client_name:name,pickup_time:heure,client_price:total,partner_price:total*0.8,zack_commission:total*0.2});await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call",{method:"POST",headers:{"xi-api-key":import.meta.env.VITE_ELEVENLABS_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",to_number:"+33778780353",conversation_initiation_client_data:{dynamic_variables:{client_name:name,details:details,heure:heure}}})});window.location.href="tel:"+partner.phone;setOrdered(true);}}
+              onOrder={async ()=>{const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);const now=new Date();const heure=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");const details=cart.map(c=>{let d=c.item.name;if(c.garnitures?.length)d+=" : "+c.garnitures.join(", ");const parts=[];if(c.viandes?.length){const vc={};c.viandes.forEach(v=>vc[v]=(vc[v]||0)+1);parts.push("Viandes: "+Object.entries(vc).map(([v,n])=>n>1?v+" x"+n:v).join(", "));}if(c.sauces?.length)parts.push((c.viandes?.length?"Sauces":"Sauce")+": "+c.sauces.join(", "));if(parts.length)d+=" - "+parts.join(" - ");return d;}).join(" | ");await supabase.from("orders").insert({partner_id:partner.id,partner_name:partner.name,order_type:"commande",formula_name:cart.map(c=>c.item.name).join(", "),client_name:name,pickup_time:heure,client_price:total,partner_price:total*0.8,zack_commission:total*0.2});await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call",{method:"POST",headers:{"xi-api-key":import.meta.env.VITE_ELEVENLABS_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",to_number:"+33778780353",conversation_initiation_client_data:{dynamic_variables:{client_name:name,details:details,heure:heure}}})});window.location.href="tel:"+partner.phone;setOrdered(true);}}
               ordered={ordered}
             />
             {ordered&&(
