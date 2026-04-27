@@ -262,8 +262,9 @@ html{scroll-behavior:smooth;}
 
 function getSlots(){
   const s=[];
-  for(let h=11;h<14;h++){s.push(`${h}h00`);s.push(`${h}h30`);}
-  for(let h=18;h<23;h++){s.push(`${h}h00`);s.push(`${h}h30`);}
+  const pad=h=>String(h).padStart(2,"0");
+  for(let h=11;h<14;h++){s.push({label:`${h}h00`,value:`${pad(h)}:00`});s.push({label:`${h}h30`,value:`${pad(h)}:30`});}
+  for(let h=18;h<23;h++){s.push({label:`${h}h00`,value:`${pad(h)}:00`});s.push({label:`${h}h30`,value:`${pad(h)}:30`});}
   return s;
 }
 
@@ -399,8 +400,14 @@ function TacosCard({ onAdd }) {
               <div className="cfg-label fb">Sauce(s) <span className="cfg-hint">({sauces.length}/2)</span></div>
               <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                 {ALL_SAUCES.map(s=>(
-                  <button key={s} disabled={!sauces.includes(s)&&sauces.length>=2}
-                    className={"chip fb "+(sauces.includes(s)?"sel":"")} onClick={()=>toggleS(s)}>{s}</button>
+                  <button key={s}
+                    disabled={s==="Fromagère"||(!sauces.includes(s)&&sauces.length>=2)}
+                    style={s==="Fromagère"?{opacity:1,cursor:"not-allowed"}:{}}
+                    title={s==="Fromagère"?"Sauce obligatoire":""}
+                    className={"chip fb "+(sauces.includes(s)?"sel":"")}
+                    onClick={()=>toggleS(s)}>
+                    {s==="Fromagère"?"Fromagère 🔒":s}
+                  </button>
                 ))}
               </div>
             </div>
@@ -429,7 +436,7 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
       <div className="success-title fd">Appelez pour confirmer</div>
       <div className="success-desc fb">
         Appelez le <strong>{partner.phone.replace(/(\d{2})(?=\d)/g,"$1 ")}</strong> pour valider.<br/>
-        Retrait : <strong>{time}</strong> · Au nom de <strong>{name}</strong>
+        Retrait : <strong>{slots.find(s=>s.value===time)?.label??time}</strong> · Au nom de <strong>{name}</strong>
       </div>
     </div>
   );
@@ -469,7 +476,7 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
           <div className="op-label fb">Heure de retrait</div>
           <div className="time-grid">
             {slots.map(s=>(
-              <button key={s} className={"time-btn fb "+(time===s?"sel":"")} onClick={()=>setTime(s)}>{s}</button>
+              <button key={s.value} className={"time-btn fb "+(time===s.value?"sel":"")} onClick={()=>setTime(s.value)}>{s.label}</button>
             ))}
           </div>
         </div>
@@ -481,7 +488,7 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
           <div className="op-label fb">Note (optionnel)</div>
           <input className="input fb" placeholder="Ex : sans oignons..." value={note} onChange={e=>setNote(e.target.value)}/>
         </div>
-        <button className="btn-call fb" disabled={!canOrder} onClick={()=>onOrder(name,time)}>
+        <button className="btn-call fb" disabled={!canOrder} onClick={()=>onOrder(name,time,note)}>
           📞 Commander par téléphone
         </button>
         <div className="call-note fb">{canOrder?"Un appel sera lancé pour confirmer":"Complétez votre commande pour continuer"}</div>
@@ -684,7 +691,49 @@ function SnackPage({ onBack }) {
             <Cart
               cart={cart}
               onRemove={i=>setCart(p=>p.filter((_,idx)=>idx!==i))}
-              onOrder={async (name,time)=>{const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);const heure=time;console.log("CLIENT:",name);const details=cart.map(c=>{let d=c.item.name;if(c.garnitures?.length)d+=" : "+c.garnitures.join(", ");const parts=[];if(c.viandes?.length){const vc={};c.viandes.forEach(v=>vc[v]=(vc[v]||0)+1);parts.push("Viandes: "+Object.entries(vc).map(([v,n])=>n>1?v+" x"+n:v).join(", "));}if(c.sauces?.length)parts.push((c.viandes?.length?"Sauces":"Sauce")+": "+c.sauces.join(", "));if(parts.length)d+=" - "+parts.join(" - ");return d;}).join(" | ");console.log("DETAILS:",details,"CLIENT:",name);await supabase.from("orders").insert({partner_id:partner.id,partner_name:partner.name,order_type:"commande",formula_name:cart.map(c=>c.item.name).join(", "),client_name:name,pickup_time:heure,client_price:total,partner_price:total*0.8,zack_commission:total*0.2});await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call",{method:"POST",headers:{"xi-api-key":import.meta.env.VITE_ELEVENLABS_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",to_number:"+33778780353",conversation_initiation_client_data:{dynamic_variables:{client_name:name,details:details,heure:heure}}})});window.location.href="tel:"+partner.phone;setOrdered(true);}}
+              onOrder={async (name,time,note)=>{
+                try{
+                  const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);
+                  const heure=time;
+                  console.log("CLIENT:",name);
+                  const details=cart.map(c=>{
+                    let d=c.item.name;
+                    if(c.garnitures?.length)d+=" : "+c.garnitures.join(", ");
+                    const parts=[];
+                    if(c.viandes?.length){const vc={};c.viandes.forEach(v=>vc[v]=(vc[v]||0)+1);parts.push("Viandes: "+Object.entries(vc).map(([v,n])=>n>1?v+" x"+n:v).join(", "));}
+                    if(c.sauces?.length)parts.push((c.viandes?.length?"Sauces":"Sauce")+": "+c.sauces.join(", "));
+                    if(c.cheddar)parts.push("+ Cheddar");
+                    if(parts.length)d+=" - "+parts.join(" - ");
+                    return d;
+                  }).join(" | ");
+                  console.log("DETAILS:",details,"CLIENT:",name);
+                  const {error:dbError}=await supabase.from("orders").insert({
+                    partner_id:partner.id,
+                    partner_name:partner.name,
+                    order_type:"commande",
+                    formula_name:cart.map(c=>c.item.name).join(", "),
+                    client_name:name,
+                    pickup_time:heure,
+                    client_price:total,
+                    partner_price:total*0.8,
+                    zack_commission:total*0.2,
+                    notes:note,
+                  });
+                  if(dbError){console.error("SUPABASE ERROR:",dbError);return;}
+                  await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call",{
+                    method:"POST",
+                    headers:{"xi-api-key":import.meta.env.VITE_ELEVENLABS_API_KEY,"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                      agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",
+                      agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",
+                      to_number:"+33778780353",
+                      conversation_initiation_client_data:{dynamic_variables:{client_name:name,details:details,heure:heure,note:note}},
+                    }),
+                  });
+                  window.location.href="tel:"+partner.phone;
+                  setOrdered(true);
+                }catch(err){console.error("ORDER ERROR:",err);}
+              }}
               ordered={ordered}
             />
             {ordered&&(
