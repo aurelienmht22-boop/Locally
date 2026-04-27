@@ -705,8 +705,9 @@ function SnackPage({ onBack }) {
                     if(c.cheddar)parts.push("+ Cheddar");
                     if(parts.length)d+=" - "+parts.join(" - ");
                     return d;
-                  }).join(" | ");
+                  }).join(" | ")+" | Retrait à "+heure;
                   console.log("DETAILS:",details,"CLIENT:",name);
+                  const script=`Nouvelle commande. Client : ${name}. Commande : ${details}. Retrait à ${heure}.`;
                   const {error:dbError}=await supabase.from("orders").insert({
                     partner_id:partner.id,
                     partner_name:partner.name,
@@ -727,7 +728,7 @@ function SnackPage({ onBack }) {
                       agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",
                       agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",
                       to_number:"+33778780353",
-                      conversation_initiation_client_data:{dynamic_variables:{client_name:name,details:details,heure:heure,note:note}},
+                      conversation_initiation_client_data:{dynamic_variables:{script}},
                     }),
                   });
                   window.location.href="tel:"+partner.phone;
