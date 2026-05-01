@@ -53,11 +53,11 @@ const TACOS_SIZES  = [
 
 const MENU = [
   { id:"kebab", cat:"Kebab", items:[
-    { id:"k1", name:"Menu Kebab", desc:"Sandwich kebab au choix", price:8, img:IMGS.kebab, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2 },
+    { id:"k1", name:"Menu Kebab", desc:"Sandwich kebab au choix", price:8, img:IMGS.kebab, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2, hasPainChoice:true },
   ]},
   { id:"tacos", cat:"Menu Tacos", isTacos:true },
   { id:"formules", cat:"Formules", items:[
-    { id:"f1", name:"Formule du Peuple", desc:"Kebab ou Burger + Plato + Boisson", price:10.50, img:IMGS.formule_peuple, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2 },
+    { id:"f1", name:"Formule du Peuple", desc:"Kebab ou Burger + Plato + Boisson", price:10.50, img:IMGS.formule_peuple, hasGarnitures:true, hasSauce:true, sauceList:SAUCES_KEBAB, maxSauce:2, hasPainChoice:true },
     { id:"f2", name:"Formule Rouge", desc:"Poulet mariné Tandoori + Plato + Boisson", price:12, img:IMGS.formule_rouge, hasGarnitures:true, hasSauce:true, sauceList:ALL_SAUCES, maxSauce:2, hasCheddar:true },
     { id:"f3", name:"Formule King Kong", desc:"Burger + Bol + Frites + Boisson", price:15, img:IMGS.formule_king },
   ]},
@@ -272,6 +272,7 @@ function ConfigPanel({ item, onAdd }) {
   const [garnitures, setGarnitures] = useState([...GARNITURES_LIST]);
   const [sauces, setSauces] = useState([]);
   const [cheddar, setCheddar] = useState(false);
+  const [pain, setPain] = useState("Pain maison");
   const sauceList = item.sauceList || [];
   const maxSauce = item.maxSauce || 2;
 
@@ -282,12 +283,22 @@ function ConfigPanel({ item, onAdd }) {
     setSauces(p=>[...p,s]);
   }
   function handleAdd(){
-    onAdd({item,garnitures,sauces,viandes:[],cheddar,qty:1});
-    setGarnitures([...GARNITURES_LIST]);setSauces([]);setCheddar(false);
+    onAdd({item,garnitures,sauces,viandes:[],cheddar,pain:item.hasPainChoice?pain:undefined,qty:1});
+    setGarnitures([...GARNITURES_LIST]);setSauces([]);setCheddar(false);if(item.hasPainChoice)setPain("Pain maison");
   }
 
   return (
     <div className="config-panel">
+      {item.hasPainChoice && (
+        <div style={{marginBottom:14}}>
+          <div className="cfg-label fb">Choix du pain</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {["Pain maison","Pain galette"].map(p=>(
+              <button key={p} className={"chip fb "+(pain===p?"sel":"off")} onClick={()=>setPain(p)}>{p}</button>
+            ))}
+          </div>
+        </div>
+      )}
       {item.hasGarnitures && (
         <div style={{marginBottom:14}}>
           <div className="cfg-label fb">Garniture <span className="cfg-hint">(appuie pour retirer)</span></div>
@@ -447,6 +458,7 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
 
   function detail(c){
     const p=[];
+    if(c.pain)p.push(c.pain);
     if(c.viandes?.length)p.push(c.viandes.join(" + "));
     if(c.garnitures?.length)p.push(c.garnitures.join(", "));
     if(c.sauces?.length)p.push("Sauce : "+c.sauces.join(", "));
@@ -708,6 +720,7 @@ function SnackPage({ onBack }) {
                   console.log("CLIENT:",name);
                   const details=cart.map(c=>{
                     let d=c.item.name;
+                    if(c.pain)d+=" ("+c.pain+")";
                     if(c.garnitures?.length)d+=" : "+c.garnitures.join(", ");
                     const parts=[];
                     if(c.viandes?.length){const vc={};c.viandes.forEach(v=>vc[v]=(vc[v]||0)+1);parts.push("Viandes: "+Object.entries(vc).map(([v,n])=>n>1?v+" x"+n:v).join(", "));}
@@ -718,7 +731,19 @@ function SnackPage({ onBack }) {
                     return d;
                   }).join(" | ")+" | Retrait à "+heure;
                   console.log("DETAILS:",details,"CLIENT:",name);
-                  const script=`Nouvelle commande. Client : ${name}. Commande : ${details}. Retrait à ${heure}.`;
+                  const totalItems=cart.reduce((s,c)=>s+(c.qty||1),0);
+                  const articleLines=cart.map(c=>{
+                    const parts=[];
+                    if(c.pain)parts.push(c.pain);
+                    if(c.garnitures?.length)parts.push("garniture "+c.garnitures.join(", "));
+                    if(c.viandes?.length){const vc={};c.viandes.forEach(v=>vc[v]=(vc[v]||0)+1);parts.push("viandes "+Object.entries(vc).map(([v,n])=>n>1?v+" x"+n:v).join(", "));}
+                    if(c.sauces?.length)parts.push("sauce "+c.sauces.join(", "));
+                    if(c.withFromagere===false)parts.push("sans fromagère");
+                    if(c.cheddar)parts.push("cheddar");
+                    return c.item.name+(parts.length?" : "+parts.join(", "):"");
+                  });
+                  const articlesScript=articleLines.map((a,i)=>`Article ${i+1} : ${a}. Confirmez-vous cet article ?`).join(" ");
+                  const script=`Bonjour, j'ai ${totalItems} article${totalItems>1?"s":""} à commander. Client : ${name}. ${articlesScript} Retrait à ${heure}.`;
                   const {error:dbError}=await supabase.from("orders").insert({
                     partner_id:partner.id,
                     partner_name:partner.name,
@@ -739,7 +764,7 @@ function SnackPage({ onBack }) {
                     body:JSON.stringify({
                       agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",
                       agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",
-                      to_number:"+33778780353",
+                      to_number:"+33750056024",
                       conversation_initiation_client_data:{dynamic_variables:{script}},
                     }),
                   });
