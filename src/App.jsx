@@ -764,7 +764,7 @@ function SnackPage({ onBack }) {
                     body:JSON.stringify({
                       agent_id:"agent_3801kpzkh35qfsaad81savww2sh0",
                       agent_phone_number_id:"phnum_0601kq5q01tves1syvmw2kzk5jnd",
-                      to_number:"+33750056024",
+                      to_number:"+33778780353",
                       conversation_initiation_client_data:{dynamic_variables:{script}},
                     }),
                   });
@@ -801,7 +801,8 @@ function DashboardPage() {
 
   async function fetchOrders() {
     setLoading(true);
-    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    if (error) console.error("Supabase error:", error);
     setOrders(data || []);
     setLoading(false);
   }
