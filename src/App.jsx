@@ -796,20 +796,89 @@ const DASH_PASSWORD = "locally2025";
 function DashboardPage() {
   const [auth, setAuth] = useState(false);
   const [input, setInput] = useState("");
+  const [tab, setTab] = useState("commandes");
+
+  // Commandes
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Analyses
+  const [analyses, setAnalyses] = useState([]);
+  const [loadingAnalyses, setLoadingAnalyses] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+  const [freshAnalysis, setFreshAnalysis] = useState(null);
 
   async function fetchOrders() {
-    setLoading(true);
+    setLoadingOrders(true);
     const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
     if (error) console.error("Supabase error:", error);
     setOrders(data || []);
-    setLoading(false);
+    setLoadingOrders(false);
+  }
+
+  async function fetchAnalyses() {
+    setLoadingAnalyses(true);
+    const { data, error } = await supabase.from("analyses").select("*").order("created_at", { ascending: false });
+    if (error) console.error("Supabase analyses error:", error);
+    setAnalyses(data || []);
+    setLoadingAnalyses(false);
+  }
+
+  async function generateAnalysis() {
+    setGenerating(true);
+    setFreshAnalysis(null);
+    try {
+      const { data: lastData } = await supabase.from("analyses").select("*").order("created_at", { ascending: false }).limit(1);
+      const lastAnalysis = lastData?.[0] || null;
+
+      let query = supabase.from("orders").select("*").order("created_at", { ascending: true });
+      if (lastAnalysis?.date_to) query = query.gt("created_at", lastAnalysis.date_to);
+      const { data: newOrders } = await query;
+      const ordersToAnalyze = newOrders || [];
+
+      const dateFrom = ordersToAnalyze[0]?.created_at || new Date().toISOString();
+      const dateTo = ordersToAnalyze[ordersToAnalyze.length - 1]?.created_at || new Date().toISOString();
+
+      const userPrompt = `Voici le contexte: ${lastAnalysis ? lastAnalysis.content : "Première analyse"}. Nouvelles commandes depuis la dernière analyse (${ordersToAnalyze.length} commandes): ${JSON.stringify(ordersToAnalyze)}. Génère une analyse business complète incluant: CA généré, articles les plus commandés, heures de pointe, tendances, comparaison avec période précédente si disponible, et 3 recommandations concrètes.`;
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2048,
+          system: "Tu es un assistant business expert pour Locally, plateforme de commande locale à Bordeaux. Tu analyses les données de commandes et produis des rapports business concis et actionnables en français.",
+          messages: [{ role: "user", content: userPrompt }],
+        }),
+      });
+      const json = await res.json();
+      const content = json.content?.[0]?.text || "";
+
+      const { error: insertError } = await supabase.from("analyses").insert({
+        content,
+        orders_count: ordersToAnalyze.length,
+        date_from: dateFrom,
+        date_to: dateTo,
+      });
+      if (insertError) console.error("Supabase insert error:", insertError);
+
+      setFreshAnalysis(content);
+      await fetchAnalyses();
+    } catch (err) {
+      console.error("Generate analysis error:", err);
+    }
+    setGenerating(false);
   }
 
   function handleLogin(e) {
     e.preventDefault();
-    if (input === DASH_PASSWORD) { setAuth(true); fetchOrders(); }
+    if (input === DASH_PASSWORD) { setAuth(true); fetchOrders(); fetchAnalyses(); }
     else alert("Mot de passe incorrect");
   }
 
@@ -824,30 +893,93 @@ function DashboardPage() {
   );
 
   return (
-    <div style={{padding:"100px 32px 64px",maxWidth:960,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:32}}>
-        <div className="fd" style={{fontSize:28}}>Commandes <em>reçues</em></div>
-        <button className="add-btn fb" onClick={fetchOrders}>{loading?"…":"↻ Actualiser"}</button>
+    <div style={{padding:"100px 24px 64px",maxWidth:1100,margin:"0 auto"}}>
+      <div className="fd" style={{fontSize:28,marginBottom:28}}>Dashboard <em>Locally</em></div>
+
+      <div className="tabs" style={{marginBottom:32}}>
+        <button className={"tab fb "+(tab==="commandes"?"active":"")} onClick={()=>setTab("commandes")}>Commandes</button>
+        <button className={"tab fb "+(tab==="analyse"?"active":"")} onClick={()=>setTab("analyse")}>Analyse IA</button>
       </div>
-      {orders.length === 0 && !loading && (
-        <div className="fb" style={{color:"#999",textAlign:"center",marginTop:64}}>Aucune commande pour l'instant.</div>
-      )}
-      {orders.map(o => (
-        <div key={o.id} style={{background:"#fff",borderRadius:10,padding:"18px 24px",marginBottom:14,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
-            <div>
-              <div className="fd" style={{fontSize:16}}>{o.client_name} <span style={{color:"#999",fontWeight:400,fontSize:13}}>· {o.client_phone}</span></div>
-              <div className="fb" style={{fontSize:13,color:"#6B1D1D",marginTop:2}}>{o.formula_name}</div>
-              {o.notes && <div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Note : {o.notes}</div>}
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div className="fd" style={{fontSize:18}}>{Number(o.client_price).toFixed(2)} €</div>
-              <div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Retrait {o.pickup_time}</div>
-              <div className="fb" style={{fontSize:11,color:"#bbb",marginTop:1}}>{new Date(o.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>
-            </div>
+
+      {tab==="commandes" && (
+        <>
+          <div style={{display:"flex",justifyContent:"flex-end",marginBottom:20}}>
+            <button className="add-btn fb" onClick={fetchOrders}>{loadingOrders?"…":"↻ Actualiser"}</button>
           </div>
+          {orders.length===0 && !loadingOrders && (
+            <div className="fb" style={{color:"#999",textAlign:"center",marginTop:64}}>Aucune commande pour l'instant.</div>
+          )}
+          {orders.map(o=>(
+            <div key={o.id} style={{background:"#fff",borderRadius:10,padding:"18px 24px",marginBottom:14,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+                <div>
+                  <div className="fd" style={{fontSize:16}}>{o.client_name} <span style={{color:"#999",fontWeight:400,fontSize:13}}>· {o.client_phone}</span></div>
+                  <div className="fb" style={{fontSize:13,color:"#6B1D1D",marginTop:2}}>{o.formula_name}</div>
+                  {o.notes&&<div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Note : {o.notes}</div>}
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div className="fd" style={{fontSize:18}}>{Number(o.client_price).toFixed(2)} €</div>
+                  <div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Retrait {o.pickup_time}</div>
+                  <div className="fb" style={{fontSize:11,color:"#bbb",marginTop:1}}>{new Date(o.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {tab==="analyse" && (
+        <div style={{display:"flex",flexWrap:"wrap",gap:32,alignItems:"flex-start"}}>
+
+          {/* History */}
+          <div style={{flex:"1 1 300px"}}>
+            <div className="fd" style={{fontSize:18,marginBottom:16,color:"#1C1208"}}>Historique</div>
+            {loadingAnalyses&&<div className="fb" style={{color:"#999"}}>Chargement…</div>}
+            {!loadingAnalyses&&analyses.length===0&&(
+              <div className="fb" style={{color:"#999",fontSize:14}}>Aucune analyse pour l'instant.</div>
+            )}
+            {analyses.map(a=>(
+              <div key={a.id}
+                style={{background:"#1C1208",borderRadius:10,padding:"18px 20px",marginBottom:14,cursor:"pointer",transition:"opacity .15s"}}
+                onClick={()=>setExpandedId(expandedId===a.id?null:a.id)}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div className="fb" style={{fontSize:12,color:"rgba(247,243,238,.5)"}}>
+                    {new Date(a.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+                  </div>
+                  <div className="fb" style={{fontSize:11,color:"#6B1D1D",background:"rgba(107,29,29,.15)",padding:"2px 8px",borderRadius:20}}>
+                    {a.orders_count} commande{a.orders_count!==1?"s":""}
+                  </div>
+                </div>
+                <div className="fb" style={{fontSize:13,color:"#F7F3EE",lineHeight:1.6,whiteSpace:"pre-wrap"}}>
+                  {expandedId===a.id ? a.content : (a.content||"").slice(0,150)+(a.content?.length>150?"…":"")}
+                </div>
+                <div className="fb" style={{fontSize:11,color:"rgba(247,243,238,.4)",marginTop:8,textAlign:"right"}}>
+                  {expandedId===a.id?"▲ Réduire":"▼ Lire tout"}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Generate */}
+          <div style={{flex:"1 1 300px"}}>
+            <div className="fd" style={{fontSize:18,marginBottom:16,color:"#1C1208"}}>Nouvelle analyse</div>
+            <button
+              className="btn-call fb"
+              onClick={generateAnalysis}
+              disabled={generating}
+              style={{width:"100%",marginBottom:20,opacity:generating?.6:1}}>
+              {generating?"⏳ Génération en cours…":"✦ Générer l'analyse"}
+            </button>
+            {freshAnalysis&&(
+              <div style={{background:"#1C1208",borderRadius:10,padding:"20px 22px"}}>
+                <div className="fb" style={{fontSize:12,color:"rgba(247,243,238,.5)",marginBottom:10}}>Analyse générée maintenant</div>
+                <div className="fb" style={{fontSize:13,color:"#F7F3EE",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{freshAnalysis}</div>
+              </div>
+            )}
+          </div>
+
         </div>
-      ))}
+      )}
     </div>
   );
 }
