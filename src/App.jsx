@@ -851,7 +851,7 @@ function DashboardPage() {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-5",
           max_tokens: 2048,
           system: "Tu es un assistant business expert pour Locally, plateforme de commande locale à Bordeaux. Tu analyses les données de commandes et produis des rapports business concis et actionnables en français.",
           messages: [{ role: "user", content: userPrompt }],
