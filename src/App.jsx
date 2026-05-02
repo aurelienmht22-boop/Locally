@@ -792,9 +792,21 @@ function SnackPage({ onBack }) {
 }
 
 export default function App() {
-  const [page,setPage]=useState("home");
+  const [page,setPage]=useState(()=>{
+    const path=window.location.pathname;
+    if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
+    return "home";
+  });
   const [activeCat,setActiveCat]=useState(null);
   useEffect(()=>{window.scrollTo(0,0);},[page]);
+  useEffect(()=>{
+    function onPopState(){
+      const path=window.location.pathname;
+      setPage(path==="/dashboard"||path.startsWith("/dashboard")?"dashboard":"home");
+    }
+    window.addEventListener("popstate",onPopState);
+    return ()=>window.removeEventListener("popstate",onPopState);
+  },[]);
   function navigate(target,catId=null){if(catId)setActiveCat(catId);setPage(target);}
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
