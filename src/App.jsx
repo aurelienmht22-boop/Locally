@@ -434,16 +434,28 @@ function TacosCard({ onAdd }) {
   );
 }
 
+const PHONE_RE=/^0[67]\d{8}$/;
+const NAME_RE=/^[a-zA-ZÀ-ÿ\- ]{2,50}$/;
+const RATE_LIMIT_MS=60000;
+
+function stripHtml(str){return str.replace(/<[^>]*>/g,"").trim();}
+
 function Cart({ cart, onRemove, onOrder, ordered }) {
   const [name,setName]=useState("");
   const [time,setTime]=useState(null);
   const [note,setNote]=useState("");
   const [clientPhone,setClientPhone]=useState("");
   const [rgpdAccepted,setRgpdAccepted]=useState(false);
+  const [rateLimitMsg,setRateLimitMsg]=useState("");
   const slots=getSlots();
   const partner=PARTNERS[0];
   const total=cart.reduce((s,c)=>s+c.item.price+(c.cheddar?1.5:0),0);
-  const canOrder=cart.length>0&&name.trim().length>1&&time&&clientPhone.trim().length>0&&rgpdAccepted;
+
+  const phoneClean=clientPhone.replace(/\s/g,"");
+  const phoneValid=PHONE_RE.test(phoneClean);
+  const nameValid=NAME_RE.test(name.trim());
+  const noteValid=note.length<=200;
+  const canOrder=cart.length>0&&nameValid&&time&&phoneValid&&noteValid&&rgpdAccepted;
 
   if(ordered) return (
     <div className="success">
@@ -499,20 +511,30 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
         <div className="op-section">
           <div className="op-label fb">Votre prénom</div>
           <input className="input fb" placeholder="Ex : Thomas" value={name} onChange={e=>setName(e.target.value)}/>
+          {name.length>0&&!nameValid&&<div className="fb" style={{fontSize:11,color:"#c0392b",marginTop:4}}>2 à 50 caractères, lettres et tirets uniquement.</div>}
         </div>
         <div className="op-section">
           <div className="op-label fb">Numéro de téléphone</div>
           <input className="input fb" type="tel" placeholder="06 XX XX XX XX" required value={clientPhone} onChange={e=>setClientPhone(e.target.value)}/>
+          {clientPhone.length>0&&!phoneValid&&<div className="fb" style={{fontSize:11,color:"#c0392b",marginTop:4}}>Format invalide. Ex : 06 12 34 56 78</div>}
         </div>
         <div className="op-section">
-          <div className="op-label fb">Note (optionnel)</div>
-          <input className="input fb" placeholder="Ex : sans oignons..." value={note} onChange={e=>setNote(e.target.value)}/>
+          <div className="op-label fb">Note (optionnel) <span style={{color:"#999",fontWeight:400}}>{note.length}/200</span></div>
+          <input className="input fb" placeholder="Ex : sans oignons..." value={note} onChange={e=>setNote(e.target.value.slice(0,200))}/>
+          {note.length>=200&&<div className="fb" style={{fontSize:11,color:"#c0392b",marginTop:4}}>Maximum 200 caractères atteint.</div>}
         </div>
         <div className="op-section" style={{display:"flex",alignItems:"flex-start",gap:10}}>
           <input type="checkbox" id="rgpd" checked={rgpdAccepted} onChange={e=>setRgpdAccepted(e.target.checked)} style={{marginTop:3,accentColor:"#6B1D1D",flexShrink:0}}/>
           <label htmlFor="rgpd" className="fb" style={{fontSize:12,color:"#7A6555",lineHeight:1.5,cursor:"pointer"}}>J'accepte que mon prénom et numéro de téléphone soient utilisés pour traiter ma commande et me contacter en cas de problème.</label>
         </div>
-        <button className="btn-call fb" disabled={!canOrder} onClick={()=>onOrder(name,time,note,clientPhone)}>
+        {rateLimitMsg&&<div className="fb" style={{fontSize:12,color:"#c0392b",marginBottom:8,textAlign:"center"}}>{rateLimitMsg}</div>}
+        <button className="btn-call fb" disabled={!canOrder} onClick={()=>{
+          const last=sessionStorage.getItem("lastOrderTs");
+          if(last&&Date.now()-Number(last)<RATE_LIMIT_MS){setRateLimitMsg("Veuillez patienter avant de passer une nouvelle commande.");return;}
+          setRateLimitMsg("");
+          sessionStorage.setItem("lastOrderTs",String(Date.now()));
+          onOrder(name,time,note,clientPhone);
+        }}>
           📞 Commander par téléphone
         </button>
         <div className="call-note fb">{canOrder?"Un appel sera lancé pour confirmer":"Complétez votre commande pour continuer"}</div>
@@ -749,13 +771,13 @@ function SnackPage({ onBack }) {
                     partner_name:partner.name,
                     order_type:"commande",
                     formula_name:cart.map(c=>c.item.name).join(", "),
-                    client_name:name,
-                    client_phone:clientPhone,
+                    client_name:stripHtml(name),
+                    client_phone:stripHtml(clientPhone),
                     pickup_time:heure,
                     client_price:total,
                     partner_price:total*0.8,
                     zack_commission:total*0.2,
-                    notes:note,
+                    notes:stripHtml(note),
                   });
                   if(dbError){console.error("SUPABASE ERROR:",dbError);return;}
                   await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound-call",{
@@ -791,7 +813,7 @@ function SnackPage({ onBack }) {
   );
 }
 
-const DASH_PASSWORD = "locally2025";
+const DASH_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD;
 
 function DashboardPage() {
   const [auth, setAuth] = useState(false);
@@ -878,6 +900,7 @@ function DashboardPage() {
 
   function handleLogin(e) {
     e.preventDefault();
+    if (!DASH_PASSWORD) { alert("Configuration manquante. Accès impossible."); return; }
     if (input === DASH_PASSWORD) { setAuth(true); fetchOrders(); fetchAnalyses(); }
     else alert("Mot de passe incorrect");
   }
