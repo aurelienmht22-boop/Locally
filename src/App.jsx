@@ -791,6 +791,66 @@ function SnackPage({ onBack }) {
   );
 }
 
+const DASH_PASSWORD = "locally2025";
+
+function DashboardPage() {
+  const [auth, setAuth] = useState(false);
+  const [input, setInput] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  async function fetchOrders() {
+    setLoading(true);
+    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    setOrders(data || []);
+    setLoading(false);
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    if (input === DASH_PASSWORD) { setAuth(true); fetchOrders(); }
+    else alert("Mot de passe incorrect");
+  }
+
+  if (!auth) return (
+    <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"80vh"}}>
+      <form onSubmit={handleLogin} style={{background:"#fff",padding:40,borderRadius:12,boxShadow:"0 4px 24px rgba(0,0,0,.08)",display:"flex",flexDirection:"column",gap:16,minWidth:300}}>
+        <div className="fd" style={{fontSize:22,marginBottom:4}}>Dashboard</div>
+        <input className="input fb" type="password" placeholder="Mot de passe" value={input} onChange={e=>setInput(e.target.value)} autoFocus/>
+        <button className="btn-primary fb" type="submit">Accéder →</button>
+      </form>
+    </div>
+  );
+
+  return (
+    <div style={{padding:"100px 32px 64px",maxWidth:960,margin:"0 auto"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:32}}>
+        <div className="fd" style={{fontSize:28}}>Commandes <em>reçues</em></div>
+        <button className="add-btn fb" onClick={fetchOrders}>{loading?"…":"↻ Actualiser"}</button>
+      </div>
+      {orders.length === 0 && !loading && (
+        <div className="fb" style={{color:"#999",textAlign:"center",marginTop:64}}>Aucune commande pour l'instant.</div>
+      )}
+      {orders.map(o => (
+        <div key={o.id} style={{background:"#fff",borderRadius:10,padding:"18px 24px",marginBottom:14,boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+            <div>
+              <div className="fd" style={{fontSize:16}}>{o.client_name} <span style={{color:"#999",fontWeight:400,fontSize:13}}>· {o.client_phone}</span></div>
+              <div className="fb" style={{fontSize:13,color:"#6B1D1D",marginTop:2}}>{o.formula_name}</div>
+              {o.notes && <div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Note : {o.notes}</div>}
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div className="fd" style={{fontSize:18}}>{Number(o.client_price).toFixed(2)} €</div>
+              <div className="fb" style={{fontSize:12,color:"#888",marginTop:2}}>Retrait {o.pickup_time}</div>
+              <div className="fb" style={{fontSize:11,color:"#bbb",marginTop:1}}>{new Date(o.created_at).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const [page,setPage]=useState(()=>{
     const path=window.location.pathname;
@@ -822,6 +882,7 @@ export default function App() {
           {page==="home"?"Explorer →":"Accueil"}
         </button>
       </nav>
+      {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} onBack={()=>setPage("home")} onNavigate={p=>setPage(p)}/>}
       {page==="snack"&&<SnackPage onBack={()=>setPage("category")}/>}
