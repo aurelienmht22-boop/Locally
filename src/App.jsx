@@ -813,6 +813,56 @@ function SnackPage({ onBack }) {
   );
 }
 
+function renderMarkdown(text) {
+  if (!text) return "";
+  function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function inline(s) {
+    return esc(s)
+      .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g,"<em>$1</em>");
+  }
+  const lines = text.split("\n");
+  let html = "";
+  let inTable = false;
+  let tableFirstRow = true;
+  let inList = false;
+  for (const line of lines) {
+    const t = line.trim();
+    if (/^\|.+\|$/.test(t)) {
+      if (/^\|[\s\-:|]+\|$/.test(t)) { tableFirstRow = false; continue; }
+      if (!inTable) {
+        if (inList) { html += "</ul>"; inList = false; }
+        html += `<table style="width:100%;border-collapse:collapse;margin:12px 0;">`;
+        inTable = true; tableFirstRow = true;
+      }
+      const cells = t.slice(1,-1).split("|").map(c=>c.trim());
+      if (tableFirstRow) {
+        html += `<thead><tr>${cells.map(c=>`<th style="padding:6px 10px;border:1px solid rgba(107,29,29,.4);background:rgba(107,29,29,.25);color:#F7F3EE;text-align:left;font-size:12px;">${inline(c)}</th>`).join("")}</tr></thead><tbody>`;
+        tableFirstRow = false;
+      } else {
+        html += `<tr>${cells.map(c=>`<td style="padding:6px 10px;border:1px solid rgba(247,243,238,.1);color:rgba(247,243,238,.85);font-size:12px;">${inline(c)}</td>`).join("")}</tr>`;
+      }
+      continue;
+    }
+    if (inTable) { html += "</tbody></table>"; inTable = false; }
+    if (/^[-*]\s/.test(t)) {
+      if (!inList) { html += `<ul style="margin:8px 0 8px 18px;padding:0;">`; inList = true; }
+      html += `<li style="font-family:'DM Sans',sans-serif;font-size:13px;color:#F7F3EE;line-height:1.7;margin:2px 0;">${inline(t.slice(2))}</li>`;
+      continue;
+    }
+    if (inList) { html += "</ul>"; inList = false; }
+    if (/^---+$/.test(t)) { html += `<hr style="border:none;border-top:1px solid rgba(107,29,29,.2);margin:16px 0;"/>`; continue; }
+    if (t.startsWith("## ")) { html += `<h2 style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:#F7F3EE;margin-top:20px;margin-bottom:6px;">${inline(t.slice(3))}</h2>`; continue; }
+    if (t.startsWith("### ")) { html += `<h3 style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:rgba(247,243,238,.8);margin-top:14px;margin-bottom:4px;">${inline(t.slice(4))}</h3>`; continue; }
+    if (t.startsWith("> ")) { html += `<blockquote style="border-left:3px solid #6B1D1D;margin:10px 0;padding:6px 14px;color:rgba(247,243,238,.75);font-style:italic;font-size:13px;">${inline(t.slice(2))}</blockquote>`; continue; }
+    if (!t) { html += `<div style="height:6px;"></div>`; continue; }
+    html += `<p style="font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.7;color:#F7F3EE;margin:2px 0;">${inline(t)}</p>`;
+  }
+  if (inTable) html += "</tbody></table>";
+  if (inList) html += "</ul>";
+  return html;
+}
+
 const DASH_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD;
 
 function DashboardPage() {
@@ -973,9 +1023,10 @@ function DashboardPage() {
                     {a.orders_count} commande{a.orders_count!==1?"s":""}
                   </div>
                 </div>
-                <div className="fb" style={{fontSize:13,color:"#F7F3EE",lineHeight:1.6,whiteSpace:"pre-wrap"}}>
-                  {expandedId===a.id ? a.content : (a.content||"").slice(0,150)+(a.content?.length>150?"…":"")}
-                </div>
+                {expandedId===a.id
+                  ? <div dangerouslySetInnerHTML={{__html:renderMarkdown(a.content)}}/>
+                  : <div className="fb" style={{fontSize:13,color:"rgba(247,243,238,.7)",lineHeight:1.6}}>{(a.content||"").slice(0,150)+(a.content?.length>150?"…":"")}</div>
+                }
                 <div className="fb" style={{fontSize:11,color:"rgba(247,243,238,.4)",marginTop:8,textAlign:"right"}}>
                   {expandedId===a.id?"▲ Réduire":"▼ Lire tout"}
                 </div>
@@ -996,7 +1047,7 @@ function DashboardPage() {
             {freshAnalysis&&(
               <div style={{background:"#1C1208",borderRadius:10,padding:"20px 22px"}}>
                 <div className="fb" style={{fontSize:12,color:"rgba(247,243,238,.5)",marginBottom:10}}>Analyse générée maintenant</div>
-                <div className="fb" style={{fontSize:13,color:"#F7F3EE",lineHeight:1.7,whiteSpace:"pre-wrap"}}>{freshAnalysis}</div>
+                <div dangerouslySetInnerHTML={{__html:renderMarkdown(freshAnalysis)}}/>
               </div>
             )}
           </div>
