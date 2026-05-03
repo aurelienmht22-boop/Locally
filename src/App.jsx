@@ -535,9 +535,9 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
           sessionStorage.setItem("lastOrderTs",String(Date.now()));
           onOrder(name,time,note,clientPhone);
         }}>
-          📞 Commander par téléphone
+          Commander
         </button>
-        <div className="call-note fb">{canOrder?"Un appel sera lancé pour confirmer":"Complétez votre commande pour continuer"}</div>
+        <div className="call-note fb">{canOrder?"":"Complétez votre commande pour continuer"}</div>
       </div>
     </>
   );
