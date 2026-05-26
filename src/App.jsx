@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "./lib/supabase";
+import { Html5Qrcode } from "html5-qrcode";
 
 const IMGS = {
   devanture: "/snack-bodrum.jpg",
@@ -81,65 +84,82 @@ function FadeUp({children,delay=0,style={}}) {
 }
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
-::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:rgba(107,29,29,.3);border-radius:2px;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:rgba(107,29,29,.25);border-radius:2px;}
 html{scroll-behavior:smooth;}
-.fd{font-family:'Cormorant Garamond',serif;}.fb{font-family:'DM Sans',sans-serif;}
-.nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 48px;background:rgba(247,243,238,.9);backdrop-filter:blur(16px);border-bottom:1px solid rgba(107,29,29,.08);}
-.logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#1C1208;cursor:pointer;}.logo em{font-style:italic;color:#6B1D1D;}
-.nav-links{display:flex;gap:32px;list-style:none;}.nav-links a{font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#7A6555;text-decoration:none;cursor:pointer;transition:color .2s;}.nav-links a:hover{color:#6B1D1D;}
-.nav-cta{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#6B1D1D;color:#F7F3EE;padding:10px 22px;border-radius:3px;border:none;cursor:pointer;transition:background .2s;}.nav-cta:hover{background:#4A1212;}
-.hero{min-height:100vh;padding:140px 48px 0;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
-.hero-badge{display:inline-flex;align-items:center;gap:10px;margin-bottom:36px;}
-.badge-dot{width:7px;height:7px;border-radius:50%;background:#6B1D1D;animation:ripple 2.5s ease-in-out infinite;}
-@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(107,29,29,.45);}70%{box-shadow:0 0 0 8px rgba(107,29,29,0);}100%{box-shadow:0 0 0 0 rgba(107,29,29,0);}}
-.badge-txt{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7A6555;}
-.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(56px,8.5vw,108px);font-weight:600;line-height:.95;color:#1C1208;margin-bottom:36px;position:relative;z-index:1;}
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.fd{font-family:'Cormorant Garamond',serif;}
+.fb{font-family:'DM Sans',sans-serif;}
+.nav{position:fixed;top:16px;left:16px;right:16px;z-index:200;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(247,243,238,.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:16px;border:1px solid rgba(107,29,29,.09);box-shadow:0 4px 32px rgba(28,18,8,.08),0 1px 0 rgba(255,255,255,.55) inset;}
+.logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#1C1208;cursor:pointer;letter-spacing:-.01em;}
+.logo em{font-style:italic;color:#6B1D1D;}
+.nav-links{display:flex;gap:32px;list-style:none;}
+.nav-links a{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#7A6555;text-decoration:none;cursor:pointer;transition:color .2s;}
+.nav-links a:hover{color:#6B1D1D;}
+.nav-cta{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#1C1208;color:#F7F3EE;padding:10px 22px;border-radius:10px;border:none;cursor:pointer;transition:all .25s ease;box-shadow:0 2px 8px rgba(28,18,8,.18);}
+.nav-cta:hover{background:#6B1D1D;transform:translateY(-1px);box-shadow:0 4px 20px rgba(107,29,29,.3);}
+.hero{min-height:100dvh;padding:148px 52px 80px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;background:#F7F3EE;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 35%,rgba(107,29,29,.055) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 10% 85%,rgba(28,18,8,.035) 0%,transparent 60%);pointer-events:none;}
+.hero-badge{display:inline-flex;align-items:center;gap:10px;margin-bottom:44px;background:rgba(107,29,29,.055);border:1px solid rgba(107,29,29,.12);border-radius:100px;padding:8px 18px;width:fit-content;}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:#6B1D1D;animation:ripple 2.5s ease-in-out infinite;flex-shrink:0;}
+@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(107,29,29,.45);}70%{box-shadow:0 0 0 9px rgba(107,29,29,0);}100%{box-shadow:0 0 0 0 rgba(107,29,29,0);}}
+.badge-txt{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;font-weight:500;}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(58px,9vw,118px);font-weight:600;line-height:.92;color:#1C1208;margin-bottom:44px;position:relative;z-index:1;max-width:14ch;}
 .hero-title em{font-style:italic;color:#6B1D1D;position:relative;}
-.hero-title em::after{content:'';position:absolute;left:0;bottom:4px;width:100%;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.2));transform:scaleX(0);transform-origin:left;animation:drawLine 1s ease .9s forwards;}
+.hero-title em::after{content:'';position:absolute;left:0;bottom:5px;width:100%;height:1.5px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.12));transform:scaleX(0);transform-origin:left;animation:drawLine 1.2s cubic-bezier(.16,1,.3,1) 1s forwards;}
 @keyframes drawLine{to{transform:scaleX(1);}}
-.hero-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:80px;position:relative;z-index:1;}
-.hero-desc{font-family:'DM Sans',sans-serif;font-size:16px;font-weight:300;color:#7A6555;line-height:1.8;max-width:400px;}
-.btn-primary{display:inline-flex;align-items:center;gap:10px;background:#6B1D1D;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;border:none;cursor:pointer;transition:background .25s,transform .2s,box-shadow .25s;}
-.btn-primary:hover{background:#4A1212;transform:translateY(-2px);}
-.hero-note{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.45);}
-.ticker-wrap{overflow:hidden;padding:15px 0;border-top:1px solid rgba(107,29,29,.08);border-bottom:1px solid rgba(107,29,29,.08);background:rgba(107,29,29,.025);}
-.ticker{display:flex;width:max-content;animation:scroll 20s linear infinite;}.ticker:hover{animation-play-state:paused;}
-.ticker-item{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(107,29,29,.45);padding:0 30px;white-space:nowrap;}
-.ticker-item::after{content:'·';opacity:.35;margin-left:30px;}
+.hero-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:48px;flex-wrap:wrap;position:relative;z-index:1;}
+.hero-desc{font-family:'DM Sans',sans-serif;font-size:16px;font-weight:300;color:#7A6555;line-height:1.8;max-width:360px;}
+.hero-actions{display:flex;flex-direction:column;align-items:flex-end;gap:16px;}
+.btn-primary{display:inline-flex;align-items:center;gap:12px;background:#1C1208;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:17px 34px;border-radius:12px;border:none;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 20px rgba(28,18,8,.2);letter-spacing:.015em;white-space:nowrap;}
+.btn-primary:hover{background:#6B1D1D;transform:translateY(-2px);box-shadow:0 8px 32px rgba(107,29,29,.28);}
+.hero-note{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.38);letter-spacing:.05em;}
+.hero-stats{display:flex;gap:44px;flex-wrap:wrap;padding-top:64px;border-top:1px solid rgba(107,29,29,.08);margin-top:64px;position:relative;z-index:1;}
+.stat-item{display:flex;flex-direction:column;gap:5px;}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;line-height:1;}
+.stat-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:400;color:#7A6555;letter-spacing:.1em;text-transform:uppercase;}
+.ticker-wrap{overflow:hidden;padding:14px 0;border-top:1px solid rgba(107,29,29,.07);border-bottom:1px solid rgba(107,29,29,.07);background:rgba(107,29,29,.018);}
+.ticker{display:flex;width:max-content;animation:scroll 22s linear infinite;}
+.ticker:hover{animation-play-state:paused;}
+.ticker-item{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:rgba(107,29,29,.38);padding:0 28px;white-space:nowrap;}
+.ticker-item::after{content:'·';opacity:.28;margin-left:28px;}
 @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-.section{padding:100px 48px;}
-.sec-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#6B1D1D;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-.sec-tag::before{content:'';width:28px;height:1px;background:#6B1D1D;display:block;}
-.sec-title{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,58px);font-weight:600;line-height:1.1;color:#1C1208;margin-bottom:60px;}
+.section{padding:104px 52px;}
+.sec-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:#6B1D1D;margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+.sec-tag::before{content:'';width:24px;height:1px;background:#6B1D1D;display:block;}
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:clamp(38px,5.5vw,64px);font-weight:600;line-height:1.04;color:#1C1208;margin-bottom:64px;}
 .sec-title em{font-style:italic;color:#6B1D1D;}
-.div-label{display:flex;align-items:center;gap:24px;padding:0 48px;}
-.div-line{flex:1;height:1px;background:rgba(107,29,29,.1);}
-.div-txt{font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(107,29,29,.3);letter-spacing:.06em;white-space:nowrap;}
-.how-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid rgba(107,29,29,.1);border-radius:6px;overflow:hidden;}
-.how-card{padding:48px 36px;border-right:1px solid rgba(107,29,29,.1);background:#FDFAF6;position:relative;overflow:hidden;transition:background .3s;}
-.how-card:last-child{border-right:none;}.how-card:hover{background:#FBF5EE;}
-.how-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#6B1D1D;transform:scaleX(0);transform-origin:left;transition:transform .4s ease;}
-.how-card:hover::before{transform:scaleX(1);}
-.how-num{font-family:'Cormorant Garamond',serif;font-size:68px;font-weight:600;color:rgba(107,29,29,.07);line-height:1;margin-bottom:18px;}
-.how-title{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;color:#1C1208;margin-bottom:10px;}
-.how-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.75;}
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-.catcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.1);border-radius:6px;padding:36px 32px;position:relative;overflow:hidden;transition:all .25s;}
-.catcard.active{cursor:pointer;}.catcard.active:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(28,18,8,.09);border-color:rgba(107,29,29,.25);}
-.catcard.inactive{opacity:.5;cursor:default;}
-.catcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:#6B1D1D;transform:scaleX(0);transform-origin:left;transition:transform .4s ease;}
+.div-label{display:flex;align-items:center;gap:24px;padding:0 52px;}
+.div-line{flex:1;height:1px;background:rgba(107,29,29,.08);}
+.div-txt{font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(107,29,29,.27);letter-spacing:.06em;white-space:nowrap;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(107,29,29,.07);border-radius:20px;overflow:hidden;}
+.how-card{padding:52px 44px;background:#FDFAF6;position:relative;overflow:hidden;transition:background .3s ease;}
+.how-card:hover{background:#FAF4EC;}
+.how-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.15));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.how-card:hover::after{transform:scaleX(1);}
+.how-icon{width:46px;height:46px;border-radius:13px;background:rgba(107,29,29,.06);border:1px solid rgba(107,29,29,.1);display:flex;align-items:center;justify-content:center;margin-bottom:26px;transition:all .3s ease;color:#6B1D1D;flex-shrink:0;}
+.how-card:hover .how-icon{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;transform:scale(1.05);}
+.how-num{font-family:'Cormorant Garamond',serif;font-size:76px;font-weight:600;color:rgba(107,29,29,.048);line-height:1;margin-bottom:14px;}
+.how-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#1C1208;margin-bottom:10px;}
+.how-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.82;}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.catcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:20px;padding:38px 34px;position:relative;overflow:hidden;transition:all .35s cubic-bezier(.16,1,.3,1);}
+.catcard.active{cursor:pointer;}
+.catcard.active:hover{transform:translateY(-5px);box-shadow:0 24px 60px rgba(28,18,8,.1);border-color:rgba(107,29,29,.2);background:#FAF4EC;}
+.catcard.inactive{opacity:.42;cursor:default;}
+.catcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.12));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
 .catcard.active:hover::before{transform:scaleX(1);}
-.catcard-icon{font-size:36px;margin-bottom:20px;display:block;}
+.catcard-icon-wrap{width:52px;height:52px;border-radius:14px;background:rgba(107,29,29,.055);border:1px solid rgba(107,29,29,.09);display:flex;align-items:center;justify-content:center;margin-bottom:24px;color:#6B1D1D;transition:all .3s ease;}
+.catcard.active:hover .catcard-icon-wrap{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;transform:scale(1.05);}
 .catcard-name{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#1C1208;margin-bottom:8px;}
-.catcard-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.6;margin-bottom:20px;}
-.catcard-foot{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid rgba(107,29,29,.08);}
-.catcard-cta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;}
-.catcard-soon{font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(122,101,85,.5);letter-spacing:.08em;text-transform:uppercase;}
-.catcard-arrow{width:30px;height:30px;border-radius:50%;border:1px solid rgba(107,29,29,.2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#6B1D1D;transition:all .3s;}
-.catcard.active:hover .catcard-arrow{background:#6B1D1D;color:#F7F3EE;transform:rotate(45deg);}
-.catpage-hero{background:#1C1208;padding:120px 48px 60px;}
+.catcard-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.65;margin-bottom:24px;}
+.catcard-foot{display:flex;justify-content:space-between;align-items:center;padding-top:18px;border-top:1px solid rgba(107,29,29,.07);}
+.catcard-cta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;letter-spacing:.02em;}
+.catcard-soon{font-family:'DM Sans',sans-serif;font-size:10px;color:rgba(122,101,85,.42);letter-spacing:.12em;text-transform:uppercase;}
+.catcard-arrow{width:32px;height:32px;border-radius:50%;border:1px solid rgba(107,29,29,.17);display:flex;align-items:center;justify-content:center;color:#6B1D1D;transition:all .35s cubic-bezier(.16,1,.3,1);font-size:15px;}
+.catcard.active:hover .catcard-arrow{background:#6B1D1D;color:#F7F3EE;transform:rotate(45deg);border-color:#6B1D1D;}
+.catpage-hero{background:#1C1208;padding:120px 52px 60px;}
 .catpage-back{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,243,238,.5);margin-bottom:28px;cursor:pointer;border:none;background:none;padding:0;transition:color .2s;}
 .catpage-back:hover{color:#F7F3EE;}
 .catpage-icon{font-size:44px;margin-bottom:16px;display:block;}
@@ -147,8 +167,8 @@ html{scroll-behavior:smooth;}
 .catpage-title em{font-style:italic;color:rgba(247,243,238,.5);}
 .catpage-sub{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:rgba(247,243,238,.5);}
 .partners-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
-.pcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.1);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s,border-color .3s;}
-.pcard:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(28,18,8,.09);border-color:rgba(107,29,29,.22);}
+.pcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.1);border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s,border-color .35s;}
+.pcard:hover{transform:translateY(-5px);box-shadow:0 24px 56px rgba(28,18,8,.1);border-color:rgba(107,29,29,.22);}
 .pcard-img{height:200px;position:relative;overflow:hidden;background:#1C1208;}
 .pcard-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
 .pcard:hover .pcard-img img{transform:scale(1.04);}
@@ -164,7 +184,7 @@ html{scroll-behavior:smooth;}
 .pcard-cta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;}
 .pcard-icon{width:30px;height:30px;border-radius:50%;border:1px solid rgba(107,29,29,.2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#6B1D1D;transition:all .3s;}
 .pcard:hover .pcard-icon{background:#6B1D1D;color:#F7F3EE;transform:rotate(45deg);}
-.snack-hero{min-height:60vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:80px 48px 60px;}
+.snack-hero{min-height:60vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:80px 52px 60px;}
 .snack-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .snack-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(28,18,8,.3) 0%,rgba(28,18,8,.75) 100%);}
 .snack-hero-content{position:relative;z-index:1;color:#F7F3EE;}
@@ -173,10 +193,14 @@ html{scroll-behavior:smooth;}
 .snack-name{font-family:'Cormorant Garamond',serif;font-size:clamp(48px,7vw,80px);font-weight:700;line-height:.95;margin-bottom:16px;}
 .snack-meta{display:flex;gap:24px;flex-wrap:wrap;}
 .snack-meta-item{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.65);}
-.hours-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:rgba(107,29,29,.1);border:1px solid rgba(107,29,29,.1);border-radius:6px;overflow:hidden;margin-bottom:64px;}
-.hours-card{background:#FDFAF6;padding:28px 24px;}
-.hours-day{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#1C1208;margin-bottom:8px;}
-.hours-slot{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;margin-bottom:3px;}
+.hours-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:64px;}
+.hours-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:18px;padding:28px 26px;position:relative;overflow:hidden;transition:box-shadow .25s;}
+.hours-card.today{background:#FAF4EC;border-color:rgba(107,29,29,.18);box-shadow:0 4px 20px rgba(107,29,29,.07);}
+.hours-card.today::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.2));}
+.hours-day{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:#1C1208;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.hours-open-dot{width:7px;height:7px;border-radius:50%;background:#2D6A4F;box-shadow:0 0 0 3px rgba(45,106,79,.15);flex-shrink:0;}
+.hours-slot{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:#3D2B1F;margin-bottom:7px;letter-spacing:-.01em;}
+.hours-slot::before{content:'';width:4px;height:4px;border-radius:50%;background:rgba(107,29,29,.3);flex-shrink:0;}
 .tabs{display:flex;gap:4px;margin-bottom:40px;background:rgba(107,29,29,.04);padding:4px;border-radius:5px;width:fit-content;}
 .tab{font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 20px;border-radius:3px;border:none;cursor:pointer;background:transparent;color:#7A6555;transition:all .2s;}
 .tab.active{background:#6B1D1D;color:#F7F3EE;}
@@ -191,16 +215,25 @@ html{scroll-behavior:smooth;}
 .mitem-desc{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#9A8878;line-height:1.6;margin-bottom:14px;}
 .mitem-foot{display:flex;justify-content:space-between;align-items:center;}
 .mitem-price{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#6B1D1D;}
-.chip{font-family:'DM Sans',sans-serif;font-size:12px;border:1px solid rgba(107,29,29,.2);border-radius:100px;padding:5px 14px;cursor:pointer;background:white;color:#7A6555;transition:all .2s;}
-.chip.sel{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;}
-.chip.off{opacity:.4;text-decoration:line-through;}
-.chip:disabled{opacity:.3;cursor:not-allowed;}
-.config-panel{background:#FBF5EE;border:1px solid rgba(107,29,29,.1);border-radius:6px;padding:18px;margin-top:12px;}
-.cfg-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:#6B1D1D;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.cfg-label::before{content:'';width:16px;height:1px;background:#6B1D1D;}
-.cfg-hint{font-family:'DM Sans',sans-serif;font-size:10px;color:rgba(122,101,85,.5);margin-left:8px;}
-.add-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:100px;padding:7px 16px;cursor:pointer;transition:all .2s;}
-.add-btn:hover{background:#4A1212;}.add-btn:disabled{background:rgba(107,29,29,.2);cursor:not-allowed;}
+.chip{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;border:1px solid rgba(107,29,29,.14);border-radius:100px;padding:9px 20px;cursor:pointer;background:white;color:#4A3728;transition:all .22s ease;display:inline-flex;align-items:center;gap:7px;line-height:1;white-space:nowrap;}
+.chip:hover:not(:disabled){border-color:rgba(107,29,29,.28);background:rgba(107,29,29,.03);}
+button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-color:#1C1208;box-shadow:0 2px 10px rgba(28,18,8,.2);}button.chip.sel svg{stroke:#F7F3EE;}
+.chip.off{opacity:.35;text-decoration:line-through;background:rgba(107,29,29,.03);}
+.chip.off:hover:not(:disabled){opacity:.55;}
+.chip:disabled{opacity:.22;cursor:not-allowed;}
+.config-panel{background:#F9F5EF;border:1px solid rgba(107,29,29,.08);border-radius:16px;padding:22px 20px;margin-top:14px;}
+.cfg-section{margin-bottom:20px;}
+.cfg-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.cfg-label-left{display:flex;align-items:center;gap:10px;}
+.cfg-label-left::before{content:'';width:14px;height:1px;background:#6B1D1D;display:block;}
+.cfg-hint{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:400;color:rgba(122,101,85,.5);letter-spacing:.04em;text-transform:none;}
+.cfg-toggle{display:flex;gap:0;background:rgba(107,29,29,.06);border-radius:12px;padding:3px;margin-bottom:4px;}
+.cfg-toggle-btn{flex:1;padding:10px 14px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;cursor:pointer;transition:all .2s ease;text-align:center;}
+.cfg-toggle-btn.active,.cfg-toggle-btn.active:hover{background:#1C1208;color:#F7F3EE;box-shadow:0 2px 8px rgba(28,18,8,.2);font-weight:500;}
+.cfg-toggle-btn.inactive{background:transparent;color:#7A6555;}
+.add-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:12px;padding:13px 20px;cursor:pointer;transition:all .3s ease;letter-spacing:.015em;box-shadow:0 2px 10px rgba(28,18,8,.18);}
+.add-btn:hover{background:#6B1D1D;transform:translateY(-1px);box-shadow:0 4px 18px rgba(107,29,29,.28);}
+.add-btn:disabled{background:rgba(107,29,29,.18);cursor:not-allowed;transform:none;box-shadow:none;}
 .size-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
 .size-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border:1px solid rgba(107,29,29,.2);border-radius:4px;padding:7px 14px;cursor:pointer;background:white;color:#7A6555;transition:all .2s;}
 .size-btn.sel{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;}
@@ -211,7 +244,7 @@ html{scroll-behavior:smooth;}
 .viande-cnt{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#6B1D1D;min-width:20px;text-align:center;}
 .v-btn{width:26px;height:26px;border-radius:50%;border:1px solid rgba(107,29,29,.25);background:white;color:#6B1D1D;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1;}
 .v-btn:hover{background:#6B1D1D;color:#F7F3EE;}.v-btn:disabled{opacity:.25;cursor:not-allowed;}
-.cart-section{background:#1C1208;border-radius:8px;padding:32px;margin-top:48px;}
+.cart-section{background:#1C1208;border-radius:16px;padding:32px;margin-top:48px;}
 .cart-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F7F3EE;margin-bottom:24px;}
 .cart-title em{font-style:italic;color:rgba(247,243,238,.4);}
 .cart-item{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 0;border-bottom:1px solid rgba(247,243,238,.07);}
@@ -242,23 +275,87 @@ html{scroll-behavior:smooth;}
 .success-icon{font-size:48px;margin-bottom:20px;}
 .success-title{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:600;color:#1C1208;margin-bottom:12px;}
 .success-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;}
-.footer{border-top:1px solid rgba(107,29,29,.08);padding:44px 48px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+.footer{border-top:1px solid rgba(107,29,29,.07);padding:52px 52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;background:#F7F3EE;}
 .footer-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#1C1208;}.footer-logo em{font-style:italic;color:#6B1D1D;}
-.footer-copy{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.4);}
+.footer-copy{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.33);}
+.visit-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
+.visit-mode-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:20px;padding:36px 32px;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.visit-mode-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(28,18,8,.09);border-color:rgba(107,29,29,.2);background:#FAF4EC;}
+.visit-mode-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.12));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.visit-mode-card:hover::before{transform:scaleX(1);}
+.visit-mode-icon{width:48px;height:48px;border-radius:13px;background:rgba(107,29,29,.055);border:1px solid rgba(107,29,29,.09);display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#6B1D1D;transition:all .3s ease;flex-shrink:0;}
+.visit-mode-card:hover .visit-mode-icon{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;}
+.visit-mode-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#1C1208;margin-bottom:8px;}
+.visit-mode-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.65;margin-bottom:20px;flex:1;}
+.visit-mode-foot{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid rgba(107,29,29,.07);}
+.visit-mode-cta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;}
+.visit-mode-arrow{width:30px;height:30px;border-radius:50%;border:1px solid rgba(107,29,29,.17);display:flex;align-items:center;justify-content:center;color:#6B1D1D;transition:all .3s;font-size:14px;}
+.visit-mode-card:hover .visit-mode-arrow{background:#6B1D1D;color:#F7F3EE;transform:rotate(45deg);border-color:#6B1D1D;}
+.visit-back{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:rgba(122,101,85,.55);background:none;border:none;cursor:pointer;padding:0;margin-bottom:36px;transition:color .2s;}
+.visit-back:hover{color:#6B1D1D;}
+.visit-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:24px;padding:8px 0 48px;}
+.visit-qr-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.1);border-radius:24px;overflow:hidden;width:100%;max-width:360px;box-shadow:0 16px 48px rgba(28,18,8,.1);}
+.visit-qr-card-header{background:linear-gradient(135deg,#1C1208 0%,#2E1F0E 100%);padding:28px 28px 24px;text-align:center;}
+.visit-qr-partner{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#F7F3EE;letter-spacing:.01em;margin-bottom:6px;}
+.visit-qr-partner-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:rgba(247,243,238,.45);letter-spacing:.12em;text-transform:uppercase;}
+.visit-qr-box{background:white;display:flex;justify-content:center;padding:28px;border-bottom:1px solid rgba(107,29,29,.06);}
+.visit-qr-client{text-align:center;padding:24px 28px 0;}
+.visit-qr-name{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:#1C1208;margin-bottom:6px;}
+.visit-qr-sub{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;line-height:1.7;}
+.visit-qr-countdown-wrap{text-align:center;padding:20px 28px 28px;}
+.visit-qr-countdown-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:rgba(122,101,85,.55);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.visit-qr-countdown{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#6B1D1D;letter-spacing:.04em;line-height:1;}
+.visit-qr-countdown.expired{color:#aaa;}
+.visit-qr-progress{height:3px;background:rgba(107,29,29,.1);border-radius:2px;margin-top:16px;overflow:hidden;}
+.visit-qr-progress-bar{height:100%;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.4));border-radius:2px;transition:width 1s linear;}
 @media(max-width:768px){
-.nav{padding:0 20px;}.nav-links{display:none;}
-.hero{padding-left:20px;padding-right:20px;}
+.nav{top:12px;left:12px;right:12px;padding:0 20px;height:54px;}
+.nav-links{display:none;}
+.hero{padding:120px 24px 60px;}
+.hero-foot{flex-direction:column;align-items:flex-start;gap:32px;}
+.hero-actions{align-items:flex-start;}
+.hero-stats{gap:28px;padding-top:44px;margin-top:44px;}
 .how-grid{grid-template-columns:1fr;}
-.section{padding:70px 20px;}
-.catpage-hero{padding:100px 20px 48px;}
-.snack-hero{padding:100px 20px 40px;}
-.div-label{padding:0 20px;}
-.footer{padding:36px 20px;}
+.section{padding:72px 24px;}
+.catpage-hero{padding:100px 24px 48px;}
+.snack-hero{padding:100px 24px 40px;}
+.div-label{padding:0 24px;}
+.footer{padding:40px 24px;flex-direction:column;align-items:flex-start;gap:12px;}
 .checkout-box{padding:24px 16px;}
 .cart-section{padding:24px 16px;}
 .tabs{flex-wrap:wrap;}
+.visit-mode-grid{grid-template-columns:1fr;}
+
+.scan-page{min-height:100vh;background:#F7F3EE;display:flex;flex-direction:column;}
+.scan-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(107,29,29,.08);}
+.scan-header-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(122,101,85,.5);background:rgba(107,29,29,.07);padding:5px 12px;border-radius:20px;}
+.scan-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px 48px;max-width:480px;width:100%;margin:0 auto;}
+.scan-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:#1C1208;text-align:center;margin-bottom:6px;line-height:1.2;}
+.scan-sub{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;text-align:center;margin-bottom:32px;line-height:1.6;}
+.scan-reader-wrap{width:100%;border-radius:20px;overflow:hidden;border:1px solid rgba(107,29,29,.1);background:#1C1208;box-shadow:0 8px 40px rgba(28,18,8,.15);}
+#qr-reader{width:100% !important;}
+#qr-reader video{width:100% !important;height:auto !important;display:block;}
+#qr-reader img{display:none;}
+.scan-result-wrap{display:flex;flex-direction:column;align-items:center;gap:28px;width:100%;}
+.scan-result{background:#FDFAF6;border-radius:24px;padding:40px 32px;text-align:center;width:100%;border:1px solid rgba(107,29,29,.08);}
+.scan-ok{border-color:rgba(34,130,70,.2);}
+.scan-err{border-color:rgba(180,40,40,.15);}
+.scan-result-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+.scan-ok .scan-result-icon{background:rgba(34,130,70,.1);}
+.scan-err .scan-result-icon{background:rgba(180,40,40,.08);}
+.scan-result-status{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;}
+.scan-ok .scan-result-status{color:rgba(34,130,70,.8);}
+.scan-err .scan-result-status{color:rgba(180,40,40,.7);}
+.scan-result-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:#1C1208;margin-bottom:8px;line-height:1.1;}
+.scan-result-meta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#7A6555;line-height:1.8;}
+.scan-err-msg{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:rgba(180,40,40,.85);line-height:1.6;margin-top:8px;}
+.scan-again{display:inline-flex;align-items:center;gap:8px;background:#1C1208;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:15px 32px;border-radius:12px;border:none;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px rgba(28,18,8,.2);letter-spacing:.015em;}
+.scan-again:hover{background:#6B1D1D;transform:translateY(-1px);}
+.scan-err-detail{font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(122,101,85,.5);margin-top:4px;}
 }
-`;
+@media(prefers-reduced-motion:reduce){
+*{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+}`;
 
 function getSlots(){
   const s=[];
@@ -266,6 +363,17 @@ function getSlots(){
   for(let h=11;h<14;h++){s.push({label:`${h}h00`,value:`${pad(h)}:00`});s.push({label:`${h}h30`,value:`${pad(h)}:30`});}
   for(let h=18;h<23;h++){s.push({label:`${h}h00`,value:`${pad(h)}:00`});s.push({label:`${h}h30`,value:`${pad(h)}:30`});}
   return s;
+}
+
+function isDayToday(dayStr) {
+  const d = new Date().getDay();
+  const map = {lundi:1,mardi:2,mercredi:3,jeudi:4,vendredi:5,samedi:6,dimanche:0};
+  const parts = dayStr.toLowerCase().split(/\s*[\u2013-]\s*/);
+  if(parts.length===2){
+    const s=map[parts[0].trim()],e=map[parts[1].trim()];
+    if(s!==undefined&&e!==undefined) return s<=e?d>=s&&d<=e:d>=s||d<=e;
+  }
+  return map[dayStr.toLowerCase().trim()]===d;
 }
 
 function ConfigPanel({ item, onAdd }) {
@@ -287,47 +395,66 @@ function ConfigPanel({ item, onAdd }) {
     setGarnitures([...GARNITURES_LIST]);setSauces([]);setCheddar(false);if(item.hasPainChoice)setPain("Pain maison");
   }
 
+  const ChkIcon = () => (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="1.5 6 4.5 9 10.5 3"/>
+    </svg>
+  );
+
   return (
     <div className="config-panel">
       {item.hasPainChoice && (
-        <div style={{marginBottom:14}}>
-          <div className="cfg-label fb">Choix du pain</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div className="cfg-section">
+          <div className="cfg-label fb"><span className="cfg-label-left">Choix du pain</span></div>
+          <div className="cfg-toggle">
             {["Pain maison","Pain galette"].map(p=>(
-              <button key={p} className={"chip fb "+(pain===p?"sel":"off")} onClick={()=>setPain(p)}>{p}</button>
+              <button key={p} className={"cfg-toggle-btn fb "+(pain===p?"active":"inactive")} onClick={()=>setPain(p)}>{p}</button>
             ))}
           </div>
         </div>
       )}
       {item.hasGarnitures && (
-        <div style={{marginBottom:14}}>
-          <div className="cfg-label fb">Garniture <span className="cfg-hint">(appuie pour retirer)</span></div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div className="cfg-section">
+          <div className="cfg-label fb">
+            <span className="cfg-label-left">Garniture</span>
+            <span className="cfg-hint">appuie pour retirer</span>
+          </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             {GARNITURES_LIST.map(g=>(
-              <button key={g} className={"chip fb "+(garnitures.includes(g)?"sel":"off")} onClick={()=>toggleG(g)}>{g}</button>
+              <button key={g} className={"chip fb "+(garnitures.includes(g)?"sel":"off")} onClick={()=>toggleG(g)}>
+                {garnitures.includes(g)&&<ChkIcon/>}{g}
+              </button>
             ))}
           </div>
         </div>
       )}
       {sauceList.length>0 && (
-        <div style={{marginBottom:14}}>
-          <div className="cfg-label fb">Sauce(s) <span className="cfg-hint">({sauces.length}/{maxSauce})</span></div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+        <div className="cfg-section">
+          <div className="cfg-label fb">
+            <span className="cfg-label-left">Sauce{maxSauce>1?"s":""}</span>
+            <span className="cfg-hint">{sauces.length}/{maxSauce} choisie{sauces.length>1?"s":""}</span>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {sauceList.map(s=>(
               <button key={s} disabled={!sauces.includes(s)&&sauces.length>=maxSauce}
-                className={"chip fb "+(sauces.includes(s)?"sel":"")} onClick={()=>toggleS(s)}>{s}</button>
+                className={"chip fb "+(sauces.includes(s)?"sel":"")} onClick={()=>toggleS(s)}>
+                {sauces.includes(s)&&<ChkIcon/>}{s}
+              </button>
             ))}
           </div>
         </div>
       )}
       {item.hasCheddar && (
-        <div style={{marginBottom:14}}>
-          <div className="cfg-label fb">Extra</div>
-          <button className={"chip fb "+(cheddar?"sel":"")} onClick={()=>setCheddar(c=>!c)}>+ Cheddar (1.50€)</button>
+        <div className="cfg-section">
+          <div className="cfg-label fb"><span className="cfg-label-left">Extra</span></div>
+          <button className={"chip fb "+(cheddar?"sel":"")} onClick={()=>setCheddar(c=>!c)}
+            style={{width:"100%",justifyContent:"center",borderRadius:12,padding:"11px 20px"}}>
+            {cheddar&&<ChkIcon/>}+ Cheddar <span style={{opacity:.6,marginLeft:4}}>1,50 €</span>
+          </button>
         </div>
       )}
-      <button className="add-btn fb" style={{width:"100%",borderRadius:4,padding:"11px"}} onClick={handleAdd}>
-        Ajouter au panier →
+      <button className="add-btn fb" style={{width:"100%",marginTop:4}} onClick={handleAdd}>
+        Ajouter au panier
       </button>
     </div>
   );
@@ -546,39 +673,98 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
 function HomePage({ onNavigate }) {
   const [loaded,setLoaded]=useState(false);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
-  const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local"];
+  const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local","Sans inscription"];
+
+  const IconBrowse = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    </svg>
+  );
+  const IconCart = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+    </svg>
+  );
+  const IconCheck = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+  );
+  const IconArrow = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  );
+
+  const CatIcons = {
+    restauration: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>
+    ),
+    sport: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    ),
+    bienetre: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+  };
+
   return (
     <>
+      {/* ── HERO ───────────────────────────────────────── */}
       <section className="hero" style={{background:"#F7F3EE"}}>
         <div style={{
-          position:"absolute",top:0,right:0,bottom:0,left:0,width:"100%",
+          position:"absolute",inset:0,
           backgroundImage:"url("+BOURSE_IMG+")",
-          backgroundSize:"cover",backgroundPosition:"center 60%",
-          filter:"contrast(0.85) brightness(1.05)",
-          opacity:0.35,
-          pointerEvents:"none"
+          backgroundSize:"cover",backgroundPosition:"center 55%",
+          filter:"saturate(0.65) brightness(1.1)",
+          opacity:0.2,pointerEvents:"none"
         }}/>
-        <div className="hero-badge" style={{opacity:loaded?1:0,transition:"opacity .8s ease .1s"}}>
-          <div className="badge-dot"/><span className="badge-txt fb">Bordeaux · Partenaires locaux</span>
-        </div>
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(20px)",transition:"opacity .9s ease .25s,transform .9s ease .25s"}}>
-          <h1 className="hero-title fd">Le meilleur<br/>de <em>Bordeaux</em>,<br/>à portée de main.</h1>
-        </div>
-        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity .9s ease .5s"}}>
-          <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux à des prix négociés. Commandez en 2 minutes, récupérez sans attendre.</p>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:14}}>
-            <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
-              Explorer →
-            </button>
-            <span className="hero-note fb">Gratuit · Sans inscription</span>
+
+        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s"}}>
+          <div className="hero-badge">
+            <div className="badge-dot"/>
+            <span className="badge-txt fb">Bordeaux · Partenaires locaux</span>
           </div>
         </div>
+
+        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s"}}>
+          <h1 className="hero-title fd">Le meilleur<br/>de <em>Bordeaux</em>,<br/>à portée de main.</h1>
+        </div>
+
+        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s"}}>
+          <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux à des prix négociés. Commandez en 2 minutes, récupérez sans attendre.</p>
+          <div className="hero-actions">
+            <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
+              Explorer les adresses <IconArrow/>
+            </button>
+            <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
+          </div>
+        </div>
+
+        <div className="hero-stats" style={{opacity:loaded?1:0,transition:"opacity 1s ease .68s"}}>
+          {[["1","Partenaire actif"],["2 min","Pour commander"],["0 €","Sans frais"]].map(([n,l])=>(
+            <div className="stat-item" key={l}>
+              <div className="stat-num fd">{n}</div>
+              <div className="stat-label fb">{l}</div>
+            </div>
+          ))}
+        </div>
       </section>
+
+      {/* ── TICKER ─────────────────────────────────────── */}
       <div className="ticker-wrap">
         <div className="ticker">
           {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
         </div>
       </div>
+
+      {/* ── HOW IT WORKS ───────────────────────────────── */}
       <section className="section" style={{background:"#F7F3EE"}}>
         <FadeUp>
           <div className="sec-tag fb">Simple &amp; rapide</div>
@@ -586,11 +772,13 @@ function HomePage({ onNavigate }) {
         </FadeUp>
         <FadeUp delay={.1}>
           <div className="how-grid">
-            {[["01","Choisissez","Parcourez nos catégories et trouvez le partenaire qui vous convient."],
-              ["02","Commandez","Sélectionnez vos plats, configurez-les et ajoutez-les au panier."],
-              ["03","Profitez","Votre commande est prête. Récupérez-la sans file d'attente."]
-            ].map(([n,t,d])=>(
+            {[
+              ["01",IconBrowse,"Choisissez","Parcourez nos catégories et trouvez le partenaire qui vous convient."],
+              ["02",IconCart,"Commandez","Sélectionnez vos plats, configurez-les et ajoutez-les au panier."],
+              ["03",IconCheck,"Profitez","Votre commande est prête. Récupérez-la sans file d'attente."]
+            ].map(([n,Icon,t,d])=>(
               <div className="how-card" key={n}>
+                <div className="how-icon"><Icon/></div>
                 <div className="how-num fd">{n}</div>
                 <div className="how-title fd">{t}</div>
                 <div className="how-desc fb">{d}</div>
@@ -599,7 +787,15 @@ function HomePage({ onNavigate }) {
           </div>
         </FadeUp>
       </section>
-      <div className="div-label"><div className="div-line"/><span className="div-txt fd">Nos catégories</span><div className="div-line"/></div>
+
+      {/* ── DIVIDER ────────────────────────────────────── */}
+      <div className="div-label">
+        <div className="div-line"/>
+        <span className="div-txt fd">Nos catégories</span>
+        <div className="div-line"/>
+      </div>
+
+      {/* ── CATEGORIES ─────────────────────────────────── */}
       <section className="section" id="categories" style={{background:"#F7F3EE"}}>
         <FadeUp>
           <div className="sec-tag fb">À Bordeaux</div>
@@ -609,7 +805,9 @@ function HomePage({ onNavigate }) {
           <div className="cat-grid">
             {CATEGORIES.map(cat=>(
               <div key={cat.id} className={"catcard "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
-                <span className="catcard-icon">{cat.icon}</span>
+                <div className="catcard-icon-wrap">
+                  {CatIcons[cat.id] || null}
+                </div>
                 <div className="catcard-name fd">{cat.label}</div>
                 <div className="catcard-desc fb">{cat.desc}</div>
                 <div className="catcard-foot">
@@ -623,6 +821,8 @@ function HomePage({ onNavigate }) {
           </div>
         </FadeUp>
       </section>
+
+      {/* ── FOOTER ─────────────────────────────────────── */}
       <footer className="footer" style={{background:"#F7F3EE"}}>
         <div className="footer-logo fd">local<em>ly</em></div>
         <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
@@ -631,43 +831,53 @@ function HomePage({ onNavigate }) {
   );
 }
 
+const heroZoom = {
+  initial: { scale: 1.06, opacity: 0 },
+  animate: { scale: 1, opacity: 1, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
+};
+const cardContainer = {
+  animate: { transition: { staggerChildren: 0.08 } },
+};
+const cardItem = {
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
+};
+
 function CategoryPage({ categoryId, onBack, onNavigate }) {
   const cat=CATEGORIES.find(c=>c.id===categoryId);
   const partners=PARTNERS.filter(p=>p.category===categoryId&&p.active);
   const open=isOpen();
   return (
     <>
-      <div className="catpage-hero">
+      <motion.div className="catpage-hero" variants={heroZoom} initial="initial" animate="animate">
         <button className="catpage-back fb" onClick={onBack}>← Retour</button>
         <span className="catpage-icon">{cat.icon}</span>
         <div className="catpage-title fd">{cat.label}<br/><em>à Bordeaux</em></div>
         <div className="catpage-sub fb">{partners.length} adresse{partners.length>1?"s":""} disponible{partners.length>1?"s":""}</div>
-      </div>
+      </motion.div>
       <div style={{background:"#F7F3EE",padding:"64px 48px"}}>
-        <FadeUp>
-          <div className="partners-grid">
-            {partners.map(p=>(
-              <div key={p.id} className="pcard" onClick={()=>onNavigate(p.id)}>
-                <div className="pcard-img">
-                  <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                  <div className={"pcard-status "+(open?"open":"closed")}>
-                    <div className={"sdot "+(open?"open":"closed")}/>
-                    <span className="fb">{open?"Disponible":"Fermé"}</span>
-                  </div>
-                </div>
-                <div className="pcard-body">
-                  <div className="pcard-cat fb">{cat.label}</div>
-                  <div className="pcard-name fd">{p.name}</div>
-                  <div className="pcard-desc fb">{p.desc} {p.address}</div>
-                  <div className="pcard-foot">
-                    <span className="pcard-cta fb">Commander maintenant</span>
-                    <div className="pcard-icon">→</div>
-                  </div>
+        <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
+          {partners.map(p=>(
+            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate(p.id)}>
+              <div className="pcard-img">
+                <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                <div className={"pcard-status "+(open?"open":"closed")}>
+                  <div className={"sdot "+(open?"open":"closed")}/>
+                  <span className="fb">{open?"Disponible":"Fermé"}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </FadeUp>
+              <div className="pcard-body">
+                <div className="pcard-cat fb">{cat.label}</div>
+                <div className="pcard-name fd">{p.name}</div>
+                <div className="pcard-desc fb">{p.desc} {p.address}</div>
+                <div className="pcard-foot">
+                  <span className="pcard-cta fb">Commander maintenant</span>
+                  <div className="pcard-icon">→</div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
       <footer className="footer" style={{background:"#F7F3EE"}}>
         <div className="footer-logo fd">local<em>ly</em></div>
@@ -684,10 +894,51 @@ function SnackPage({ onBack }) {
   const partner=PARTNERS[0];
   const open=isOpen();
   const currentCat=MENU.find(c=>c.id===activeTab);
+  const [visitMode,setVisitMode]=useState(null);
+  const [visitName,setVisitName]=useState('');
+  const [visitData,setVisitData]=useState(null);
+  const [visitLoading,setVisitLoading]=useState(false);
+  const [countdown,setCountdown]=useState('02:00:00');
+  const [countdownPct,setCountdownPct]=useState(100);
+
+  useEffect(()=>{
+    if(!visitData)return;
+    const DURATION=2*60*60*1000;
+    const tick=()=>{
+      const remaining=new Date(visitData.expires_at)-Date.now();
+      if(remaining<=0){setCountdown('Expiré');setCountdownPct(0);return;}
+      const h=Math.floor(remaining/3600000);
+      const m=Math.floor((remaining%3600000)/60000);
+      const s=Math.floor((remaining%60000)/1000);
+      setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+      setCountdownPct(Math.round(remaining/DURATION*100));
+    };
+    tick();
+    const id=setInterval(tick,1000);
+    return()=>clearInterval(id);
+  },[visitData]);
+
+  async function generateVisit(){
+    if(!visitName.trim())return;
+    setVisitLoading(true);
+    const qr_code_id=crypto.randomUUID();
+    const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
+    const{error}=await supabase.from('visits').insert({
+      qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at,
+    });
+    if(error)console.error('[Locally] Visit insert error:',error);
+    setVisitData({qr_code_id,expires_at});
+    setVisitLoading(false);
+  }
+
+  const snackSection = {
+    initial: { opacity: 0, y: 20 },
+    animate: (i) => ({ opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: i * 0.12 } }),
+  };
 
   return (
     <>
-      <div className="snack-hero" style={{paddingTop:100}}>
+      <motion.div className="snack-hero" style={{paddingTop:100}} variants={heroZoom} initial="initial" animate="animate">
         <img className="snack-hero-bg" src={partner.img} alt={partner.name}/>
         <div className="snack-hero-overlay"/>
         <div className="snack-hero-content">
@@ -699,39 +950,129 @@ function SnackPage({ onBack }) {
             <div className="snack-meta-item fb" style={{color:open?"#7FD4A0":"#F09090"}}>{open?"🟢 Ouvert":"🔴 Fermé"}</div>
           </div>
         </div>
-      </div>
+      </motion.div>
       <div style={{background:"#F7F3EE",padding:"72px 48px"}}>
-        <FadeUp>
+        <motion.div variants={snackSection} custom={0} initial="initial" animate="animate">
           <div className="sec-tag fb">Horaires</div>
           <div className="sec-title fd" style={{marginBottom:32}}>Quand <em>passer</em> ?</div>
           <div className="hours-grid">
             {partner.hours.map(h=>(
-              <div className="hours-card" key={h.day}>
-                <div className="hours-day fd">{h.day}</div>
+              <div className={"hours-card "+(isDayToday(h.day)?"today":"")} key={h.day}>
+                <div className="hours-day fd">
+                  <span>{h.day}</span>
+                  {isDayToday(h.day)&&<div className="hours-open-dot"/>}
+                </div>
                 {h.slots.map(s=><div className="hours-slot fb" key={s}>{s}</div>)}
               </div>
             ))}
           </div>
-        </FadeUp>
-        <FadeUp>
-          <div className="sec-tag fb">Menu</div>
-          <div className="sec-title fd">Composez votre <em>commande</em></div>
-          <div className="tabs">
-            {MENU.map(c=>(
-              <button key={c.id} className={"tab fb "+(activeTab===c.id?"active":"")} onClick={()=>setActiveTab(c.id)}>{c.cat}</button>
-            ))}
-          </div>
-          <div className="menu-grid">
-            {currentCat?.isTacos
-              ?<TacosCard onAdd={e=>setCart(p=>[...p,e])}/>
-              :currentCat?.items?.map(item=>(
-                <MenuItem key={item.id} item={item} onAdd={e=>setCart(p=>[...p,e])}/>
-              ))
-            }
-          </div>
-        </FadeUp>
-        {(cart.length>0||ordered)&&(
-          <FadeUp>
+        </motion.div>
+        <motion.div id="mode-section" variants={snackSection} custom={1} initial="initial" animate="animate">
+
+          {/* ── Mode : sélection ── */}
+          {visitMode===null&&(
+            <>
+              <div className="sec-tag fb">Commander</div>
+              <div className="sec-title fd" style={{marginBottom:32}}>Comment <em>souhaitez-vous</em><br/>procéder ?</div>
+              <div className="visit-mode-grid">
+                <div className="visit-mode-card" onClick={()=>setVisitMode('online')}>
+                  <div className="visit-mode-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                  </div>
+                  <div className="visit-mode-title fd">Commander en ligne</div>
+                  <div className="visit-mode-desc fb">Composez votre repas, choisissez un créneau et récupérez sans attente.</div>
+                  <div className="visit-mode-foot"><span className="visit-mode-cta fb">Composer ma commande</span><div className="visit-mode-arrow">→</div></div>
+                </div>
+                <div className="visit-mode-card" onClick={()=>setVisitMode('visit')}>
+                  <div className="visit-mode-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </div>
+                  <div className="visit-mode-title fd">Je me déplace</div>
+                  <div className="visit-mode-desc fb">Obtenez un QR code à présenter sur place et profitez des tarifs négociés.</div>
+                  <div className="visit-mode-foot"><span className="visit-mode-cta fb">Générer mon QR code</span><div className="visit-mode-arrow">→</div></div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Mode : commande en ligne ── */}
+          {visitMode==='online'&&(
+            <>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setCart([]);setOrdered(false);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
+              <div className="sec-tag fb">Menu</div>
+              <div className="sec-title fd">Composez votre <em>commande</em></div>
+              <div className="tabs">
+                {MENU.map(c=>(
+                  <button key={c.id} className={"tab fb "+(activeTab===c.id?"active":"")} onClick={()=>setActiveTab(c.id)}>{c.cat}</button>
+                ))}
+              </div>
+              <div className="menu-grid">
+                {currentCat?.isTacos
+                  ?<TacosCard onAdd={e=>setCart(p=>[...p,e])}/>
+                  :currentCat?.items?.map(item=>(
+                    <MenuItem key={item.id} item={item} onAdd={e=>setCart(p=>[...p,e])}/>
+                  ))
+                }
+              </div>
+            </>
+          )}
+
+          {/* ── Mode : visite QR ── */}
+          {visitMode==='visit'&&(
+            <>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
+              {!visitData?(
+                <>
+                  <div className="sec-tag fb">Visite</div>
+                  <div className="sec-title fd" style={{marginBottom:32}}>Votre <em>QR code</em></div>
+                  <div style={{maxWidth:400}}>
+                    <div className="op-label fb">Votre prénom</div>
+                    <input className="input fb" style={{marginBottom:16}}
+                      value={visitName} onChange={e=>setVisitName(e.target.value.slice(0,50))}
+                      placeholder="Ex : Julien"
+                      onKeyDown={e=>e.key==='Enter'&&visitName.trim()&&generateVisit()}/>
+                    <button className="btn-call fb" onClick={generateVisit} disabled={!visitName.trim()||visitLoading}>
+                      {visitLoading?'Génération…':'Générer mon QR code'}
+                    </button>
+                  </div>
+                </>
+              ):(
+                <div className="visit-qr-wrap">
+                  <div className="visit-qr-card">
+                    <div className="visit-qr-card-header">
+                      <div className="visit-qr-partner fd">{partner.name}</div>
+                      <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                    </div>
+                    <div className="visit-qr-box">
+                      <QRCodeSVG value={visitData.qr_code_id} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                    </div>
+                    <div className="visit-qr-client">
+                      <div className="visit-qr-name fd">{visitName}</div>
+                      <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
+                    </div>
+                    <div className="visit-qr-countdown-wrap">
+                      <div className="visit-qr-countdown-label fb">Expire dans</div>
+                      <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
+                      <div className="visit-qr-progress">
+                        <div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/>
+                      </div>
+                    </div>
+                  </div>
+                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>
+                    Générer un nouveau code
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+        </motion.div>
+        {visitMode==='online'&&(cart.length>0||ordered)&&(
+          <motion.div variants={snackSection} custom={2} initial="initial" animate="animate">
             <Cart
               cart={cart}
               onRemove={i=>setCart(p=>p.filter((_,idx)=>idx!==i))}
@@ -802,7 +1143,7 @@ function SnackPage({ onBack }) {
                 Nouvelle commande
               </button>
             )}
-          </FadeUp>
+          </motion.div>
         )}
       </div>
       <footer className="footer" style={{background:"#F7F3EE"}}>
@@ -1058,10 +1399,92 @@ function DashboardPage() {
   );
 }
 
+function ScanPage() {
+  const [scanning,setScanning]=useState(true);
+  const [result,setResult]=useState(null);
+  const qrRef=useRef(null);
+
+  useEffect(()=>{
+    if(!scanning)return;
+    const qr=new Html5Qrcode('qr-reader');
+    qrRef.current=qr;
+    qr.start(
+      {facingMode:'environment'},
+      {fps:10,qrbox:{width:240,height:240}},
+      async(decoded)=>{
+        try{await qr.stop();}catch(e){}
+        setScanning(false);
+        await verifyQR(decoded);
+      },
+      ()=>{}
+    ).catch(err=>console.error('Camera:',err));
+    return()=>{ try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){} };
+  },[scanning]);
+
+  async function verifyQR(qrCodeId){
+    const{data,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrCodeId).single();
+    if(error||!data){setResult({ok:false,msg:'QR code introuvable.',detail:'Ce code ne correspond à aucune visite enregistrée.'});return;}
+    if(data.scanned){
+      const t=data.scanned_at?new Date(data.scanned_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+      setResult({ok:false,msg:'QR code déjà utilisé.',detail:t?`Scanné à ${t}`:'Déjà validé.'});
+      return;
+    }
+    if(new Date(data.expires_at)<new Date()){setResult({ok:false,msg:'QR code expiré.',detail:'Délai de validité dépassé.'});return;}
+    const now=new Date().toISOString();
+    await supabase.from('visits').update({scanned:true,scanned_at:now}).eq('qr_code_id',qrCodeId);
+    setResult({ok:true,client:data.client_name,time:new Date(now).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+  }
+
+  function reset(){setResult(null);setScanning(true);}
+
+  return(
+    <div className="scan-page">
+      <div className="scan-header">
+        <div className="logo fd">local<em>ly</em></div>
+        <span className="scan-header-tag fb">Espace partenaire</span>
+      </div>
+      <div className="scan-body">
+        {scanning&&(
+          <>
+            <div className="scan-title fd">Scanner un <em>QR code</em></div>
+            <div className="scan-sub fb">Pointez la caméra vers le code présenté par le client</div>
+            <div className="scan-reader-wrap"><div id="qr-reader"/></div>
+          </>
+        )}
+        {result&&(
+          <div className="scan-result-wrap">
+            {result.ok?(
+              <div className="scan-result scan-ok">
+                <div className="scan-result-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(34,130,70,.9)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div className="scan-result-status fb">Accès validé</div>
+                <div className="scan-result-name fd">{result.client}</div>
+                <div className="scan-result-meta fb">Visite enregistrée · {result.time}</div>
+              </div>
+            ):(
+              <div className="scan-result scan-err">
+                <div className="scan-result-icon">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(180,40,40,.8)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div className="scan-result-status fb">Accès refusé</div>
+                <div className="scan-err-msg fb">{result.msg}</div>
+                <div className="scan-err-detail fb">{result.detail}</div>
+              </div>
+            )}
+            <button className="scan-again fb" onClick={reset}>↩ Scanner à nouveau</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page,setPage]=useState(()=>{
     const path=window.location.pathname;
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
+    if(path==="/scan")return "scan";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -1069,12 +1492,15 @@ export default function App() {
   useEffect(()=>{
     function onPopState(){
       const path=window.location.pathname;
-      setPage(path==="/dashboard"||path.startsWith("/dashboard")?"dashboard":"home");
+      if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
+      if(path==="/scan"){setPage("scan");return;}
+      setPage("home");
     }
     window.addEventListener("popstate",onPopState);
     return ()=>window.removeEventListener("popstate",onPopState);
   },[]);
   function navigate(target,catId=null){if(catId)setActiveCat(catId);setPage(target);}
+  if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
