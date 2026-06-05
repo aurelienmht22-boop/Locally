@@ -437,7 +437,17 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .adm-confirm-cancel:hover{color:#F7F3EE;border-color:rgba(247,243,238,.25);}
 .adm-confirm-ok{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:11px;border-radius:8px;border:none;background:#EF4444;color:#fff;cursor:pointer;transition:background .2s;}
 .adm-confirm-ok:hover{background:#DC2626;}
-@media(max-width:640px){.adm-content{padding:14px;}.adm-header{padding:12px 14px;}.adm-tabs{flex:1;}.adm-modal{border-radius:14px;}.adm-modal-head,.adm-modal-body,.adm-modal-actions,.adm-confirm{padding-left:18px;padding-right:18px;}}
+.adm-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+.adm-stat-card{background:rgba(247,243,238,.04);border:1px solid rgba(247,243,238,.07);border-radius:10px;padding:14px 12px;text-align:center;}
+.adm-stat-num{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F7F3EE;line-height:1;margin-bottom:4px;}
+.adm-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:rgba(247,243,238,.32);}
+.adm-section-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.adm-section-label::before{content:'';width:12px;height:1px;background:#6B1D1D;display:block;}
+.adm-visit-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(247,243,238,.05);}
+.adm-visit-row:last-child{border-bottom:none;}
+.adm-visit-name{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.75);}
+.adm-visit-date{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(247,243,238,.3);margin-top:1px;}
+@media(max-width:640px){.adm-content{padding:14px;}.adm-header{padding:12px 14px;}.adm-tabs{flex:1;}.adm-modal{border-radius:14px;}.adm-modal-head,.adm-modal-body,.adm-modal-actions,.adm-confirm{padding-left:18px;padding-right:18px;}.adm-stats-grid{grid-template-columns:repeat(3,1fr);gap:6px;}}
 `;
 
 function getSlots(){
@@ -1588,7 +1598,10 @@ function AdminView(){
   const [confirmReject,setConfirmReject]=useState(false);
   const [partners,setPartners]=useState([]);
   const [loadingPartners,setLoadingPartners]=useState(false);
-  const [confirmDisable,setConfirmDisable]=useState(null);
+  const [selPartner,setSelPartner]=useState(null);
+  const [partnerVisits,setPartnerVisits]=useState([]);
+  const [loadingPV,setLoadingPV]=useState(false);
+  const [confirmPDisable,setConfirmPDisable]=useState(false);
   const [visits,setVisits]=useState([]);
   const [loadingVisits,setLoadingVisits]=useState(false);
 
@@ -1614,6 +1627,12 @@ function AdminView(){
     const{data}=await supabase.from('visits').select('*').order('created_at',{ascending:false});
     setVisits(data||[]);setLoadingVisits(false);
   }
+  async function openPartner(p){
+    setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);
+    setLoadingPV(true);
+    const{data}=await supabase.from('visits').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
+    setPartnerVisits(data||[]);setLoadingPV(false);
+  }
 
   useEffect(()=>{
     if(!authed)return;
@@ -1627,8 +1646,9 @@ function AdminView(){
     setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
     setSel(s=>s?.id===id?{...s,status}:s);
     setPartners(ps=>ps.filter(p=>p.id!==id));
+    setSelPartner(null);
     setConfirmReject(false);
-    setConfirmDisable(null);
+    setConfirmPDisable(false);
   }
 
   const filtered=candFilter==='tous'?cands:cands.filter(c=>c.status===candFilter);
@@ -1692,13 +1712,13 @@ function AdminView(){
               <div className="adm-list">
                 {partners.length===0&&<div className="adm-empty fb">Aucun partenaire approuvé.</div>}
                 {partners.map(p=>(
-                  <div key={p.id} className="adm-row" style={{cursor:'default'}}>
+                  <div key={p.id} className="adm-row" onClick={()=>openPartner(p)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{p.nom}</div>
                       <div className="adm-row-meta fb">{p.categorie} · {p.telephone}</div>
                       <div className="adm-row-sub fb">{p.email} · Depuis le {admFmt(p.created_at)}</div>
                     </div>
-                    <button className="adm-deactivate fb" onClick={()=>setConfirmDisable(p)}>Désactiver</button>
+                    <span className="adm-arrow">›</span>
                   </div>
                 ))}
               </div>
@@ -1779,23 +1799,91 @@ function AdminView(){
         </div>
       )}
 
-      {confirmDisable&&(
-        <div className="adm-overlay" onClick={e=>{if(e.target===e.currentTarget)setConfirmDisable(null);}}>
-          <div className="adm-modal" style={{maxWidth:420}}>
-            <div className="adm-modal-head">
-              <div className="adm-modal-title">Désactiver {confirmDisable.nom}</div>
-              <button className="adm-modal-close fb" onClick={()=>setConfirmDisable(null)}>✕</button>
-            </div>
-            <div className="adm-confirm">
-              <div className="adm-confirm-txt fb">Êtes-vous sûr de vouloir désactiver ce partenaire ? Action irréversible.</div>
-              <div className="adm-confirm-row">
-                <button className="adm-confirm-cancel fb" onClick={()=>setConfirmDisable(null)}>Annuler</button>
-                <button className="adm-confirm-ok fb" onClick={()=>updateStatus(confirmDisable.id,'rejete')}>Confirmer</button>
+      {selPartner&&(()=>{
+        const total=partnerVisits.length;
+        const scanned=partnerVisits.filter(v=>v.scanned).length;
+        const lastDate=partnerVisits[0]?.created_at;
+        const recent=partnerVisits.slice(0,5);
+        return(
+          <div className="adm-overlay" onClick={e=>{if(e.target===e.currentTarget){setSelPartner(null);setConfirmPDisable(false);}}}>
+            <div className="adm-modal">
+              <div className="adm-modal-head">
+                <div className="adm-modal-title">{selPartner.nom}</div>
+                <button className="adm-modal-close fb" onClick={()=>{setSelPartner(null);setConfirmPDisable(false);}}>✕</button>
               </div>
+              <div className="adm-modal-body">
+                {[
+                  ['Catégorie',selPartner.categorie],
+                  ['Téléphone',selPartner.telephone],
+                  ['Email',selPartner.email],
+                  ['Adresse',selPartner.google_maps],
+                  ['Réduction',selPartner.reduction],
+                ].map(([k,v])=>(
+                  <div key={k} className="adm-field">
+                    <div className="adm-field-label">{k}</div>
+                    <div className="adm-field-val fb">{v||'—'}</div>
+                  </div>
+                ))}
+                <div style={{marginTop:8}}>
+                  <div className="adm-section-label">Statistiques</div>
+                  {loadingPV?(
+                    <div className="adm-empty fb" style={{padding:'16px 0'}}>Chargement…</div>
+                  ):(
+                    <>
+                      <div className="adm-stats-grid">
+                        <div className="adm-stat-card">
+                          <div className="adm-stat-num fd">{total}</div>
+                          <div className="adm-stat-label">QR générés</div>
+                        </div>
+                        <div className="adm-stat-card">
+                          <div className="adm-stat-num fd">{scanned}</div>
+                          <div className="adm-stat-label">Scannés</div>
+                        </div>
+                        <div className="adm-stat-card">
+                          <div className="adm-stat-num fd" style={{fontSize:16,paddingTop:6}}>{lastDate?admFmt(lastDate):'—'}</div>
+                          <div className="adm-stat-label">Dernière visite</div>
+                        </div>
+                      </div>
+                      {recent.length>0&&(
+                        <>
+                          <div className="adm-section-label" style={{marginTop:16}}>5 dernières visites</div>
+                          <div>
+                            {recent.map(v=>(
+                              <div key={v.id} className="adm-visit-row">
+                                <div>
+                                  <div className="adm-visit-name fb">{v.client_name}</div>
+                                  <div className="adm-visit-date fb">{admFmt(v.created_at)}</div>
+                                </div>
+                                {v.scanned
+                                  ?<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981'}}>✓ Scanné</span>
+                                  :<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>Non scanné</span>
+                                }
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+              {!confirmPDisable?(
+                <div className="adm-modal-actions">
+                  <button className="adm-sbtn adm-s-reject fb" style={{marginLeft:'auto'}} onClick={()=>setConfirmPDisable(true)}>Désactiver</button>
+                </div>
+              ):(
+                <div className="adm-confirm">
+                  <div className="adm-confirm-txt fb">Êtes-vous sûr de vouloir désactiver ce partenaire ? Action irréversible.</div>
+                  <div className="adm-confirm-row">
+                    <button className="adm-confirm-cancel fb" onClick={()=>setConfirmPDisable(false)}>Annuler</button>
+                    <button className="adm-confirm-ok fb" onClick={()=>updateStatus(selPartner.id,'rejete')}>Confirmer</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
