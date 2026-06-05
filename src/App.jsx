@@ -1566,7 +1566,7 @@ function JoindreView({onHome}){
               <div className="join-field">
                 <div className="join-label fb">Catégorie</div>
                 <select className="join-select fb" name="categorie" value={form.categorie} onChange={handleChange} required>
-                  <option value="">Choisir une catégorie</option>
+                  <option value="" disabled>Choisir une catégorie</option>
                   <option>Restauration</option>
                   <option>Boulangerie</option>
                   <option>Sport</option>
@@ -1581,8 +1581,8 @@ function JoindreView({onHome}){
                 </div>
               )}
               <div className="join-field">
-                <div className="join-label fb">Lien Google Maps</div>
-                <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="https://maps.google.com/…" required maxLength={500}/>
+                <div className="join-label fb">Adresse</div>
+                <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="Ex: 12 Rue de la Paix, Bordeaux" required maxLength={500}/>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Numéro de téléphone</div>
@@ -1590,8 +1590,7 @@ function JoindreView({onHome}){
               </div>
               <div className="join-field">
                 <div className="join-label fb">Description courte</div>
-                <textarea className="join-textarea fb" name="description" value={form.description} onChange={handleChange} placeholder="Décrivez votre établissement en quelques mots…" required maxLength={200}/>
-                <div className="join-char fb">{form.description.length}/200</div>
+                <textarea className="join-textarea fb" name="description" value={form.description} onChange={handleChange} placeholder="Décrivez votre établissement en quelques mots…" required/>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Réduction proposée</div>
