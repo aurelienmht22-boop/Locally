@@ -355,7 +355,36 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 }
 @media(prefers-reduced-motion:reduce){
 *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
-}`;
+}
+.join-wrap{min-height:100dvh;background:#F7F3EE;display:flex;flex-direction:column;align-items:center;padding:48px 20px 80px;}
+.join-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#1C1208;letter-spacing:-.01em;margin-bottom:56px;cursor:pointer;}
+.join-logo em{font-style:italic;color:#6B1D1D;}
+.join-card{width:100%;max-width:600px;background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:24px;padding:48px 44px;}
+.join-title{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,5vw,48px);font-weight:600;color:#1C1208;line-height:1.05;margin-bottom:10px;}
+.join-title em{font-style:italic;color:#6B1D1D;}
+.join-sub{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;margin-bottom:44px;}
+.join-field{margin-bottom:22px;}
+.join-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.join-label::before{content:'';width:14px;height:1px;background:#6B1D1D;display:block;}
+.join-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:white;border:1px solid rgba(107,29,29,.15);border-radius:8px;padding:13px 16px;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.join-input:focus{border-color:#6B1D1D;}
+.join-input::placeholder{color:rgba(122,101,85,.38);}
+.join-textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:white;border:1px solid rgba(107,29,29,.15);border-radius:8px;padding:13px 16px;outline:none;transition:border-color .2s;resize:vertical;min-height:96px;line-height:1.6;font-family:'DM Sans',sans-serif;}
+.join-textarea:focus{border-color:#6B1D1D;}
+.join-textarea::placeholder{color:rgba(122,101,85,.38);}
+.join-select{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:white;border:1px solid rgba(107,29,29,.15);border-radius:8px;padding:13px 16px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B1D1D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;}
+.join-select:focus{border-color:#6B1D1D;}
+.join-char{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.45);text-align:right;margin-top:6px;}
+.join-submit{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#1C1208;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:17px;border-radius:10px;border:none;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);box-shadow:0 4px 20px rgba(28,18,8,.2);letter-spacing:.015em;margin-top:12px;}
+.join-submit:hover:not(:disabled){background:#6B1D1D;transform:translateY(-2px);box-shadow:0 8px 32px rgba(107,29,29,.28);}
+.join-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.join-success{text-align:center;padding:32px 0;}
+.join-success-icon{width:56px;height:56px;border-radius:50%;background:rgba(107,29,29,.06);border:1px solid rgba(107,29,29,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;}
+.join-success-title{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;margin-bottom:12px;}
+.join-success-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;}
+.join-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#9B2335;margin-top:10px;text-align:center;}
+@media(max-width:640px){.join-card{padding:32px 24px;border-radius:16px;}.join-wrap{padding:32px 16px 64px;}}
+`;
 
 function getSlots(){
   const s=[];
@@ -1480,11 +1509,116 @@ function ScanPage() {
   );
 }
 
+function JoindreView({onHome}){
+  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
+  const [loading,setLoading]=useState(false);
+  const [sent,setSent]=useState(false);
+  const [err,setErr]=useState('');
+  function handleChange(e){const{name,value}=e.target;setForm(f=>({...f,[name]:value}));}
+  async function handleSubmit(e){
+    e.preventDefault();
+    setErr('');
+    if(form.categorie==='Autre'&&!form.categorie_autre.trim()){setErr('Veuillez préciser la catégorie.');return;}
+    setLoading(true);
+    try{
+      const cat=form.categorie==='Autre'?form.categorie_autre.trim():form.categorie;
+      const{error}=await supabase.from('candidates').insert([{
+        nom:form.nom.trim(),
+        categorie:cat,
+        google_maps:form.google_maps.trim(),
+        telephone:form.telephone.trim(),
+        description:form.description.trim(),
+        reduction:form.reduction.trim(),
+        email:form.email.trim(),
+        status:'pending',
+        created_at:new Date().toISOString()
+      }]);
+      if(error)throw error;
+      setSent(true);
+    }catch(e){
+      setErr('Une erreur est survenue. Veuillez réessayer.');
+    }finally{
+      setLoading(false);
+    }
+  }
+  return(
+    <div className="join-wrap">
+      <style>{CSS}</style>
+      <div className="join-logo fd" onClick={onHome}>local<em>ly</em></div>
+      <div className="join-card">
+        {sent?(
+          <div className="join-success">
+            <div className="join-success-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div className="join-success-title fd">Candidature envoyée</div>
+            <div className="join-success-desc fb">Merci pour votre intérêt. Nous examinerons votre dossier et vous recontacterons sous 48h.</div>
+          </div>
+        ):(
+          <>
+            <div className="join-title fd">Rejoindre <em>Locally</em></div>
+            <div className="join-sub fb">Vous souhaitez mettre votre commerce en avant et proposer des avantages exclusifs à nos membres ? Remplissez ce formulaire.</div>
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="join-field">
+                <div className="join-label fb">Nom de l'établissement</div>
+                <input className="join-input fb" name="nom" value={form.nom} onChange={handleChange} placeholder="Le Café du Marché" required maxLength={100}/>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Catégorie</div>
+                <select className="join-select fb" name="categorie" value={form.categorie} onChange={handleChange} required>
+                  <option value="">Choisir une catégorie</option>
+                  <option>Restauration</option>
+                  <option>Boulangerie</option>
+                  <option>Sport</option>
+                  <option>Bien-être</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+              {form.categorie==='Autre'&&(
+                <div className="join-field">
+                  <div className="join-label fb">Précisez la catégorie</div>
+                  <input className="join-input fb" name="categorie_autre" value={form.categorie_autre} onChange={handleChange} placeholder="Ex: Librairie, Fleuriste…" required maxLength={80}/>
+                </div>
+              )}
+              <div className="join-field">
+                <div className="join-label fb">Lien Google Maps</div>
+                <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="https://maps.google.com/…" required maxLength={500}/>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Numéro de téléphone</div>
+                <input className="join-input fb" name="telephone" type="tel" value={form.telephone} onChange={handleChange} placeholder="06 00 00 00 00" required maxLength={20}/>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Description courte</div>
+                <textarea className="join-textarea fb" name="description" value={form.description} onChange={handleChange} placeholder="Décrivez votre établissement en quelques mots…" required maxLength={200}/>
+                <div className="join-char fb">{form.description.length}/200</div>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Réduction proposée</div>
+                <input className="join-input fb" name="reduction" value={form.reduction} onChange={handleChange} placeholder="Ex: 10% sur tous les achats" required maxLength={100}/>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Email de contact</div>
+                <input className="join-input fb" name="email" type="email" value={form.email} onChange={handleChange} placeholder="contact@moncommerce.fr" required maxLength={150}/>
+              </div>
+              {err&&<div className="join-err fb">{err}</div>}
+              <button type="submit" className="join-submit fb" disabled={loading}>
+                {loading?'Envoi en cours…':'Envoyer ma candidature →'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page,setPage]=useState(()=>{
     const path=window.location.pathname;
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
     if(path==="/scan")return "scan";
+    if(path==="/rejoindre")return "rejoindre";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -1494,6 +1628,7 @@ export default function App() {
       const path=window.location.pathname;
       if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
       if(path==="/scan"){setPage("scan");return;}
+      if(path==="/rejoindre"){setPage("rejoindre");return;}
       setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -1501,6 +1636,7 @@ export default function App() {
   },[]);
   function navigate(target,catId=null){if(catId)setActiveCat(catId);setPage(target);}
   if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
+  if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
