@@ -384,6 +384,60 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .join-success-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;}
 .join-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#9B2335;margin-top:10px;text-align:center;}
 @media(max-width:640px){.join-card{padding:32px 24px;border-radius:16px;}.join-wrap{padding:32px 16px 64px;}}
+.adm-login{width:100%;max-width:360px;background:rgba(247,243,238,.04);border:1px solid rgba(247,243,238,.08);border-radius:20px;padding:48px 36px;}
+.adm-logo{font-size:22px;font-weight:700;color:#F7F3EE;display:block;margin-bottom:36px;}
+.adm-logo em{font-style:italic;color:#6B1D1D;}
+.adm-logo .fb{font-size:11px;font-weight:400;color:rgba(247,243,238,.3);letter-spacing:.14em;text-transform:uppercase;vertical-align:middle;}
+.adm-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.06);border:1px solid rgba(247,243,238,.12);border-radius:8px;padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:12px;display:block;}
+.adm-input:focus{border-color:#6B1D1D;}.adm-input::placeholder{color:rgba(247,243,238,.25);}
+.adm-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#EF4444;margin-bottom:12px;}
+.adm-btn{width:100%;background:#6B1D1D;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px;border-radius:8px;border:none;cursor:pointer;transition:all .25s;letter-spacing:.02em;display:block;}
+.adm-btn:hover{background:#8B2929;transform:translateY(-1px);}
+.adm-header{display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid rgba(247,243,238,.06);flex-wrap:wrap;}
+.adm-tabs{display:flex;gap:2px;background:rgba(247,243,238,.05);padding:3px;border-radius:8px;}
+.adm-tab{font-family:'DM Sans',sans-serif;font-size:12px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:rgba(247,243,238,.4);transition:all .2s;letter-spacing:.04em;}
+.adm-tab.act{background:#6B1D1D;color:#F7F3EE;}
+.adm-logout{font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(247,243,238,.28);background:none;border:none;cursor:pointer;margin-left:auto;letter-spacing:.06em;transition:color .2s;padding:8px 0;}
+.adm-logout:hover{color:rgba(247,243,238,.7);}
+.adm-content{padding:24px;max-width:860px;margin:0 auto;width:100%;}
+.adm-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+.adm-filter{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;padding:6px 14px;border-radius:100px;border:1px solid rgba(247,243,238,.09);background:transparent;color:rgba(247,243,238,.38);cursor:pointer;transition:all .2s;}
+.adm-filter.act{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;}
+.adm-list{display:flex;flex-direction:column;gap:2px;}
+.adm-row{display:flex;align-items:center;gap:14px;padding:15px 18px;background:rgba(247,243,238,.025);border:1px solid rgba(247,243,238,.055);border-radius:10px;cursor:pointer;transition:background .18s,border-color .18s;}
+.adm-row:hover{background:rgba(247,243,238,.05);border-color:rgba(247,243,238,.1);}
+.adm-row-body{flex:1;min-width:0;}
+.adm-row-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#F7F3EE;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.adm-row-meta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:rgba(247,243,238,.35);}
+.adm-row-sub{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(247,243,238,.22);margin-top:2px;}
+.adm-arrow{color:rgba(247,243,238,.18);font-size:20px;flex-shrink:0;}
+.adm-empty{font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(247,243,238,.25);padding:40px 0;text-align:center;}
+.adm-deactivate{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:7px 13px;border-radius:6px;border:1px solid rgba(239,68,68,.28);background:rgba(239,68,68,.07);color:#EF4444;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.adm-deactivate:hover{background:rgba(239,68,68,.16);}
+.adm-overlay{position:fixed;inset:0;background:rgba(8,4,2,.8);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
+.adm-modal{background:#1e130a;border:1px solid rgba(247,243,238,.09);border-radius:18px;width:100%;max-width:520px;max-height:90dvh;overflow-y:auto;display:flex;flex-direction:column;}
+.adm-modal-head{display:flex;align-items:center;justify-content:space-between;padding:22px 26px 18px;border-bottom:1px solid rgba(247,243,238,.06);flex-shrink:0;}
+.adm-modal-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#F7F3EE;}
+.adm-modal-close{background:none;border:none;color:rgba(247,243,238,.3);font-size:16px;cursor:pointer;padding:4px;transition:color .2s;line-height:1;}
+.adm-modal-close:hover{color:#F7F3EE;}
+.adm-modal-body{padding:20px 26px;display:flex;flex-direction:column;gap:12px;}
+.adm-field{display:flex;flex-direction:column;gap:3px;}
+.adm-field-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:#6B1D1D;}
+.adm-field-val{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.78);line-height:1.55;}
+.adm-modal-actions{display:flex;gap:6px;padding:18px 26px;border-top:1px solid rgba(247,243,238,.06);flex-wrap:wrap;flex-shrink:0;}
+.adm-sbtn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:8px 14px;border-radius:7px;cursor:pointer;transition:all .2s;border:1px solid transparent;}
+.adm-s-pending{background:rgba(217,119,6,.12);color:#D97706;border-color:rgba(217,119,6,.28);}.adm-s-pending:hover{background:rgba(217,119,6,.22);}
+.adm-s-waiting{background:rgba(59,130,246,.12);color:#3B82F6;border-color:rgba(59,130,246,.28);}.adm-s-waiting:hover{background:rgba(59,130,246,.22);}
+.adm-s-ok{background:rgba(16,185,129,.12);color:#10B981;border-color:rgba(16,185,129,.28);}.adm-s-ok:hover{background:rgba(16,185,129,.22);}
+.adm-s-reject{background:rgba(239,68,68,.1);color:#EF4444;border-color:rgba(239,68,68,.24);}.adm-s-reject:hover{background:rgba(239,68,68,.2);}
+.adm-confirm{padding:18px 26px 22px;border-top:1px solid rgba(247,243,238,.06);}
+.adm-confirm-txt{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.6);line-height:1.6;margin-bottom:14px;}
+.adm-confirm-row{display:flex;gap:8px;}
+.adm-confirm-cancel{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;padding:11px;border-radius:8px;border:1px solid rgba(247,243,238,.1);background:transparent;color:rgba(247,243,238,.45);cursor:pointer;transition:all .2s;}
+.adm-confirm-cancel:hover{color:#F7F3EE;border-color:rgba(247,243,238,.25);}
+.adm-confirm-ok{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:11px;border-radius:8px;border:none;background:#EF4444;color:#fff;cursor:pointer;transition:background .2s;}
+.adm-confirm-ok:hover{background:#DC2626;}
+@media(max-width:640px){.adm-content{padding:14px;}.adm-header{padding:12px 14px;}.adm-tabs{flex:1;}.adm-modal{border-radius:14px;}.adm-modal-head,.adm-modal-body,.adm-modal-actions,.adm-confirm{padding-left:18px;padding-right:18px;}}
 `;
 
 function getSlots(){
@@ -1509,6 +1563,243 @@ function ScanPage() {
   );
 }
 
+const ADMIN_PWD="locally2024";
+const STATUS_BADGES={
+  pending:   {label:'Pending',    bg:'rgba(217,119,6,.15)',  color:'#D97706'},
+  en_attente:{label:'En attente', bg:'rgba(59,130,246,.15)', color:'#3B82F6'},
+  approuve:  {label:'Approuvé',   bg:'rgba(16,185,129,.15)', color:'#10B981'},
+  rejete:    {label:'Rejeté',     bg:'rgba(239,68,68,.15)',  color:'#EF4444'},
+};
+function StatusBadge({status}){
+  const b=STATUS_BADGES[status]||STATUS_BADGES.pending;
+  return <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,letterSpacing:'.1em',textTransform:'uppercase',padding:'4px 10px',borderRadius:100,background:b.bg,color:b.color,whiteSpace:'nowrap'}}>{b.label}</span>;
+}
+function admFmt(d){if(!d)return '—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+
+function AdminView(){
+  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('adm')==='1');
+  const [pwd,setPwd]=useState('');
+  const [loginErr,setLoginErr]=useState('');
+  const [tab,setTab]=useState('candidatures');
+  const [cands,setCands]=useState([]);
+  const [candFilter,setCandFilter]=useState('tous');
+  const [loadingCand,setLoadingCand]=useState(false);
+  const [sel,setSel]=useState(null);
+  const [confirmReject,setConfirmReject]=useState(false);
+  const [partners,setPartners]=useState([]);
+  const [loadingPartners,setLoadingPartners]=useState(false);
+  const [confirmDisable,setConfirmDisable]=useState(null);
+  const [visits,setVisits]=useState([]);
+  const [loadingVisits,setLoadingVisits]=useState(false);
+
+  function login(e){
+    e.preventDefault();
+    if(pwd===ADMIN_PWD){sessionStorage.setItem('adm','1');setAuthed(true);}
+    else setLoginErr('Mot de passe incorrect.');
+  }
+  function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
+
+  async function fetchCands(){
+    setLoadingCand(true);
+    const{data}=await supabase.from('candidates').select('*').order('created_at',{ascending:false});
+    setCands(data||[]);setLoadingCand(false);
+  }
+  async function fetchPartners(){
+    setLoadingPartners(true);
+    const{data}=await supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false});
+    setPartners(data||[]);setLoadingPartners(false);
+  }
+  async function fetchVisits(){
+    setLoadingVisits(true);
+    const{data}=await supabase.from('visits').select('*').order('created_at',{ascending:false});
+    setVisits(data||[]);setLoadingVisits(false);
+  }
+
+  useEffect(()=>{
+    if(!authed)return;
+    if(tab==='candidatures')fetchCands();
+    else if(tab==='partenaires')fetchPartners();
+    else fetchVisits();
+  },[authed,tab]);
+
+  async function updateStatus(id,status){
+    await supabase.from('candidates').update({status}).eq('id',id);
+    setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
+    setSel(s=>s?.id===id?{...s,status}:s);
+    setPartners(ps=>ps.filter(p=>p.id!==id));
+    setConfirmReject(false);
+    setConfirmDisable(null);
+  }
+
+  const filtered=candFilter==='tous'?cands:cands.filter(c=>c.status===candFilter);
+
+  if(!authed) return(
+    <div style={{minHeight:'100dvh',background:'#1C1208',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+      <style>{CSS}</style>
+      <div className="adm-login">
+        <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
+        <form onSubmit={login}>
+          <input className="adm-input fb" type="password" placeholder="Mot de passe" value={pwd} onChange={e=>{setPwd(e.target.value);setLoginErr('');}} autoFocus/>
+          {loginErr&&<div className="adm-err fb">{loginErr}</div>}
+          <button type="submit" className="adm-btn fb">Accéder →</button>
+        </form>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:'100dvh',background:'#1C1208',display:'flex',flexDirection:'column'}}>
+      <style>{CSS}</style>
+      <div className="adm-header">
+        <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
+        <div className="adm-tabs">
+          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['visites','Visites']].map(([v,l])=>(
+            <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
+          ))}
+        </div>
+        <button className="adm-logout fb" onClick={logout}>Déconnexion</button>
+      </div>
+
+      <div className="adm-content">
+        {tab==='candidatures'&&(
+          <>
+            <div className="adm-filters">
+              {[['tous','Tous'],['pending','Pending'],['en_attente','En attente'],['approuve','Approuvé'],['rejete','Rejeté']].map(([v,l])=>(
+                <button key={v} className={'adm-filter fb'+(candFilter===v?' act':'')} onClick={()=>setCandFilter(v)}>{l}</button>
+              ))}
+            </div>
+            {loadingCand?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {filtered.length===0&&<div className="adm-empty fb">Aucune candidature.</div>}
+                {filtered.map(c=>(
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{c.nom}</div>
+                      <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
+                    </div>
+                    <StatusBadge status={c.status}/>
+                    <span className="adm-arrow">›</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab==='partenaires'&&(
+          <>
+            {loadingPartners?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {partners.length===0&&<div className="adm-empty fb">Aucun partenaire approuvé.</div>}
+                {partners.map(p=>(
+                  <div key={p.id} className="adm-row" style={{cursor:'default'}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{p.nom}</div>
+                      <div className="adm-row-meta fb">{p.categorie} · {p.telephone}</div>
+                      <div className="adm-row-sub fb">{p.email} · Depuis le {admFmt(p.created_at)}</div>
+                    </div>
+                    <button className="adm-deactivate fb" onClick={()=>setConfirmDisable(p)}>Désactiver</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab==='visites'&&(
+          <>
+            {loadingVisits?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {visits.length===0&&<div className="adm-empty fb">Aucune visite enregistrée.</div>}
+                {visits.map(v=>(
+                  <div key={v.id} className="adm-row" style={{cursor:'default'}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{v.client_name}</div>
+                      <div className="adm-row-meta fb">Partenaire : {v.partner_id}</div>
+                      <div className="adm-row-sub fb">{admFmt(v.created_at)}</div>
+                    </div>
+                    <div>
+                      {v.scanned
+                        ?<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981'}}>✓ Scanné {admFmt(v.scanned_at)}</span>
+                        :<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>Non scanné</span>
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {sel&&(
+        <div className="adm-overlay" onClick={e=>{if(e.target===e.currentTarget){setSel(null);setConfirmReject(false);}}}>
+          <div className="adm-modal">
+            <div className="adm-modal-head">
+              <div className="adm-modal-title">{sel.nom}</div>
+              <button className="adm-modal-close fb" onClick={()=>{setSel(null);setConfirmReject(false);}}>✕</button>
+            </div>
+            <div className="adm-modal-body">
+              {[
+                ['Catégorie',sel.categorie],
+                ['Adresse',sel.google_maps],
+                ['Téléphone',sel.telephone],
+                ['Email',sel.email],
+                ['Description',sel.description],
+                ['Réduction',sel.reduction],
+                ['Date',admFmt(sel.created_at)],
+              ].map(([k,v])=>(
+                <div key={k} className="adm-field">
+                  <div className="adm-field-label">{k}</div>
+                  <div className="adm-field-val fb">{v}</div>
+                </div>
+              ))}
+              <div className="adm-field">
+                <div className="adm-field-label">Statut</div>
+                <div style={{marginTop:2}}><StatusBadge status={sel.status}/></div>
+              </div>
+            </div>
+            {!confirmReject?(
+              <div className="adm-modal-actions">
+                <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateStatus(sel.id,'pending')}>Pending</button>
+                <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateStatus(sel.id,'en_attente')}>En attente</button>
+                <button className="adm-sbtn adm-s-ok fb" onClick={()=>updateStatus(sel.id,'approuve')}>Approuver</button>
+                <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmReject(true)}>Rejeter</button>
+              </div>
+            ):(
+              <div className="adm-confirm">
+                <div className="adm-confirm-txt fb">Êtes-vous sûr de vouloir rejeter cette candidature ? Action irréversible.</div>
+                <div className="adm-confirm-row">
+                  <button className="adm-confirm-cancel fb" onClick={()=>setConfirmReject(false)}>Annuler</button>
+                  <button className="adm-confirm-ok fb" onClick={()=>updateStatus(sel.id,'rejete')}>Confirmer</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {confirmDisable&&(
+        <div className="adm-overlay" onClick={e=>{if(e.target===e.currentTarget)setConfirmDisable(null);}}>
+          <div className="adm-modal" style={{maxWidth:420}}>
+            <div className="adm-modal-head">
+              <div className="adm-modal-title">Désactiver {confirmDisable.nom}</div>
+              <button className="adm-modal-close fb" onClick={()=>setConfirmDisable(null)}>✕</button>
+            </div>
+            <div className="adm-confirm">
+              <div className="adm-confirm-txt fb">Êtes-vous sûr de vouloir désactiver ce partenaire ? Action irréversible.</div>
+              <div className="adm-confirm-row">
+                <button className="adm-confirm-cancel fb" onClick={()=>setConfirmDisable(null)}>Annuler</button>
+                <button className="adm-confirm-ok fb" onClick={()=>updateStatus(confirmDisable.id,'rejete')}>Confirmer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function JoindreView({onHome}){
   const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
   const [loading,setLoading]=useState(false);
@@ -1618,6 +1909,7 @@ export default function App() {
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
     if(path==="/scan")return "scan";
     if(path==="/rejoindre")return "rejoindre";
+    if(path==="/admin")return "admin";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -1628,6 +1920,7 @@ export default function App() {
       if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
       if(path==="/scan"){setPage("scan");return;}
       if(path==="/rejoindre"){setPage("rejoindre");return;}
+      if(path==="/admin"){setPage("admin");return;}
       setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -1636,6 +1929,7 @@ export default function App() {
   function navigate(target,catId=null){if(catId)setActiveCat(catId);setPage(target);}
   if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="admin")return <AdminView/>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
