@@ -578,6 +578,7 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .gpp-cart-total{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#F7F3EE;}
 .gpp-cart-cta{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:8px;padding:12px 22px;cursor:pointer;transition:background .2s;}
 .gpp-cart-cta:hover{background:#8B2929;}
+.gpp-no-hours{display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(122,101,85,.6);background:#FDFAF6;border:1px solid rgba(107,29,29,.07);border-radius:12px;padding:18px 20px;}
 @media(max-width:640px){.gpp-hero{padding:90px 20px 40px;min-height:40vh;}.gpp-body{padding:28px 16px;}.gpp-info-grid{grid-template-columns:1fr;}.gpp-section-title{font-size:28px;}}
 `;
 
@@ -2376,6 +2377,12 @@ function GenericPartnerPage({partner,onBack}){
   const [loadingMenu,setLoadingMenu]=useState(true);
   const [cart,setCart]=useState([]);
   const [addedId,setAddedId]=useState(null);
+  const [visitMode,setVisitMode]=useState(null);
+  const [visitName,setVisitName]=useState('');
+  const [visitData,setVisitData]=useState(null);
+  const [visitLoading,setVisitLoading]=useState(false);
+  const [countdown,setCountdown]=useState('02:00:00');
+  const [countdownPct,setCountdownPct]=useState(100);
 
   useEffect(()=>{
     supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});
@@ -2384,6 +2391,28 @@ function GenericPartnerPage({partner,onBack}){
     });
   },[partner.id]);
 
+  useEffect(()=>{
+    if(!visitData)return;
+    const DURATION=2*60*60*1000;
+    const tick=()=>{
+      const rem=new Date(visitData.expires_at)-Date.now();
+      if(rem<=0){setCountdown('Expiré');setCountdownPct(0);return;}
+      const h=Math.floor(rem/3600000),m=Math.floor((rem%3600000)/60000),s=Math.floor((rem%60000)/1000);
+      setCountdown(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+      setCountdownPct(Math.round(rem/DURATION*100));
+    };
+    tick();const id=setInterval(tick,1000);return()=>clearInterval(id);
+  },[visitData]);
+
+  async function generateVisit(){
+    if(!visitName.trim())return;
+    setVisitLoading(true);
+    const qr_code_id=crypto.randomUUID();
+    const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
+    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at});
+    setVisitData({qr_code_id,expires_at});setVisitLoading(false);
+  }
+
   function addToCart(item){
     setCart(c=>{const ex=c.find(x=>x.id===item.id);return ex?c.map(x=>x.id===item.id?{...x,qty:x.qty+1}:x):[...c,{...item,qty:1}];});
     setAddedId(item.id);setTimeout(()=>setAddedId(null),1200);
@@ -2391,6 +2420,7 @@ function GenericPartnerPage({partner,onBack}){
   const cartTotal=cart.reduce((s,i)=>s+i.prix*i.qty,0);
   const cartCount=cart.reduce((s,i)=>s+i.qty,0);
   const horaires=partner.horaires||{};
+  const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
   return(
     <>
@@ -2404,11 +2434,16 @@ function GenericPartnerPage({partner,onBack}){
         </div>
       </div>
       <div className="gpp-body">
+
+        {/* Infos */}
         <div className="gpp-info-grid">
           {partner.google_maps&&(
-            <div className="gpp-info-card">
+            <div className="gpp-info-card" style={{cursor:'pointer'}}
+              onClick={()=>window.open("https://maps.google.com/?q="+encodeURIComponent(partner.google_maps),"_blank")}>
               <div className="gpp-info-label fb">Adresse</div>
-              <div className="gpp-info-val fb">{partner.google_maps}</div>
+              <div className="gpp-info-val fb" style={{color:'#6B1D1D',textDecoration:'underline',textDecorationColor:'rgba(107,29,29,.28)'}}>
+                {partner.google_maps} <span style={{fontSize:11}}>↗</span>
+              </div>
             </div>
           )}
           {partner.telephone&&(
@@ -2420,18 +2455,18 @@ function GenericPartnerPage({partner,onBack}){
           {partner.reduction&&(
             <div className="gpp-info-card" style={{gridColumn:'1/-1'}}>
               <div className="gpp-info-label fb">Avantage membre</div>
-              <div className="gpp-badge"><span className="gpp-badge-txt fb">{partner.reduction}</span></div>
+              <div className="gpp-badge" style={{marginTop:6}}><span className="gpp-badge-txt fb">{partner.reduction}</span></div>
             </div>
           )}
         </div>
 
-        {Object.keys(horaires).length>0&&(
-          <div className="gpp-section">
-            <div className="gpp-section-title fd">Horaires <em>d'ouverture</em></div>
+        {/* Horaires */}
+        <div className="gpp-section">
+          <div className="gpp-section-title fd">Horaires <em>d'ouverture</em></div>
+          {hasHoraires?(
             <div className="gpp-hours-grid">
               {DAYS.map(day=>{
-                const h=horaires[day];
-                if(!h)return null;
+                const h=horaires[day];if(!h)return null;
                 return(
                   <div key={day} className="gpp-hours-card">
                     <div className="gpp-hours-day fd">{day}</div>
@@ -2443,9 +2478,73 @@ function GenericPartnerPage({partner,onBack}){
                 );
               })}
             </div>
-          </div>
-        )}
+          ):(
+            <div className="gpp-no-hours fb">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,opacity:.45}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Horaires non renseignés — contactez le commerce
+            </div>
+          )}
+        </div>
 
+        {/* Flow Je me déplace */}
+        <div className="gpp-section">
+          {visitMode===null&&(
+            <>
+              <div className="gpp-section-title fd">Préparer <em>ma visite</em></div>
+              <div className="visit-mode-card" style={{maxWidth:420}} onClick={()=>setVisitMode('visit')}>
+                <div className="visit-mode-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </div>
+                <div className="visit-mode-title fd">Je me déplace</div>
+                <div className="visit-mode-desc fb">Obtenez un QR code à présenter sur place et profitez des avantages négociés.</div>
+                <div className="visit-mode-foot"><span className="visit-mode-cta fb">Générer mon QR code</span><div className="visit-mode-arrow">→</div></div>
+              </div>
+            </>
+          )}
+          {visitMode==='visit'&&(
+            <>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>← Retour</button>
+              {!visitData?(
+                <>
+                  <div className="gpp-section-title fd">Votre <em>QR code</em></div>
+                  <div style={{maxWidth:400}}>
+                    <div className="op-label fb">Votre prénom</div>
+                    <input className="input fb" style={{marginBottom:16}} value={visitName} onChange={e=>setVisitName(e.target.value.slice(0,50))} placeholder="Ex : Julien" onKeyDown={e=>e.key==='Enter'&&visitName.trim()&&generateVisit()}/>
+                    <button className="btn-call fb" onClick={generateVisit} disabled={!visitName.trim()||visitLoading}>
+                      {visitLoading?'Génération…':'Générer mon QR code'}
+                    </button>
+                  </div>
+                </>
+              ):(
+                <div className="visit-qr-wrap">
+                  <div className="visit-qr-card">
+                    <div className="visit-qr-card-header">
+                      <div className="visit-qr-partner fd">{partner.nom}</div>
+                      <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                    </div>
+                    <div className="visit-qr-box">
+                      <QRCodeSVG value={visitData.qr_code_id} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                    </div>
+                    <div className="visit-qr-client">
+                      <div className="visit-qr-name fd">{visitName}</div>
+                      <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
+                    </div>
+                    <div className="visit-qr-countdown-wrap">
+                      <div className="visit-qr-countdown-label fb">Expire dans</div>
+                      <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
+                      <div className="visit-qr-progress"><div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/></div>
+                    </div>
+                  </div>
+                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>
+                    Générer un nouveau code
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Menu */}
         {(loadingMenu||menuItems.length>0)&&(
           <div className="gpp-section">
             <div className="gpp-section-title fd">Notre <em>menu</em></div>
