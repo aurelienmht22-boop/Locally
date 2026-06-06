@@ -32,6 +32,9 @@ const CATEGORIES = [
   { id:"bienetre",     label:"Bien-être",     icon:"🌿", desc:"Spa, massage, soins et relaxation",     active:false },
 ];
 
+const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre'};
+const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
 const PARTNERS = [{
   id:"snack", name:"Snack Bodrum", category:"restauration", city:"bordeaux",
   address:"66 Rue Bonnefin, 33100 Bordeaux", phone:"0625951075",
@@ -522,6 +525,60 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-loading{font-family:'DM Sans',sans-serif;font-size:13px;color:#7A6555;padding:32px 0;text-align:center;}
 .prt-empty{font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(122,101,85,.5);padding:24px 0;text-align:center;}
 @media(max-width:640px){.prt-content{padding:20px 16px;}.prt-header{padding:14px 16px;}.prt-tabs-bar{padding:0 12px;}.prt-stats-grid{grid-template-columns:repeat(2,1fr);gap:6px;}.prt-stat-num{font-size:26px;}.prt-menu-item-actions{flex-direction:row;}.prt-login{padding:36px 28px;}}
+.prt-hours-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.prt-hours-row{background:white;border:1px solid rgba(107,29,29,.12);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.prt-hours-day-name{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#1C1208;min-width:86px;}
+.prt-hours-toggle{display:flex;gap:0;background:rgba(107,29,29,.06);border-radius:8px;padding:2px;flex-shrink:0;}
+.prt-hours-toggle-btn{font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 11px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:rgba(122,101,85,.55);transition:all .18s;}
+.prt-hours-toggle-btn.on{background:#1C1208;color:#F7F3EE;}
+.prt-hours-slot-input{flex:1;min-width:180px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#1C1208;background:#F9F5EF;border:1px solid rgba(107,29,29,.1);border-radius:6px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.prt-hours-slot-input:focus{border-color:#6B1D1D;background:white;}
+.prt-hours-slot-input::placeholder{color:rgba(122,101,85,.35);}
+.prt-hours-slot-input:disabled{opacity:.35;cursor:not-allowed;}
+.gpp-hero{background:#1C1208;min-height:50vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:120px 52px 52px;}
+.gpp-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.gpp-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(28,18,8,.2) 0%,rgba(28,18,8,.78) 100%);}
+.gpp-hero-content{position:relative;z-index:1;}
+.gpp-hero-cat{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:rgba(247,243,238,.5);margin-bottom:10px;}
+.gpp-hero-name{font-family:'Cormorant Garamond',serif;font-size:clamp(42px,6vw,68px);font-weight:700;color:#F7F3EE;line-height:.95;margin-bottom:14px;}
+.gpp-hero-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:rgba(247,243,238,.6);max-width:440px;line-height:1.65;}
+.gpp-body{background:#F7F3EE;padding:52px;}
+.gpp-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:44px;}
+.gpp-info-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;padding:20px 18px;}
+.gpp-info-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:7px;}
+.gpp-info-val{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#1C1208;line-height:1.55;}
+.gpp-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(107,29,29,.06);border:1px solid rgba(107,29,29,.13);border-radius:100px;padding:8px 16px;margin-top:6px;}
+.gpp-badge-txt{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#6B1D1D;}
+.gpp-section{margin-bottom:52px;}
+.gpp-section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,40px);font-weight:600;color:#1C1208;margin-bottom:28px;line-height:1.05;}
+.gpp-section-title em{font-style:italic;color:#6B1D1D;}
+.gpp-hours-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+.gpp-hours-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:12px;padding:18px 16px;}
+.gpp-hours-day{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#1C1208;margin-bottom:8px;}
+.gpp-hours-closed{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:rgba(122,101,85,.4);}
+.gpp-hours-slot{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#3D2B1F;display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.gpp-hours-slot::before{content:'';width:4px;height:4px;border-radius:50%;background:rgba(107,29,29,.3);flex-shrink:0;}
+.gpp-menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.gpp-item{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;overflow:hidden;transition:all .25s;}
+.gpp-item:hover{border-color:rgba(107,29,29,.18);box-shadow:0 8px 28px rgba(28,18,8,.07);}
+.gpp-item-img{height:160px;overflow:hidden;background:#1C1208;}
+.gpp-item-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.gpp-item:hover .gpp-item-img img{transform:scale(1.04);}
+.gpp-no-photo{height:160px;background:rgba(107,29,29,.04);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(122,101,85,.3);}
+.gpp-item-body{padding:16px 18px;}
+.gpp-item-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#1C1208;margin-bottom:4px;}
+.gpp-item-desc{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;line-height:1.55;margin-bottom:12px;}
+.gpp-item-foot{display:flex;align-items:center;justify-content:space-between;}
+.gpp-item-price{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#6B1D1D;}
+.gpp-cart-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .2s;}
+.gpp-cart-btn:hover{background:#6B1D1D;}.gpp-cart-btn.added{background:#2D6A4F;}
+.gpp-cart-bar{position:fixed;bottom:0;left:0;right:0;background:#1C1208;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;z-index:100;transform:translateY(105%);transition:transform .35s cubic-bezier(.16,1,.3,1);}
+.gpp-cart-bar.vis{transform:translateY(0);}
+.gpp-cart-count{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(247,243,238,.45);margin-bottom:2px;}
+.gpp-cart-total{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#F7F3EE;}
+.gpp-cart-cta{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:8px;padding:12px 22px;cursor:pointer;transition:background .2s;}
+.gpp-cart-cta:hover{background:#8B2929;}
+@media(max-width:640px){.gpp-hero{padding:90px 20px 40px;min-height:40vh;}.gpp-body{padding:28px 16px;}.gpp-info-grid{grid-template-columns:1fr;}.gpp-section-title{font-size:28px;}}
 `;
 
 function getSlots(){
@@ -1010,22 +1067,24 @@ const cardItem = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
 };
 
-function CategoryPage({ categoryId, onBack, onNavigate }) {
+function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
   const cat=CATEGORIES.find(c=>c.id===categoryId);
   const partners=PARTNERS.filter(p=>p.category===categoryId&&p.active);
   const open=isOpen();
+  const sbPartners=(supabasePartners||[]).filter(p=>CATEGORIE_MAP[p.categorie]===categoryId);
+  const total=partners.length+sbPartners.length;
   return (
     <>
       <motion.div className="catpage-hero" variants={heroZoom} initial="initial" animate="animate">
         <button className="catpage-back fb" onClick={onBack}>← Retour</button>
         <span className="catpage-icon">{cat.icon}</span>
         <div className="catpage-title fd">{cat.label}<br/><em>à Bordeaux</em></div>
-        <div className="catpage-sub fb">{partners.length} adresse{partners.length>1?"s":""} disponible{partners.length>1?"s":""}</div>
+        <div className="catpage-sub fb">{total} adresse{total>1?"s":""} disponible{total>1?"s":""}</div>
       </motion.div>
       <div style={{background:"#F7F3EE",padding:"64px 48px"}}>
         <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
           {partners.map(p=>(
-            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate(p.id)}>
+            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate(p.id,null)}>
               <div className="pcard-img">
                 <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 <div className={"pcard-status "+(open?"open":"closed")}>
@@ -1039,6 +1098,23 @@ function CategoryPage({ categoryId, onBack, onNavigate }) {
                 <div className="pcard-desc fb">{p.desc} {p.address}</div>
                 <div className="pcard-foot">
                   <span className="pcard-cta fb">Commander maintenant</span>
+                  <div className="pcard-icon">→</div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+          {sbPartners.map(p=>(
+            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
+              <div className="pcard-img" style={{background:'#1C1208'}}>
+                {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
+                <div className="pcard-status open"><div className="sdot open"/><span className="fb">Disponible</span></div>
+              </div>
+              <div className="pcard-body">
+                <div className="pcard-cat fb">{p.categorie}</div>
+                <div className="pcard-name fd">{p.nom}</div>
+                <div className="pcard-desc fb">{p.description||p.google_maps}</div>
+                <div className="pcard-foot">
+                  <span className="pcard-cta fb">Voir le commerce</span>
                   <div className="pcard-icon">→</div>
                 </div>
               </div>
@@ -1989,10 +2065,11 @@ function PartnerView({onLogout}){
   const [statVisits,setStatVisits]=useState([]);
   const [pageViews,setPageViews]=useState(0);
   const [loadingStats,setLoadingStats]=useState(false);
+  const [horaires,setHoraires]=useState({});
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
-    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});}
+    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});}
   }
   useEffect(()=>{if(authed)loadPartner();},[]);
 
@@ -2009,6 +2086,7 @@ function PartnerView({onLogout}){
       sessionStorage.setItem('partner_slug',slug);
       setPartner(data);
       setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});
+      setHoraires(data.horaires||{});
       setAuthed(true);
     }else{
       setLoginErr('Code incorrect ou accès non autorisé.');
@@ -2016,10 +2094,12 @@ function PartnerView({onLogout}){
     setLoginLoading(false);
   }
 
+  function setDay(day,key,val){setHoraires(h=>({...h,[day]:{...(h[day]||{ouvert:false,creneaux:''}),[key]:val}}));}
+
   async function saveProfile(){
     setSavingProfile(true);
-    await supabase.from('candidates').update(profileForm).eq('id',partner.id);
-    setPartner(p=>({...p,...profileForm}));
+    await supabase.from('candidates').update({...profileForm,horaires}).eq('id',partner.id);
+    setPartner(p=>({...p,...profileForm,horaires}));
     setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
     setSavingProfile(false);
   }
@@ -2149,6 +2229,24 @@ function PartnerView({onLogout}){
                 <div className="prt-label fb">Description</div>
                 <textarea className="prt-textarea fb" value={profileForm.description||''} onChange={e=>setProfileForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
               </div>
+              <div className="prt-field">
+                <div className="prt-label fb">Horaires d'ouverture</div>
+                <div className="prt-hours-grid">
+                  {DAYS.map(day=>{
+                    const h=horaires[day]||{ouvert:false,creneaux:''};
+                    return(
+                      <div key={day} className="prt-hours-row">
+                        <div className="prt-hours-day-name fb">{day}</div>
+                        <div className="prt-hours-toggle">
+                          <button className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',true)}>Ouvert</button>
+                          <button className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',false)}>Fermé</button>
+                        </div>
+                        <input className="prt-hours-slot-input fb" disabled={!h.ouvert} value={h.creneaux||''} onChange={e=>setDay(day,'creneaux',e.target.value)} placeholder="11h00 – 14h00, 18h00 – 22h00"/>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
               <div>
                 <button className="prt-btn-primary fb" onClick={saveProfile} disabled={savingProfile}>
                   {savingProfile?'Sauvegarde…':profileSaved?'✓ Sauvegardé':'Sauvegarder'}
@@ -2273,6 +2371,125 @@ function PartnerView({onLogout}){
   );
 }
 
+function GenericPartnerPage({partner,onBack}){
+  const [menuItems,setMenuItems]=useState([]);
+  const [loadingMenu,setLoadingMenu]=useState(true);
+  const [cart,setCart]=useState([]);
+  const [addedId,setAddedId]=useState(null);
+
+  useEffect(()=>{
+    supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});
+    supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}).then(({data})=>{
+      setMenuItems(data||[]);setLoadingMenu(false);
+    });
+  },[partner.id]);
+
+  function addToCart(item){
+    setCart(c=>{const ex=c.find(x=>x.id===item.id);return ex?c.map(x=>x.id===item.id?{...x,qty:x.qty+1}:x):[...c,{...item,qty:1}];});
+    setAddedId(item.id);setTimeout(()=>setAddedId(null),1200);
+  }
+  const cartTotal=cart.reduce((s,i)=>s+i.prix*i.qty,0);
+  const cartCount=cart.reduce((s,i)=>s+i.qty,0);
+  const horaires=partner.horaires||{};
+
+  return(
+    <>
+      <div className="gpp-hero">
+        {partner.photo_url&&<img src={partner.photo_url} className="gpp-hero-img" alt=""/>}
+        <div className="gpp-hero-overlay"/>
+        <div className="gpp-hero-content">
+          <div className="gpp-hero-cat fb">{partner.categorie}</div>
+          <div className="gpp-hero-name fd">{partner.nom}</div>
+          {partner.description&&<div className="gpp-hero-desc fb">{partner.description}</div>}
+        </div>
+      </div>
+      <div className="gpp-body">
+        <div className="gpp-info-grid">
+          {partner.google_maps&&(
+            <div className="gpp-info-card">
+              <div className="gpp-info-label fb">Adresse</div>
+              <div className="gpp-info-val fb">{partner.google_maps}</div>
+            </div>
+          )}
+          {partner.telephone&&(
+            <div className="gpp-info-card">
+              <div className="gpp-info-label fb">Téléphone</div>
+              <div className="gpp-info-val fb">{partner.telephone}</div>
+            </div>
+          )}
+          {partner.reduction&&(
+            <div className="gpp-info-card" style={{gridColumn:'1/-1'}}>
+              <div className="gpp-info-label fb">Avantage membre</div>
+              <div className="gpp-badge"><span className="gpp-badge-txt fb">{partner.reduction}</span></div>
+            </div>
+          )}
+        </div>
+
+        {Object.keys(horaires).length>0&&(
+          <div className="gpp-section">
+            <div className="gpp-section-title fd">Horaires <em>d'ouverture</em></div>
+            <div className="gpp-hours-grid">
+              {DAYS.map(day=>{
+                const h=horaires[day];
+                if(!h)return null;
+                return(
+                  <div key={day} className="gpp-hours-card">
+                    <div className="gpp-hours-day fd">{day}</div>
+                    {h.ouvert&&h.creneaux
+                      ?h.creneaux.split(',').map((s,i)=><div key={i} className="gpp-hours-slot fb">{s.trim()}</div>)
+                      :<div className="gpp-hours-closed fb">Fermé</div>
+                    }
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {(loadingMenu||menuItems.length>0)&&(
+          <div className="gpp-section">
+            <div className="gpp-section-title fd">Notre <em>menu</em></div>
+            {loadingMenu?(
+              <div className="fb" style={{fontSize:13,color:'#7A6555',padding:'16px 0'}}>Chargement…</div>
+            ):(
+              <div className="gpp-menu-grid">
+                {menuItems.map(item=>(
+                  <div key={item.id} className="gpp-item">
+                    {item.photo_url?<div className="gpp-item-img"><img src={item.photo_url} alt={item.nom}/></div>:<div className="gpp-no-photo fb">Pas de photo</div>}
+                    <div className="gpp-item-body">
+                      <div className="gpp-item-name">{item.nom}</div>
+                      {item.description&&<div className="gpp-item-desc fb">{item.description}</div>}
+                      <div className="gpp-item-foot">
+                        <div className="gpp-item-price">{Number(item.prix).toFixed(2)} €</div>
+                        <button className={'gpp-cart-btn fb'+(addedId===item.id?' added':'')} onClick={()=>addToCart(item)}>
+                          {addedId===item.id?'✓ Ajouté':'+ Panier'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <footer className="footer" style={{background:"#F7F3EE",borderTop:"1px solid rgba(107,29,29,.07)",padding:"32px 0 0"}}>
+          <div className="footer-logo fd">local<em>ly</em></div>
+          <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
+        </footer>
+      </div>
+
+      <div className={'gpp-cart-bar'+(cartCount>0?' vis':'')}>
+        <div>
+          <div className="gpp-cart-count fb">{cartCount} article{cartCount>1?'s':''}</div>
+          <div className="gpp-cart-total fd">{cartTotal.toFixed(2)} €</div>
+        </div>
+        <button className="gpp-cart-cta fb">Voir le panier →</button>
+      </div>
+    </>
+  );
+}
+
 function JoindreView({onHome}){
   const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
   const [loading,setLoading]=useState(false);
@@ -2387,6 +2604,11 @@ export default function App() {
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
+  const [activePartner,setActivePartner]=useState(null);
+  const [supabasePartners,setSupabasePartners]=useState([]);
+  useEffect(()=>{
+    supabase.from('candidates').select('*').eq('status','approuve').then(({data})=>setSupabasePartners(data||[]));
+  },[]);
   useEffect(()=>{window.scrollTo(0,0);},[page]);
   useEffect(()=>{
     function onPopState(){
@@ -2402,6 +2624,10 @@ export default function App() {
     return ()=>window.removeEventListener("popstate",onPopState);
   },[]);
   function navigate(target,catId=null){if(catId)setActiveCat(catId);setPage(target);}
+  function navPartner(pageId,partnerObj){
+    if(pageId==='generic'){setActivePartner(partnerObj);setPage('generic');}
+    else setPage(pageId);
+  }
   if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="admin")return <AdminView/>;
@@ -2415,6 +2641,7 @@ export default function App() {
           <li><a onClick={()=>setPage("home")}>Accueil</a></li>
           {page==="category"&&<li><a onClick={()=>setPage("home")}>Catégories</a></li>}
           {page==="snack"&&<li><a onClick={()=>setPage("category")}>Restauration</a></li>}
+          {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <button className="nav-cta fb" onClick={()=>setPage("home")}>
           {page==="home"?"Explorer →":"Accueil"}
@@ -2422,8 +2649,9 @@ export default function App() {
       </nav>
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
-      {page==="category"&&<CategoryPage categoryId={activeCat} onBack={()=>setPage("home")} onNavigate={p=>setPage(p)}/>}
+      {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
       {page==="snack"&&<SnackPage onBack={()=>setPage("category")}/>}
+      {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")}/>}
     </div>
   );
 }
