@@ -503,7 +503,9 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-btn-ghost-sm:hover{border-color:rgba(107,29,29,.28);color:#1C1208;}
 .prt-btn-danger-sm{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;padding:6px 11px;border-radius:6px;border:1px solid rgba(155,35,53,.2);background:transparent;color:#9B2335;cursor:pointer;transition:all .18s;white-space:nowrap;}
 .prt-btn-danger-sm:hover{background:rgba(155,35,53,.06);}
-.prt-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.prt-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;}
+.prt-deconnect{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(122,101,85,.45);background:none;border:none;cursor:pointer;transition:color .2s;letter-spacing:.04em;padding:0;white-space:nowrap;}
+.prt-deconnect:hover{color:#6B1D1D;}
 .prt-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;padding:20px 12px;text-align:center;}
 .prt-stat-num{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:6px;}
 .prt-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:#7A6555;}
@@ -519,7 +521,7 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-logout-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;margin-bottom:28px;}
 .prt-loading{font-family:'DM Sans',sans-serif;font-size:13px;color:#7A6555;padding:32px 0;text-align:center;}
 .prt-empty{font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(122,101,85,.5);padding:24px 0;text-align:center;}
-@media(max-width:640px){.prt-content{padding:20px 16px;}.prt-header{padding:14px 16px;}.prt-tabs-bar{padding:0 12px;}.prt-stats-grid{gap:6px;}.prt-stat-num{font-size:26px;}.prt-menu-item-actions{flex-direction:row;}.prt-login{padding:36px 28px;}}
+@media(max-width:640px){.prt-content{padding:20px 16px;}.prt-header{padding:14px 16px;}.prt-tabs-bar{padding:0 12px;}.prt-stats-grid{grid-template-columns:repeat(2,1fr);gap:6px;}.prt-stat-num{font-size:26px;}.prt-menu-item-actions{flex-direction:row;}.prt-login{padding:36px 28px;}}
 `;
 
 function getSlots(){
@@ -1065,6 +1067,10 @@ function SnackPage({ onBack }) {
   const [visitLoading,setVisitLoading]=useState(false);
   const [countdown,setCountdown]=useState('02:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
+
+  useEffect(()=>{
+    supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});
+  },[]);
 
   useEffect(()=>{
     if(!visitData)return;
@@ -1981,6 +1987,7 @@ function PartnerView({onLogout}){
   const [savingMenu,setSavingMenu]=useState(false);
   const [deletingId,setDeletingId]=useState(null);
   const [statVisits,setStatVisits]=useState([]);
+  const [pageViews,setPageViews]=useState(0);
   const [loadingStats,setLoadingStats]=useState(false);
 
   async function loadPartner(){
@@ -2032,8 +2039,11 @@ function PartnerView({onLogout}){
 
   async function fetchStats(){
     setLoadingStats(true);
-    const{data}=await supabase.from('visits').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false});
-    setStatVisits(data||[]);setLoadingStats(false);
+    const[{data:vData},{count:pvCount}]=await Promise.all([
+      supabase.from('visits').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}),
+      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
+    ]);
+    setStatVisits(vData||[]);setPageViews(pvCount||0);setLoadingStats(false);
   }
 
   async function saveMenuItem(){
@@ -2096,10 +2106,13 @@ function PartnerView({onLogout}){
       <style>{CSS}</style>
       <div className="prt-header">
         <div className="prt-logo-sm fd">local<em>ly</em></div>
-        <div className="prt-partner-name fb">{partner.nom}</div>
+        <div style={{display:'flex',alignItems:'center',gap:16}}>
+          <div className="prt-partner-name fb">{partner.nom}</div>
+          <button className="prt-deconnect fb" onClick={logout}>Déconnexion</button>
+        </div>
       </div>
       <div className="prt-tabs-bar">
-        {[['profil','Mon profil'],['menu','Mon menu'],['stats','Mes stats'],['logout','Se déconnecter']].map(([v,l])=>(
+        {[['profil','Mon profil'],['menu','Mon menu'],['stats','Mes stats']].map(([v,l])=>(
           <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
         ))}
       </div>
@@ -2221,15 +2234,19 @@ function PartnerView({onLogout}){
               <>
                 <div className="prt-stats-grid">
                   <div className="prt-stat-card">
+                    <div className="prt-stat-num fd">{pageViews}</div>
+                    <div className="prt-stat-label fb">Vues de la page</div>
+                  </div>
+                  <div className="prt-stat-card">
                     <div className="prt-stat-num fd">{totalV}</div>
-                    <div className="prt-stat-label fb">Visites totales</div>
+                    <div className="prt-stat-label fb">QR générés</div>
                   </div>
                   <div className="prt-stat-card">
                     <div className="prt-stat-num fd">{scannedV}</div>
-                    <div className="prt-stat-label fb">Scannées</div>
+                    <div className="prt-stat-label fb">QR scannés</div>
                   </div>
                   <div className="prt-stat-card">
-                    <div className="prt-stat-num fd" style={{fontSize:statVisits[0]?16:34,paddingTop:statVisits[0]?6:0,lineHeight:1.4}}>{pFmt(statVisits[0]?.created_at)}</div>
+                    <div className="prt-stat-num fd" style={{fontSize:statVisits[0]?15:34,paddingTop:statVisits[0]?7:0,lineHeight:1.35}}>{pFmt(statVisits[0]?.created_at)}</div>
                     <div className="prt-stat-label fb">Dernière visite</div>
                   </div>
                 </div>
@@ -2251,13 +2268,6 @@ function PartnerView({onLogout}){
           </>
         )}
 
-        {tab==='logout'&&(
-          <div className="prt-logout-area">
-            <div className="prt-logout-title fd">Se déconnecter</div>
-            <div className="prt-logout-desc fb">Vous serez redirigé vers la page d'accueil.</div>
-            <button className="prt-btn-primary fb" onClick={logout}>Déconnexion</button>
-          </div>
-        )}
       </div>
     </div>
   );
