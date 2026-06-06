@@ -448,6 +448,78 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .adm-visit-name{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.75);}
 .adm-visit-date{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(247,243,238,.3);margin-top:1px;}
 @media(max-width:640px){.adm-content{padding:14px;}.adm-header{padding:12px 14px;}.adm-tabs{flex:1;}.adm-modal{border-radius:14px;}.adm-modal-head,.adm-modal-body,.adm-modal-actions,.adm-confirm{padding-left:18px;padding-right:18px;}.adm-stats-grid{grid-template-columns:repeat(3,1fr);gap:6px;}}
+.prt-login-wrap{min-height:100dvh;background:#F7F3EE;display:flex;align-items:center;justify-content:center;padding:24px;}
+.prt-login{width:100%;max-width:380px;background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:24px;padding:48px 40px;}
+.prt-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#1C1208;display:block;margin-bottom:24px;}
+.prt-logo em{font-style:italic;color:#6B1D1D;}
+.prt-login-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:#1C1208;margin-bottom:8px;}
+.prt-login-sub{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.65;margin-bottom:28px;}
+.prt-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#9B2335;margin-bottom:12px;}
+.prt-wrap{min-height:100dvh;background:#F7F3EE;display:flex;flex-direction:column;}
+.prt-header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid rgba(107,29,29,.07);background:#F7F3EE;}
+.prt-logo-sm{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#1C1208;}
+.prt-logo-sm em{font-style:italic;color:#6B1D1D;}
+.prt-partner-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#7A6555;letter-spacing:.04em;}
+.prt-tabs-bar{display:flex;overflow-x:auto;border-bottom:1px solid rgba(107,29,29,.07);padding:0 24px;scrollbar-width:none;}
+.prt-tabs-bar::-webkit-scrollbar{display:none;}
+.prt-tab{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;padding:14px 18px;border:none;border-bottom:2px solid transparent;background:transparent;color:rgba(122,101,85,.55);cursor:pointer;transition:all .2s;white-space:nowrap;letter-spacing:.04em;margin-bottom:-1px;}
+.prt-tab.act{color:#6B1D1D;border-bottom-color:#6B1D1D;font-weight:500;}
+.prt-content{padding:28px 24px;max-width:720px;margin:0 auto;width:100%;}
+.prt-section-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.prt-section-label::before{content:'';width:14px;height:1px;background:#6B1D1D;display:block;}
+.prt-photo-section{margin-bottom:28px;}
+.prt-photo-area{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.prt-photo-preview{width:88px;height:88px;object-fit:cover;border-radius:12px;border:1px solid rgba(107,29,29,.1);}
+.prt-photo-placeholder{width:88px;height:88px;border:1px dashed rgba(107,29,29,.18);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(122,101,85,.45);text-align:center;}
+.prt-photo-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;border:1px solid rgba(107,29,29,.2);border-radius:8px;padding:9px 16px;cursor:pointer;background:white;transition:all .2s;}
+.prt-photo-btn:hover{background:rgba(107,29,29,.04);}
+.prt-form{display:flex;flex-direction:column;gap:18px;}
+.prt-field{display:flex;flex-direction:column;gap:6px;}
+.prt-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;display:flex;align-items:center;gap:8px;}
+.prt-label::before{content:'';width:14px;height:1px;background:#6B1D1D;display:block;}
+.prt-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:white;border:1px solid rgba(107,29,29,.15);border-radius:8px;padding:12px 14px;outline:none;transition:border-color .2s;}
+.prt-input:focus{border-color:#6B1D1D;}.prt-input::placeholder{color:rgba(122,101,85,.38);}
+.prt-textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:white;border:1px solid rgba(107,29,29,.15);border-radius:8px;padding:12px 14px;outline:none;transition:border-color .2s;resize:vertical;min-height:90px;line-height:1.6;}
+.prt-textarea:focus{border-color:#6B1D1D;}.prt-textarea::placeholder{color:rgba(122,101,85,.38);}
+.prt-btn-primary{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#1C1208;color:#F7F3EE;padding:13px 28px;border-radius:10px;border:none;cursor:pointer;transition:all .3s ease;letter-spacing:.015em;box-shadow:0 2px 10px rgba(28,18,8,.18);}
+.prt-btn-primary:hover:not(:disabled){background:#6B1D1D;transform:translateY(-1px);box-shadow:0 4px 18px rgba(107,29,29,.28);}
+.prt-btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.prt-btn-secondary{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;background:transparent;color:#7A6555;padding:13px 24px;border-radius:10px;border:1px solid rgba(107,29,29,.15);cursor:pointer;transition:all .2s;}
+.prt-btn-secondary:hover{border-color:rgba(107,29,29,.3);color:#1C1208;}
+.prt-add-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:rgba(107,29,29,.05);color:#6B1D1D;padding:13px 20px;border-radius:10px;border:1px solid rgba(107,29,29,.13);cursor:pointer;transition:all .2s;margin-bottom:20px;display:block;width:100%;text-align:center;}
+.prt-add-btn:hover{background:rgba(107,29,29,.09);}
+.prt-menu-form{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:24px;margin-bottom:20px;display:flex;flex-direction:column;gap:16px;}
+.prt-menu-list{display:flex;flex-direction:column;gap:10px;}
+.prt-menu-item{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;display:flex;align-items:flex-start;gap:14px;padding:16px;transition:border-color .2s;}
+.prt-menu-item:hover{border-color:rgba(107,29,29,.18);}
+.prt-menu-item-img{width:72px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;}
+.prt-menu-item-body{flex:1;min-width:0;}
+.prt-menu-item-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C1208;margin-bottom:4px;}
+.prt-menu-item-desc{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;line-height:1.55;margin-bottom:6px;}
+.prt-menu-item-price{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#6B1D1D;}
+.prt-menu-item-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.prt-delete-confirm{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.prt-btn-ghost-sm{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;padding:6px 11px;border-radius:6px;border:1px solid rgba(107,29,29,.14);background:transparent;color:#7A6555;cursor:pointer;transition:all .18s;white-space:nowrap;}
+.prt-btn-ghost-sm:hover{border-color:rgba(107,29,29,.28);color:#1C1208;}
+.prt-btn-danger-sm{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;padding:6px 11px;border-radius:6px;border:1px solid rgba(155,35,53,.2);background:transparent;color:#9B2335;cursor:pointer;transition:all .18s;white-space:nowrap;}
+.prt-btn-danger-sm:hover{background:rgba(155,35,53,.06);}
+.prt-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px;}
+.prt-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;padding:20px 12px;text-align:center;}
+.prt-stat-num{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:6px;}
+.prt-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:#7A6555;}
+.prt-visit-list{display:flex;flex-direction:column;}
+.prt-visit-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(107,29,29,.06);}
+.prt-visit-row:last-child{border-bottom:none;}
+.prt-visit-name{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#1C1208;}
+.prt-visit-date{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:#7A6555;margin-top:2px;}
+.prt-scanned{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;color:#2D6A4F;}
+.prt-not-scanned{font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(122,101,85,.42);}
+.prt-logout-area{text-align:center;padding:64px 20px;}
+.prt-logout-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:#1C1208;margin-bottom:12px;}
+.prt-logout-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;margin-bottom:28px;}
+.prt-loading{font-family:'DM Sans',sans-serif;font-size:13px;color:#7A6555;padding:32px 0;text-align:center;}
+.prt-empty{font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(122,101,85,.5);padding:24px 0;text-align:center;}
+@media(max-width:640px){.prt-content{padding:20px 16px;}.prt-header{padding:14px 16px;}.prt-tabs-bar{padding:0 12px;}.prt-stats-grid{gap:6px;}.prt-stat-num{font-size:26px;}.prt-menu-item-actions{flex-direction:row;}.prt-login{padding:36px 28px;}}
 `;
 
 function getSlots(){
@@ -1888,6 +1960,309 @@ function AdminView(){
   );
 }
 
+function toBase64(file){
+  return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(file);});
+}
+
+function PartnerView({onLogout}){
+  const slug=window.location.pathname.replace(/^\/partner\//,'').split('/')[0];
+  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('partner_slug')===slug);
+  const [partner,setPartner]=useState(null);
+  const [code,setCode]=useState('');
+  const [loginErr,setLoginErr]=useState('');
+  const [loginLoading,setLoginLoading]=useState(false);
+  const [tab,setTab]=useState('profil');
+  const [profileForm,setProfileForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:''});
+  const [savingProfile,setSavingProfile]=useState(false);
+  const [profileSaved,setProfileSaved]=useState(false);
+  const [menuItems,setMenuItems]=useState([]);
+  const [loadingMenu,setLoadingMenu]=useState(false);
+  const [menuForm,setMenuForm]=useState(null);
+  const [savingMenu,setSavingMenu]=useState(false);
+  const [deletingId,setDeletingId]=useState(null);
+  const [statVisits,setStatVisits]=useState([]);
+  const [loadingStats,setLoadingStats]=useState(false);
+
+  async function loadPartner(){
+    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
+    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});}
+  }
+  useEffect(()=>{if(authed)loadPartner();},[]);
+
+  useEffect(()=>{
+    if(!partner)return;
+    if(tab==='menu')fetchMenu();
+    else if(tab==='stats')fetchStats();
+  },[tab,partner]);
+
+  async function handleLogin(e){
+    e.preventDefault();setLoginLoading(true);setLoginErr('');
+    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('access_code',code).eq('status','approuve').maybeSingle();
+    if(data){
+      sessionStorage.setItem('partner_slug',slug);
+      setPartner(data);
+      setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});
+      setAuthed(true);
+    }else{
+      setLoginErr('Code incorrect ou accès non autorisé.');
+    }
+    setLoginLoading(false);
+  }
+
+  async function saveProfile(){
+    setSavingProfile(true);
+    await supabase.from('candidates').update(profileForm).eq('id',partner.id);
+    setPartner(p=>({...p,...profileForm}));
+    setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
+    setSavingProfile(false);
+  }
+
+  async function handlePhotoUpload(e){
+    const file=e.target.files[0];if(!file)return;
+    const b64=await toBase64(file);
+    await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
+    setPartner(p=>({...p,photo_url:b64}));
+  }
+
+  async function fetchMenu(){
+    setLoadingMenu(true);
+    const{data}=await supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false});
+    setMenuItems(data||[]);setLoadingMenu(false);
+  }
+
+  async function fetchStats(){
+    setLoadingStats(true);
+    const{data}=await supabase.from('visits').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false});
+    setStatVisits(data||[]);setLoadingStats(false);
+  }
+
+  async function saveMenuItem(){
+    if(!menuForm.nom||!menuForm.prix)return;
+    setSavingMenu(true);
+    const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null};
+    if(menuForm.id){
+      await supabase.from('menu_items').update(payload).eq('id',menuForm.id);
+    }else{
+      await supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
+    }
+    setMenuForm(null);await fetchMenu();setSavingMenu(false);
+  }
+
+  async function deleteMenuItem(id){
+    await supabase.from('menu_items').delete().eq('id',id);
+    setMenuItems(ms=>ms.filter(m=>m.id!==id));setDeletingId(null);
+  }
+
+  async function handleMenuPhoto(e){
+    const file=e.target.files[0];if(!file)return;
+    const b64=await toBase64(file);
+    setMenuForm(f=>({...f,photo_url:b64}));
+  }
+
+  function logout(){sessionStorage.removeItem('partner_slug');onLogout();}
+
+  const pFmt=d=>d?new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+
+  if(!authed) return(
+    <div className="prt-login-wrap">
+      <style>{CSS}</style>
+      <div className="prt-login">
+        <div className="prt-logo fd">local<em>ly</em></div>
+        <div className="prt-login-title fd">Espace partenaire</div>
+        <div className="prt-login-sub fb">Entrez votre code d'accès pour accéder à votre espace.</div>
+        <form onSubmit={handleLogin}>
+          <input className="prt-input fb" type="password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setLoginErr('');}} autoFocus style={{marginBottom:10}}/>
+          {loginErr&&<div className="prt-err fb">{loginErr}</div>}
+          <button type="submit" className="prt-btn-primary fb" style={{width:'100%'}} disabled={loginLoading}>
+            {loginLoading?'Vérification…':'Accéder →'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+  if(!partner) return(
+    <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <style>{CSS}</style>
+      <div className="prt-loading fb">Chargement…</div>
+    </div>
+  );
+
+  const totalV=statVisits.length;
+  const scannedV=statVisits.filter(v=>v.scanned).length;
+
+  return(
+    <div className="prt-wrap">
+      <style>{CSS}</style>
+      <div className="prt-header">
+        <div className="prt-logo-sm fd">local<em>ly</em></div>
+        <div className="prt-partner-name fb">{partner.nom}</div>
+      </div>
+      <div className="prt-tabs-bar">
+        {[['profil','Mon profil'],['menu','Mon menu'],['stats','Mes stats'],['logout','Se déconnecter']].map(([v,l])=>(
+          <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
+        ))}
+      </div>
+      <div className="prt-content">
+
+        {tab==='profil'&&(
+          <>
+            <div className="prt-photo-section">
+              <div className="prt-section-label fb">Photo principale</div>
+              <div className="prt-photo-area">
+                {partner.photo_url
+                  ?<img src={partner.photo_url} className="prt-photo-preview" alt=""/>
+                  :<div className="prt-photo-placeholder fb">Aucune photo</div>
+                }
+                <label className="prt-photo-btn fb">
+                  {partner.photo_url?'Changer la photo':'Ajouter une photo'}
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:'none'}}/>
+                </label>
+              </div>
+            </div>
+            <div className="prt-form">
+              {[
+                ['nom',"Nom de l'établissement",'text','Le Café du Marché'],
+                ['telephone','Téléphone','text','06 00 00 00 00'],
+                ['google_maps','Adresse','text','12 Rue de la Paix, Bordeaux'],
+                ['reduction','Réduction proposée','text','10% sur tous les achats'],
+              ].map(([name,label,type,ph])=>(
+                <div key={name} className="prt-field">
+                  <div className="prt-label fb">{label}</div>
+                  <input className="prt-input fb" type={type} value={profileForm[name]||''} onChange={e=>setProfileForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
+                </div>
+              ))}
+              <div className="prt-field">
+                <div className="prt-label fb">Description</div>
+                <textarea className="prt-textarea fb" value={profileForm.description||''} onChange={e=>setProfileForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
+              </div>
+              <div>
+                <button className="prt-btn-primary fb" onClick={saveProfile} disabled={savingProfile}>
+                  {savingProfile?'Sauvegarde…':profileSaved?'✓ Sauvegardé':'Sauvegarder'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab==='menu'&&(
+          <>
+            {menuForm!==null&&(
+              <div className="prt-menu-form">
+                <div className="prt-section-label fb">{menuForm.id?"Modifier l'article":"Nouvel article"}</div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Nom *</div>
+                  <input className="prt-input fb" value={menuForm.nom||''} onChange={e=>setMenuForm(f=>({...f,nom:e.target.value}))} placeholder="Nom de l'article"/>
+                </div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Description</div>
+                  <textarea className="prt-textarea fb" value={menuForm.description||''} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Description de l'article"/>
+                </div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Prix (€) *</div>
+                  <input className="prt-input fb" type="number" step="0.01" min="0" value={menuForm.prix||''} onChange={e=>setMenuForm(f=>({...f,prix:e.target.value}))} placeholder="0.00" style={{maxWidth:160}}/>
+                </div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Photo (optionnel)</div>
+                  <label className="prt-photo-btn fb" style={{display:'inline-block'}}>
+                    {menuForm.photo_url?'Changer la photo':'Ajouter une photo'}
+                    <input type="file" accept="image/*" onChange={handleMenuPhoto} style={{display:'none'}}/>
+                  </label>
+                  {menuForm.photo_url&&<img src={menuForm.photo_url} style={{width:72,height:72,objectFit:'cover',borderRadius:8,display:'block',marginTop:10}} alt=""/>}
+                </div>
+                <div style={{display:'flex',gap:10}}>
+                  <button className="prt-btn-secondary fb" onClick={()=>setMenuForm(null)}>Annuler</button>
+                  <button className="prt-btn-primary fb" onClick={saveMenuItem} disabled={savingMenu||!menuForm.nom||!menuForm.prix}>
+                    {savingMenu?'Sauvegarde…':menuForm.id?'Modifier':'Ajouter'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {menuForm===null&&(
+              <button className="prt-add-btn fb" onClick={()=>setMenuForm({nom:'',description:'',prix:'',photo_url:''})}>
+                + Ajouter un article
+              </button>
+            )}
+            {loadingMenu?<div className="prt-loading fb">Chargement…</div>:(
+              <div className="prt-menu-list">
+                {menuItems.length===0&&<div className="prt-empty fb">Aucun article dans le menu.</div>}
+                {menuItems.map(item=>(
+                  <div key={item.id} className="prt-menu-item">
+                    {item.photo_url&&<img src={item.photo_url} className="prt-menu-item-img" alt=""/>}
+                    <div className="prt-menu-item-body">
+                      <div className="prt-menu-item-name">{item.nom}</div>
+                      {item.description&&<div className="prt-menu-item-desc fb">{item.description}</div>}
+                      <div className="prt-menu-item-price">{Number(item.prix).toFixed(2)} €</div>
+                    </div>
+                    <div className="prt-menu-item-actions">
+                      {deletingId===item.id?(
+                        <div className="prt-delete-confirm">
+                          <span className="fb" style={{fontSize:11,color:'#9B2335',whiteSpace:'nowrap'}}>Confirmer ?</span>
+                          <button className="prt-btn-danger-sm fb" onClick={()=>deleteMenuItem(item.id)}>Oui</button>
+                          <button className="prt-btn-ghost-sm fb" onClick={()=>setDeletingId(null)}>Non</button>
+                        </div>
+                      ):(
+                        <>
+                          <button className="prt-btn-ghost-sm fb" onClick={()=>{setMenuForm({...item});window.scrollTo(0,0);}}>Modifier</button>
+                          <button className="prt-btn-danger-sm fb" onClick={()=>setDeletingId(item.id)}>Suppr.</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab==='stats'&&(
+          <>
+            {loadingStats?<div className="prt-loading fb">Chargement…</div>:(
+              <>
+                <div className="prt-stats-grid">
+                  <div className="prt-stat-card">
+                    <div className="prt-stat-num fd">{totalV}</div>
+                    <div className="prt-stat-label fb">Visites totales</div>
+                  </div>
+                  <div className="prt-stat-card">
+                    <div className="prt-stat-num fd">{scannedV}</div>
+                    <div className="prt-stat-label fb">Scannées</div>
+                  </div>
+                  <div className="prt-stat-card">
+                    <div className="prt-stat-num fd" style={{fontSize:statVisits[0]?16:34,paddingTop:statVisits[0]?6:0,lineHeight:1.4}}>{pFmt(statVisits[0]?.created_at)}</div>
+                    <div className="prt-stat-label fb">Dernière visite</div>
+                  </div>
+                </div>
+                <div className="prt-section-label fb" style={{marginBottom:12}}>10 dernières visites</div>
+                <div className="prt-visit-list">
+                  {statVisits.slice(0,10).length===0&&<div className="prt-empty fb">Aucune visite enregistrée.</div>}
+                  {statVisits.slice(0,10).map(v=>(
+                    <div key={v.id} className="prt-visit-row">
+                      <div>
+                        <div className="prt-visit-name fb">{v.client_name}</div>
+                        <div className="prt-visit-date fb">{pFmt(v.created_at)}</div>
+                      </div>
+                      {v.scanned?<span className="prt-scanned fb">✓ Scanné</span>:<span className="prt-not-scanned fb">Non scanné</span>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {tab==='logout'&&(
+          <div className="prt-logout-area">
+            <div className="prt-logout-title fd">Se déconnecter</div>
+            <div className="prt-logout-desc fb">Vous serez redirigé vers la page d'accueil.</div>
+            <button className="prt-btn-primary fb" onClick={logout}>Déconnexion</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function JoindreView({onHome}){
   const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
   const [loading,setLoading]=useState(false);
@@ -1998,6 +2373,7 @@ export default function App() {
     if(path==="/scan")return "scan";
     if(path==="/rejoindre")return "rejoindre";
     if(path==="/admin")return "admin";
+    if(path.startsWith("/partner/"))return "partner";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -2009,6 +2385,7 @@ export default function App() {
       if(path==="/scan"){setPage("scan");return;}
       if(path==="/rejoindre"){setPage("rejoindre");return;}
       if(path==="/admin"){setPage("admin");return;}
+      if(path.startsWith("/partner/")){setPage("partner");return;}
       setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -2018,6 +2395,7 @@ export default function App() {
   if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="admin")return <AdminView/>;
+  if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
