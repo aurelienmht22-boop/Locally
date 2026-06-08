@@ -540,6 +540,15 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-hours-slot-input:focus{border-color:#6B1D1D;background:white;}
 .prt-hours-slot-input::placeholder{color:rgba(122,101,85,.35);}
 .prt-hours-slot-input:disabled{opacity:.35;cursor:not-allowed;}
+.prt-hours-slots{display:flex;flex-direction:column;gap:7px;flex:1;}
+.prt-hours-slot-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.prt-hours-time{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#1C1208;background:#F9F5EF;border:1px solid rgba(107,29,29,.1);border-radius:6px;padding:6px 8px;outline:none;transition:border-color .2s;width:96px;}
+.prt-hours-time:focus{border-color:#6B1D1D;background:white;}
+.prt-hours-time-sep{font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(122,101,85,.45);}
+.prt-hours-slot-add{font-family:'DM Sans',sans-serif;font-size:11px;color:#6B1D1D;background:none;border:1px solid rgba(107,29,29,.2);border-radius:6px;padding:5px 9px;cursor:pointer;transition:all .18s;white-space:nowrap;}
+.prt-hours-slot-add:hover{background:rgba(107,29,29,.05);}
+.prt-hours-slot-rm{font-family:'DM Sans',sans-serif;font-size:16px;line-height:1;color:rgba(122,101,85,.38);background:none;border:none;cursor:pointer;padding:0 2px;transition:color .18s;}
+.prt-hours-slot-rm:hover{color:#9B2335;}
 .gpp-hero{background:#1C1208;min-height:50vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:120px 52px 52px;}
 .gpp-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .gpp-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(28,18,8,.2) 0%,rgba(28,18,8,.78) 100%);}
@@ -2100,7 +2109,10 @@ function PartnerView({onLogout}){
     setLoginLoading(false);
   }
 
-  function setDay(day,key,val){setHoraires(h=>({...h,[day]:{...(h[day]||{ouvert:false,creneaux:''}),[key]:val}}));}
+  function setDay(day,key,val){setHoraires(h=>{const d=h[day]||{ouvert:false,creneaux:[["",""]]};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr,[key]:val}};});}
+  function setDayTime(day,si,ti,val){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=(Array.isArray(d.creneaux)?d.creneaux:[["",""]]).map((s,i)=>i===si?s.map((t,j)=>j===ti?val:t):s);return{...h,[day]:{...d,creneaux:cr}};});}
+  function addDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];if(cr.length>=2)return h;return{...h,[day]:{...d,creneaux:[...cr,["",""]]}};});}
+  function removeDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
 
   async function saveProfile(){
     setSavingProfile(true);
@@ -2239,15 +2251,28 @@ function PartnerView({onLogout}){
                 <div className="prt-label fb">Horaires d'ouverture</div>
                 <div className="prt-hours-grid">
                   {DAYS.map(day=>{
-                    const h=horaires[day]||{ouvert:false,creneaux:''};
+                    const h=horaires[day]||{ouvert:false,creneaux:[["",""]]};
+                    const cr=Array.isArray(h.creneaux)&&h.creneaux.length?h.creneaux:[["",""]];
                     return(
-                      <div key={day} className="prt-hours-row">
-                        <div className="prt-hours-day-name fb">{day}</div>
-                        <div className="prt-hours-toggle">
-                          <button className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',true)}>Ouvert</button>
-                          <button className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',false)}>Fermé</button>
+                      <div key={day} className="prt-hours-row" style={{alignItems:'flex-start'}}>
+                        <div className="prt-hours-day-name fb" style={{paddingTop:6}}>{day}</div>
+                        <div className="prt-hours-toggle" style={{flexShrink:0,paddingTop:4}}>
+                          <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',true)}>Ouvert</button>
+                          <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',false)}>Fermé</button>
                         </div>
-                        <input className="prt-hours-slot-input fb" disabled={!h.ouvert} value={h.creneaux||''} onChange={e=>setDay(day,'creneaux',e.target.value)} placeholder="11h00 – 14h00, 18h00 – 22h00"/>
+                        {h.ouvert&&(
+                          <div className="prt-hours-slots">
+                            {cr.map((slot,si)=>(
+                              <div key={si} className="prt-hours-slot-row">
+                                <input className="prt-hours-time fb" type="time" value={slot[0]||''} onChange={e=>setDayTime(day,si,0,e.target.value)}/>
+                                <span className="prt-hours-time-sep fb">→</span>
+                                <input className="prt-hours-time fb" type="time" value={slot[1]||''} onChange={e=>setDayTime(day,si,1,e.target.value)}/>
+                                {si===0&&cr.length<2&&<button type="button" className="prt-hours-slot-add fb" onClick={()=>addDaySlot(day)}>+ 2ème créneau</button>}
+                                {si>0&&<button type="button" className="prt-hours-slot-rm" onClick={()=>removeDaySlot(day)}>×</button>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -2388,7 +2413,9 @@ function GenericPartnerPage({partner,onBack}){
   const [countdownPct,setCountdownPct]=useState(100);
 
   useEffect(()=>{
-    supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});
+    const today=new Date().toISOString().slice(0,10);
+    const vk=`view_${partner.id}_${today}`;
+    if(!localStorage.getItem(vk)){supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});localStorage.setItem(vk,'1');}
     supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}).then(({data})=>{
       setMenuItems(data||[]);setLoadingMenu(false);
     });
@@ -2471,10 +2498,11 @@ function GenericPartnerPage({partner,onBack}){
                 return(
                   <div key={day} className="gpp-hours-card">
                     <div className="gpp-hours-day fd">{day}</div>
-                    {h.ouvert&&h.creneaux
-                      ?h.creneaux.split(',').map((s,i)=><div key={i} className="gpp-hours-slot fb">{s.trim()}</div>)
-                      :<div className="gpp-hours-closed fb">Fermé</div>
-                    }
+                    {h.ouvert?(
+                      Array.isArray(h.creneaux)
+                        ?h.creneaux.filter(s=>s[0]||s[1]).map((s,i)=><div key={i} className="gpp-hours-slot fb">{s[0]} – {s[1]}</div>)
+                        :h.creneaux?.split(',').map((s,i)=><div key={i} className="gpp-hours-slot fb">{s.trim()}</div>)
+                    ):<div className="gpp-hours-closed fb">Fermé</div>}
                   </div>
                 );
               })}
@@ -2587,7 +2615,10 @@ function JoindreView({onHome}){
   const [sent,setSent]=useState(false);
   const [err,setErr]=useState('');
   function handleChange(e){const{name,value}=e.target;setForm(f=>({...f,[name]:value}));}
-  function setJoinDay(day,key,val){setJoinHoraires(h=>({...h,[day]:{...(h[day]||{ouvert:false,creneaux:''}),[key]:val}}));}
+  function setJoinDay(day,key,val){setJoinHoraires(h=>{const d=h[day]||{ouvert:false,creneaux:[["",""]]};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr,[key]:val}};});}
+  function setJoinDayTime(day,si,ti,val){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=(Array.isArray(d.creneaux)?d.creneaux:[["",""]]).map((s,i)=>i===si?s.map((t,j)=>j===ti?val:t):s);return{...h,[day]:{...d,creneaux:cr}};});}
+  function addJoinDaySlot(day){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];if(cr.length>=2)return h;return{...h,[day]:{...d,creneaux:[...cr,["",""]]}};});}
+  function removeJoinDaySlot(day){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
   async function handleSubmit(e){
     e.preventDefault();
     setErr('');
@@ -2680,15 +2711,28 @@ function JoindreView({onHome}){
                 <div className="join-label fb">Horaires d'ouverture</div>
                 <div className="prt-hours-grid">
                   {DAYS.map(day=>{
-                    const h=joinHoraires[day]||{ouvert:false,creneaux:''};
+                    const h=joinHoraires[day]||{ouvert:false,creneaux:[["",""]]};
+                    const cr=Array.isArray(h.creneaux)&&h.creneaux.length?h.creneaux:[["",""]];
                     return(
-                      <div key={day} className="prt-hours-row">
-                        <div className="prt-hours-day-name fb">{day}</div>
-                        <div className="prt-hours-toggle">
+                      <div key={day} className="prt-hours-row" style={{alignItems:'flex-start'}}>
+                        <div className="prt-hours-day-name fb" style={{paddingTop:6}}>{day}</div>
+                        <div className="prt-hours-toggle" style={{flexShrink:0,paddingTop:4}}>
                           <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',true)}>Ouvert</button>
                           <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',false)}>Fermé</button>
                         </div>
-                        <input className="prt-hours-slot-input fb" disabled={!h.ouvert} value={h.creneaux||''} onChange={e=>setJoinDay(day,'creneaux',e.target.value)} placeholder="11h00 – 14h00, 18h00 – 22h00"/>
+                        {h.ouvert&&(
+                          <div className="prt-hours-slots">
+                            {cr.map((slot,si)=>(
+                              <div key={si} className="prt-hours-slot-row">
+                                <input className="prt-hours-time fb" type="time" value={slot[0]||''} onChange={e=>setJoinDayTime(day,si,0,e.target.value)}/>
+                                <span className="prt-hours-time-sep fb">→</span>
+                                <input className="prt-hours-time fb" type="time" value={slot[1]||''} onChange={e=>setJoinDayTime(day,si,1,e.target.value)}/>
+                                {si===0&&cr.length<2&&<button type="button" className="prt-hours-slot-add fb" onClick={()=>addJoinDaySlot(day)}>+ 2ème créneau</button>}
+                                {si>0&&<button type="button" className="prt-hours-slot-rm" onClick={()=>removeJoinDaySlot(day)}>×</button>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
