@@ -2496,7 +2496,7 @@ function GenericPartnerPage({partner,onBack}){
           <div className="gpp-section-title fd">Horaires <em>d'ouverture</em></div>
           {hasHoraires?(()=>{
             const todayFr=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][new Date().getDay()];
-            const fmtSlots=cr=>Array.isArray(cr)?cr.filter(s=>s[0]&&s[1]&&s[1]!=='00:00').map(s=>s[0]+' – '+s[1]).join('  ·  '):(cr||'');
+            const fmtSlots=cr=>Array.isArray(cr)?cr.filter(s=>s[0]&&s[1]).map(s=>s[0]+' – '+s[1]).join('  ·  '):(cr||'');
             return(
               <div className="gpp-hours-list">
                 {DAYS.map(day=>{
