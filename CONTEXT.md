@@ -1,25 +1,27 @@
-# Projet Locally - Context
+# Locally — Projet
+
+## Concept
+Plateforme web mobile qui connecte les voyageurs (hôtels, Airbnb) aux commerces locaux via QR code. Lancé à Bordeaux.
+
+## Modèle économique
+- Pass client 5 €/séjour → 2,50 € pour l'hôtel / 2,50 € pour Locally
+- Abonnement partenaire mensuel → 100 % pour Locally
+- Commissions commandes en ligne → 50/50 avec l'hôtel
+- Hôtels gratuits au lancement
 
 ## Stack
-- React + Vite
-- Supabase : https://lsorbtjjyiseqryigezy.supabase.co
-- Vercel : locally-gules.vercel.app
-- GitHub : aurelienmht22-boop/Locally
-- Dossier local : ~/Locally
-- Lancer : npm run dev
+- React + Vite (SPA, routing manuel par état)
+- Supabase (base de données + auth)
+- Vercel (déploiement)
+- ElevenLabs + Twilio (appel IA pour commandes)
+- Anthropic API (analyses dashboard)
 
-## Variables .env.local
-VITE_SUPABASE_URL=https://lsorbtjjyiseqryigezy.supabase.co
-VITE_SUPABASE_ANON_KEY=sb_publishable_EZT7Ssdy3zEC11x3VSU9pg_mj2bsO0v
-
-## Partenaire V1
-Snack Bodrum - Bordeaux - 0625951075
-
-## Commission
-client_price * 0.8 = partner_price
-client_price * 0.2 = zack_commission
+## Liens
+- Repo : aurelienmht22-boop/Locally
+- Site : locally-gules.vercel.app
+- Local : `cd ~/Locally && npm run dev`
 
 ## Important
-- Utiliser import.meta.env.VITE_ (pas process.env)
-- Taper les commandes manuellement (pas copier-coller)
-- Verifier ligne avec grep -n avant sed -i
+- Utiliser `import.meta.env.VITE_` (pas `process.env`) — Vite
+- Taper les commandes manuellement, ne jamais copier-coller dans le terminal
+- Vérifier la ligne avec `grep -n` avant tout `sed -i`
