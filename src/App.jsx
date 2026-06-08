@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "./lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
@@ -14,6 +14,7 @@ const IMGS = {
 };
 
 const BOURSE_IMG = "/bordeaux.jpg";
+const HERO_UNSPLASH = "https://images.unsplash.com/photo-1589952283406-b53a7d1347e8?auto=format&fit=crop&w=1920&q=80";
 
 function isOpen() {
   const now = new Date();
@@ -141,7 +142,7 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .stat-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:400;color:#7A6555;letter-spacing:.1em;text-transform:uppercase;}
 .ticker-wrap{overflow:hidden;padding:14px 0;border-top:1px solid rgba(107,29,29,.07);border-bottom:1px solid rgba(107,29,29,.07);background:rgba(107,29,29,.018);}
 .ticker{display:flex;width:max-content;animation:scroll 22s linear infinite;}
-.ticker:hover{animation-play-state:paused;}
+.ticker:hover{animation-duration:9s;}
 .ticker-item{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:rgba(107,29,29,.38);padding:0 28px;white-space:nowrap;}
 .ticker-item::after{content:'·';opacity:.28;margin-left:28px;}
 @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
@@ -166,7 +167,7 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .catcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:20px;padding:38px 34px;position:relative;overflow:hidden;transition:all .35s cubic-bezier(.16,1,.3,1);}
 .catcard.active{cursor:pointer;}
-.catcard.active:hover{transform:translateY(-5px);box-shadow:0 24px 60px rgba(28,18,8,.1);border-color:rgba(107,29,29,.2);background:#FAF4EC;}
+.catcard.active:hover{box-shadow:0 24px 60px rgba(28,18,8,.1);border-color:rgba(107,29,29,.2);background:#FAF4EC;}
 .catcard.inactive{opacity:.42;cursor:default;}
 .catcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.12));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
 .catcard.active:hover::before{transform:scaleX(1);}
@@ -937,10 +938,63 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
   );
 }
 
+function TiltCard({active,className,onClick,children}){
+  const ref=useRef(null);
+  const [rot,setRot]=useState({x:0,y:0,on:false});
+  function onMove(e){
+    if(!active)return;
+    const{left,top,width,height}=ref.current.getBoundingClientRect();
+    const cx=(e.clientX-left)/width-.5,cy=(e.clientY-top)/height-.5;
+    setRot({x:cy*-8,y:cx*8,on:true});
+  }
+  function onLeave(){setRot({x:0,y:0,on:false});}
+  return(
+    <motion.div ref={ref} className={className} onClick={onClick}
+      onMouseMove={onMove} onMouseLeave={onLeave}
+      animate={{rotateX:rot.x,rotateY:rot.y,y:active&&rot.on?-5:0}}
+      transition={{type:'spring',stiffness:360,damping:28}}
+      style={{transformStyle:'preserve-3d'}}>
+      {children}
+    </motion.div>
+  );
+}
+
 function HomePage({ onNavigate }) {
+  const {scrollY}=useScroll();
+  const bgY=useTransform(scrollY,[0,900],['0%','30%']);
   const [loaded,setLoaded]=useState(false);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
-  const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local","Sans inscription"];
+  const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local","Sans inscription","Saint-Michel","Chartrons","Capucins","Bacalan","Victoire","Quinconces"];
+  const W=(text,n,mr='.22em')=>(
+    <motion.span key={n} initial={{opacity:0,y:16}} animate={loaded?{opacity:1,y:0}:{}}
+      transition={{duration:.65,ease:[.16,1,.3,1],delay:.28+n*.08}}
+      style={{display:'inline-block',marginRight:mr}}>
+      {text}
+    </motion.span>
+  );
+  const FILIGRANE={
+    restauration:(
+      <svg viewBox="0 0 80 105" fill="currentColor" style={{position:'absolute',bottom:-14,right:-10,width:110,height:140,opacity:.035,color:'#6B1D1D',pointerEvents:'none'}} aria-hidden="true">
+        <path d="M40 3 Q46 10 40 18 Q34 10 40 3z"/><line x1="40" y1="18" x2="40" y2="26" stroke="currentColor" strokeWidth="2.5"/>
+        <ellipse cx="40" cy="36" rx="10" ry="11"/><ellipse cx="24" cy="51" rx="10" ry="11"/><ellipse cx="56" cy="51" rx="10" ry="11"/>
+        <ellipse cx="14" cy="66" rx="10" ry="11"/><ellipse cx="40" cy="66" rx="10" ry="11"/><ellipse cx="66" cy="66" rx="10" ry="11"/>
+        <ellipse cx="26" cy="81" rx="10" ry="11"/><ellipse cx="54" cy="81" rx="10" ry="11"/><ellipse cx="40" cy="96" rx="10" ry="11"/>
+      </svg>
+    ),
+    sport:(
+      <svg viewBox="0 0 120 70" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" style={{position:'absolute',bottom:-10,right:-14,width:150,height:90,opacity:.04,color:'#6B1D1D',pointerEvents:'none'}} aria-hidden="true">
+        <path d="M0 35 C25 10 45 60 65 35 C85 10 105 60 125 35"/>
+        <path d="M0 55 C25 30 45 80 65 55 C85 30 105 80 125 55"/>
+      </svg>
+    ),
+    bienetre:(
+      <svg viewBox="0 0 100 92" fill="currentColor" style={{position:'absolute',bottom:-12,right:-10,width:130,height:115,opacity:.04,color:'#6B1D1D',pointerEvents:'none'}} aria-hidden="true">
+        <path d="M50 88 C36 63 10 55 14 30 C18 9 40 2 50 2 C60 2 82 9 86 30 C90 55 64 63 50 88z"/>
+        <path d="M18 80 C4 58 0 44 8 27 C14 13 32 12 38 23 C26 40 20 60 18 80z"/>
+        <path d="M82 80 C96 58 100 44 92 27 C86 13 68 12 62 23 C74 40 80 60 82 80z"/>
+      </svg>
+    ),
+  };
 
   const IconBrowse = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -985,26 +1039,36 @@ function HomePage({ onNavigate }) {
     <>
       {/* ── HERO ───────────────────────────────────────── */}
       <section className="hero" style={{background:"#F7F3EE"}}>
-        <div style={{
+        {/* Parallax image */}
+        <motion.div style={{
           position:"absolute",inset:0,
-          backgroundImage:"url("+BOURSE_IMG+")",
+          backgroundImage:`url(${HERO_UNSPLASH}), url(${BOURSE_IMG})`,
           backgroundSize:"cover",backgroundPosition:"center 55%",
-          filter:"saturate(0.65) brightness(1.1)",
-          opacity:0.2,pointerEvents:"none"
+          filter:"saturate(0.62) brightness(1.06)",
+          opacity:0.22,
+          y:bgY,
+          scale:1.15,
         }}/>
+        {/* Overlay bordeaux 15% */}
+        <div style={{position:"absolute",inset:0,background:"rgba(107,29,29,.15)",pointerEvents:"none",zIndex:1}}/>
 
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s"}}>
+        {/* Badge — premier */}
+        <motion.div initial={{opacity:0,y:12}} animate={loaded?{opacity:1,y:0}:{}} transition={{duration:.55,ease:[.16,1,.3,1],delay:0}} style={{position:'relative',zIndex:2}}>
           <div className="hero-badge">
             <div className="badge-dot"/>
             <span className="badge-txt fb">Bordeaux · Partenaires locaux</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s"}}>
-          <h1 className="hero-title fd">Le meilleur<br/>de <em>Bordeaux</em>,<br/>à portée de main.</h1>
-        </div>
+        {/* Titre mot par mot */}
+        <h1 className="hero-title fd" style={{position:'relative',zIndex:2}}>
+          {W("Le",0)}{W("meilleur",1,'0')}<br/>
+          {W("de",2)}{W(<><em>Bordeaux</em>,</>,3,'0')}<br/>
+          {W("à",4)}{W("portée",5)}{W("de",6)}{W("main.",7,'0')}
+        </h1>
 
-        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s"}}>
+        {/* Desc + CTA */}
+        <motion.div className="hero-foot" initial={{opacity:0,y:10}} animate={loaded?{opacity:1,y:0}:{}} transition={{duration:.8,ease:[.16,1,.3,1],delay:.98}} style={{position:'relative',zIndex:2}}>
           <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux à des prix négociés. Commandez en 2 minutes, récupérez sans attendre.</p>
           <div className="hero-actions">
             <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
@@ -1012,22 +1076,23 @@ function HomePage({ onNavigate }) {
             </button>
             <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="hero-stats" style={{opacity:loaded?1:0,transition:"opacity 1s ease .68s"}}>
+        {/* Stats */}
+        <motion.div className="hero-stats" initial={{opacity:0}} animate={loaded?{opacity:1}:{}} transition={{duration:.8,delay:1.16}} style={{position:'relative',zIndex:2}}>
           {[["1","Partenaire actif"],["2 min","Pour commander"],["0 €","Sans frais"]].map(([n,l])=>(
             <div className="stat-item" key={l}>
               <div className="stat-num fd">{n}</div>
               <div className="stat-label fb">{l}</div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* ── TICKER ─────────────────────────────────────── */}
       <div className="ticker-wrap">
         <div className="ticker">
-          {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
+          {[...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
         </div>
       </div>
 
@@ -1071,10 +1136,9 @@ function HomePage({ onNavigate }) {
         <FadeUp delay={.1}>
           <div className="cat-grid">
             {CATEGORIES.map(cat=>(
-              <div key={cat.id} className={"catcard "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
-                <div className="catcard-icon-wrap">
-                  {CatIcons[cat.id] || null}
-                </div>
+              <TiltCard key={cat.id} active={cat.active} className={"catcard "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
+                {FILIGRANE[cat.id]}
+                <div className="catcard-icon-wrap">{CatIcons[cat.id]||null}</div>
                 <div className="catcard-name fd">{cat.label}</div>
                 <div className="catcard-desc fb">{cat.desc}</div>
                 <div className="catcard-foot">
@@ -1083,7 +1147,7 @@ function HomePage({ onNavigate }) {
                     :<span className="catcard-soon fb">Bientôt disponible</span>
                   }
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </FadeUp>
