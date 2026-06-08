@@ -566,12 +566,15 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .gpp-section{margin-bottom:52px;}
 .gpp-section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,40px);font-weight:600;color:#1C1208;margin-bottom:28px;line-height:1.05;}
 .gpp-section-title em{font-style:italic;color:#6B1D1D;}
-.gpp-hours-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
-.gpp-hours-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:12px;padding:18px 16px;}
-.gpp-hours-day{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#1C1208;margin-bottom:8px;}
-.gpp-hours-closed{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:rgba(122,101,85,.4);}
-.gpp-hours-slot{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#3D2B1F;display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-.gpp-hours-slot::before{content:'';width:4px;height:4px;border-radius:50%;background:rgba(107,29,29,.3);flex-shrink:0;}
+.gpp-hours-list{border:1px solid rgba(107,29,29,.08);border-radius:12px;overflow:hidden;}
+.gpp-hours-line{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:11px 18px;border-bottom:1px solid rgba(107,29,29,.06);background:#FDFAF6;transition:background .15s;}
+.gpp-hours-line:last-child{border-bottom:none;}
+.gpp-hours-line.today{background:#FAF4EC;}
+.gpp-hl-day{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#1C1208;flex-shrink:0;}
+.gpp-hours-line.today .gpp-hl-day{font-weight:600;color:#6B1D1D;}
+.gpp-hl-slots{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#3D2B1F;text-align:right;}
+.gpp-hours-line.today .gpp-hl-slots{font-weight:400;color:#6B1D1D;}
+.gpp-hl-closed{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(122,101,85,.32);text-align:right;}
 .gpp-menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
 .gpp-item{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;overflow:hidden;transition:all .25s;}
 .gpp-item:hover{border-color:rgba(107,29,29,.18);box-shadow:0 8px 28px rgba(28,18,8,.07);}
@@ -2491,23 +2494,27 @@ function GenericPartnerPage({partner,onBack}){
         {/* Horaires */}
         <div className="gpp-section">
           <div className="gpp-section-title fd">Horaires <em>d'ouverture</em></div>
-          {hasHoraires?(
-            <div className="gpp-hours-grid">
-              {DAYS.map(day=>{
-                const h=horaires[day];if(!h)return null;
-                return(
-                  <div key={day} className="gpp-hours-card">
-                    <div className="gpp-hours-day fd">{day}</div>
-                    {h.ouvert?(
-                      Array.isArray(h.creneaux)
-                        ?h.creneaux.filter(s=>s[0]||s[1]).map((s,i)=><div key={i} className="gpp-hours-slot fb">{s[0]} – {s[1]}</div>)
-                        :h.creneaux?.split(',').map((s,i)=><div key={i} className="gpp-hours-slot fb">{s.trim()}</div>)
-                    ):<div className="gpp-hours-closed fb">Fermé</div>}
-                  </div>
-                );
-              })}
-            </div>
-          ):(
+          {hasHoraires?(()=>{
+            const todayFr=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][new Date().getDay()];
+            const fmtSlots=cr=>Array.isArray(cr)?cr.filter(s=>s[0]||s[1]).map(s=>s[0]+' – '+s[1]).join('  ·  '):(cr||'');
+            return(
+              <div className="gpp-hours-list">
+                {DAYS.map(day=>{
+                  const h=horaires[day];
+                  const isToday=day===todayFr;
+                  return(
+                    <div key={day} className={'gpp-hours-line'+(isToday?' today':'')}>
+                      <span className="gpp-hl-day fb">{day}</span>
+                      {h?.ouvert
+                        ?<span className="gpp-hl-slots fb">{fmtSlots(h.creneaux)}</span>
+                        :<span className="gpp-hl-closed fb">Fermé</span>
+                      }
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })():(
             <div className="gpp-no-hours fb">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0,opacity:.45}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               Horaires non renseignés — contactez le commerce
