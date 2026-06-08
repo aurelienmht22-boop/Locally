@@ -596,6 +596,10 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .gpp-cart-cta{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:8px;padding:12px 22px;cursor:pointer;transition:background .2s;}
 .gpp-cart-cta:hover{background:#8B2929;}
 .gpp-no-hours{display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(122,101,85,.6);background:#FDFAF6;border:1px solid rgba(107,29,29,.07);border-radius:12px;padding:18px 20px;}
+.gpp-status-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(247,243,238,.14);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:100px;padding:5px 12px;font-family:'DM Sans',sans-serif;font-size:11px;margin-top:12px;border:1px solid rgba(247,243,238,.12);}
+.gpp-status-badge.open{color:#7FD4A0;}.gpp-status-badge.soon{color:#FFB74D;}.gpp-status-badge.closed{color:#F09090;}
+.gpp-sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.gpp-sdot.open{background:#7FD4A0;animation:ripple 2.2s infinite;}.gpp-sdot.soon{background:#FFB74D;}.gpp-sdot.closed{background:#F09090;}
 @media(max-width:640px){.gpp-hero{padding:90px 20px 40px;min-height:40vh;}.gpp-body{padding:28px 16px;}.gpp-info-grid{grid-template-columns:1fr;}.gpp-section-title{font-size:28px;}}
 `;
 
@@ -2450,6 +2454,25 @@ function GenericPartnerPage({partner,onBack}){
   const horaires=partner.horaires||{};
   const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
+  function getOpenStatus(){
+    if(!hasHoraires)return null;
+    const now=new Date();
+    const todayFr=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][now.getDay()];
+    const h=horaires[todayFr];
+    if(!h||!h.ouvert||!Array.isArray(h.creneaux))return 'closed';
+    const cur=now.getHours()*60+now.getMinutes();
+    const toMins=t=>{const[hh,mm]=t.split(':').map(Number);return hh*60+mm;};
+    for(const[s,e]of h.creneaux){
+      if(!s||!e)continue;
+      let start=toMins(s),end=toMins(e);
+      if(end===0)end=1440;
+      if(end<=start)end+=1440;
+      if(cur>=start&&cur<end)return(end-cur)<=30?'soon':'open';
+    }
+    return 'closed';
+  }
+  const openStatus=getOpenStatus();
+
   return(
     <>
       <div className="gpp-hero">
@@ -2458,7 +2481,13 @@ function GenericPartnerPage({partner,onBack}){
         <div className="gpp-hero-content">
           <div className="gpp-hero-cat fb">{partner.categorie}</div>
           <div className="gpp-hero-name fd">{partner.nom}</div>
-          {partner.description&&<div className="gpp-hero-desc fb">{partner.description}</div>}
+          {openStatus&&(
+            <div className={'gpp-status-badge '+openStatus}>
+              <div className={'gpp-sdot '+openStatus}/>
+              <span>{openStatus==='open'?'Ouvert':openStatus==='soon'?'Ferme bientôt':'Fermé'}</span>
+            </div>
+          )}
+          {partner.description&&<div className="gpp-hero-desc fb" style={{marginTop:14}}>{partner.description}</div>}
         </div>
       </div>
       <div className="gpp-body">
