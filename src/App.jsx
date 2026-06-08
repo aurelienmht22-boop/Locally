@@ -2375,8 +2375,6 @@ function PartnerView({onLogout}){
 function GenericPartnerPage({partner,onBack}){
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(true);
-  const [cart,setCart]=useState([]);
-  const [addedId,setAddedId]=useState(null);
   const [visitMode,setVisitMode]=useState(null);
   const [visitName,setVisitName]=useState('');
   const [visitData,setVisitData]=useState(null);
@@ -2413,12 +2411,6 @@ function GenericPartnerPage({partner,onBack}){
     setVisitData({qr_code_id,expires_at});setVisitLoading(false);
   }
 
-  function addToCart(item){
-    setCart(c=>{const ex=c.find(x=>x.id===item.id);return ex?c.map(x=>x.id===item.id?{...x,qty:x.qty+1}:x):[...c,{...item,qty:1}];});
-    setAddedId(item.id);setTimeout(()=>setAddedId(null),1200);
-  }
-  const cartTotal=cart.reduce((s,i)=>s+i.prix*i.qty,0);
-  const cartCount=cart.reduce((s,i)=>s+i.qty,0);
   const horaires=partner.horaires||{};
   const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
@@ -2455,7 +2447,10 @@ function GenericPartnerPage({partner,onBack}){
           {partner.reduction&&(
             <div className="gpp-info-card" style={{gridColumn:'1/-1'}}>
               <div className="gpp-info-label fb">Avantage membre</div>
-              <div className="gpp-badge" style={{marginTop:6}}><span className="gpp-badge-txt fb">{partner.reduction}</span></div>
+              <div className="fb" style={{marginTop:6,fontSize:13,fontWeight:300,color:'#6B1D1D',display:'flex',alignItems:'center',gap:8}}>
+                <span style={{width:16,height:1,background:'#6B1D1D',display:'inline-block',flexShrink:0}}/>
+                Réduction membre : {partner.reduction}
+              </div>
             </div>
           )}
         </div>
@@ -2560,9 +2555,6 @@ function GenericPartnerPage({partner,onBack}){
                       {item.description&&<div className="gpp-item-desc fb">{item.description}</div>}
                       <div className="gpp-item-foot">
                         <div className="gpp-item-price">{Number(item.prix).toFixed(2)} €</div>
-                        <button className={'gpp-cart-btn fb'+(addedId===item.id?' added':'')} onClick={()=>addToCart(item)}>
-                          {addedId===item.id?'✓ Ajouté':'+ Panier'}
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -2578,13 +2570,6 @@ function GenericPartnerPage({partner,onBack}){
         </footer>
       </div>
 
-      <div className={'gpp-cart-bar'+(cartCount>0?' vis':'')}>
-        <div>
-          <div className="gpp-cart-count fb">{cartCount} article{cartCount>1?'s':''}</div>
-          <div className="gpp-cart-total fd">{cartTotal.toFixed(2)} €</div>
-        </div>
-        <button className="gpp-cart-cta fb">Voir le panier →</button>
-      </div>
     </>
   );
 }
