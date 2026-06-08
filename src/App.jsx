@@ -34,6 +34,23 @@ const CATEGORIES = [
 
 const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre'};
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+function getOpenStatus(horaires){
+  if(!horaires||!Object.keys(horaires).some(k=>horaires[k]))return null;
+  const now=new Date();
+  const todayFr=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][now.getDay()];
+  const h=horaires[todayFr];
+  if(!h||!h.ouvert||!Array.isArray(h.creneaux))return 'closed';
+  const cur=now.getHours()*60+now.getMinutes();
+  const toMins=t=>{const[hh,mm]=t.split(':').map(Number);return hh*60+mm;};
+  for(const[s,e]of h.creneaux){
+    if(!s||!e)continue;
+    let start=toMins(s),end=toMins(e);
+    if(end===0)end=1440;
+    if(end<=start)end+=1440;
+    if(cur>=start&&cur<end)return(end-cur)<=30?'soon':'open';
+  }
+  return 'closed';
+}
 
 const PARTNERS = [{
   id:"snack", name:"Snack Bodrum", category:"restauration", city:"bordeaux",
@@ -177,8 +194,8 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .pcard:hover .pcard-img img{transform:scale(1.04);}
 .pcard-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(28,18,8,.4));}
 .pcard-status{position:absolute;top:14px;right:14px;z-index:2;background:rgba(247,243,238,.92);backdrop-filter:blur(8px);border-radius:100px;padding:4px 12px;font-family:'DM Sans',sans-serif;font-size:11px;display:flex;align-items:center;gap:6px;}
-.pcard-status.open{color:#2D6A4F;}.pcard-status.closed{color:#9B2335;}
-.sdot{width:5px;height:5px;border-radius:50%;}.sdot.open{background:#2D6A4F;animation:ripple 2.2s infinite;}.sdot.closed{background:#9B2335;}
+.pcard-status.open{color:#2D6A4F;}.pcard-status.soon{color:#B45309;}.pcard-status.closed{color:#9B2335;}
+.sdot{width:5px;height:5px;border-radius:50%;}.sdot.open{background:#2D6A4F;animation:ripple 2.2s infinite;}.sdot.soon{background:#FFB74D;}.sdot.closed{background:#9B2335;}
 .pcard-body{padding:24px 26px 26px;}
 .pcard-cat{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B1D1D;margin-bottom:7px;}
 .pcard-name{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:#1C1208;margin-bottom:8px;line-height:1;}
@@ -1133,6 +1150,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
             <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
               <div className="pcard-img" style={{background:'#1C1208'}}>
                 {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
+                {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={"pcard-status "+st}><div className={"sdot "+st}/><span className="fb">{lbl}</span></div>);})()}
               </div>
               <div className="pcard-body">
                 <div className="pcard-cat fb">{p.categorie}</div>
@@ -2457,24 +2475,7 @@ function GenericPartnerPage({partner,onBack}){
   const horaires=partner.horaires||{};
   const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
-  function getOpenStatus(){
-    if(!hasHoraires)return null;
-    const now=new Date();
-    const todayFr=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][now.getDay()];
-    const h=horaires[todayFr];
-    if(!h||!h.ouvert||!Array.isArray(h.creneaux))return 'closed';
-    const cur=now.getHours()*60+now.getMinutes();
-    const toMins=t=>{const[hh,mm]=t.split(':').map(Number);return hh*60+mm;};
-    for(const[s,e]of h.creneaux){
-      if(!s||!e)continue;
-      let start=toMins(s),end=toMins(e);
-      if(end===0)end=1440;
-      if(end<=start)end+=1440;
-      if(cur>=start&&cur<end)return(end-cur)<=30?'soon':'open';
-    }
-    return 'closed';
-  }
-  const openStatus=getOpenStatus();
+  const openStatus=getOpenStatus(horaires);
 
   return(
     <>
