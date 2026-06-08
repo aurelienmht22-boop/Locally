@@ -600,6 +600,10 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .gpp-status-badge.open{color:#7FD4A0;}.gpp-status-badge.soon{color:#FFB74D;}.gpp-status-badge.closed{color:#F09090;}
 .gpp-sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .gpp-sdot.open{background:#7FD4A0;animation:ripple 2.2s infinite;}.gpp-sdot.soon{background:#FFB74D;}.gpp-sdot.closed{background:#F09090;}
+.gpp-status-badge-sm{display:inline-flex;align-items:center;gap:5px;border-radius:100px;padding:3px 9px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.03em;flex-shrink:0;}
+.gpp-status-badge-sm.open{background:rgba(45,106,79,.1);color:#2D6A4F;}
+.gpp-status-badge-sm.soon{background:rgba(180,83,9,.1);color:#B45309;}
+.gpp-status-badge-sm.closed{background:rgba(155,35,53,.09);color:#9B2335;}
 @media(max-width:640px){.gpp-hero{padding:90px 20px 40px;min-height:40vh;}.gpp-body{padding:28px 16px;}.gpp-info-grid{grid-template-columns:1fr;}.gpp-section-title{font-size:28px;}}
 `;
 
@@ -1129,7 +1133,6 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
             <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
               <div className="pcard-img" style={{background:'#1C1208'}}>
                 {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
-                <div className="pcard-status open"><div className="sdot open"/><span className="fb">Disponible</span></div>
               </div>
               <div className="pcard-body">
                 <div className="pcard-cat fb">{p.categorie}</div>
@@ -2531,13 +2534,23 @@ function GenericPartnerPage({partner,onBack}){
                 {DAYS.map(day=>{
                   const h=horaires[day];
                   const isToday=day===todayFr;
+                  const badge=isToday&&openStatus;
+                  const badgeLbl=openStatus==='open'?'Ouvert':openStatus==='soon'?'Bientôt':'Fermé';
                   return(
                     <div key={day} className={'gpp-hours-line'+(isToday?' today':'')}>
                       <span className="gpp-hl-day fb">{day}</span>
-                      {h?.ouvert
-                        ?<span className="gpp-hl-slots fb">{fmtSlots(h.creneaux)}</span>
-                        :<span className="gpp-hl-closed fb">Fermé</span>
-                      }
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        {h?.ouvert
+                          ?<span className="gpp-hl-slots fb">{fmtSlots(h.creneaux)}</span>
+                          :<span className="gpp-hl-closed fb">Fermé</span>
+                        }
+                        {badge&&(
+                          <div className={'gpp-status-badge-sm '+openStatus}>
+                            <div className={'gpp-sdot '+openStatus}/>
+                            {badgeLbl}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
