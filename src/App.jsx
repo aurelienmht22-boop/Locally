@@ -386,6 +386,11 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .join-success-title{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;margin-bottom:12px;}
 .join-success-desc{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;line-height:1.7;}
 .join-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#9B2335;margin-top:10px;text-align:center;}
+.join-input-group{display:flex;}
+.join-input-group .join-input{border-radius:8px 0 0 8px;border-right:none;flex:1;}
+.join-input-suffix{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:#7A6555;background:white;border:1px solid rgba(107,29,29,.15);border-left:none;border-radius:0 8px 8px 0;padding:13px 16px;flex-shrink:0;transition:border-color .2s;}
+.join-input-group:focus-within .join-input-suffix{border-color:#6B1D1D;}
+.join-input-group:focus-within .join-input{border-color:#6B1D1D;}
 @media(max-width:640px){.join-card{padding:32px 24px;border-radius:16px;}.join-wrap{padding:32px 16px 64px;}}
 .adm-login{width:100%;max-width:360px;background:rgba(247,243,238,.04);border:1px solid rgba(247,243,238,.08);border-radius:20px;padding:48px 36px;}
 .adm-logo{font-size:22px;font-weight:700;color:#F7F3EE;display:block;margin-bottom:36px;}
@@ -2411,6 +2416,7 @@ function GenericPartnerPage({partner,onBack}){
     setVisitData({qr_code_id,expires_at});setVisitLoading(false);
   }
 
+  const fmtR=r=>r&&/^[\d.]+$/.test(r.trim())?r.trim()+'%':r;
   const horaires=partner.horaires||{};
   const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
@@ -2449,7 +2455,7 @@ function GenericPartnerPage({partner,onBack}){
               <div className="gpp-info-label fb">Avantage membre</div>
               <div className="fb" style={{marginTop:6,fontSize:13,fontWeight:300,color:'#6B1D1D',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{width:16,height:1,background:'#6B1D1D',display:'inline-block',flexShrink:0}}/>
-                Réduction membre : {partner.reduction}
+                Réduction membre : {fmtR(partner.reduction)}
               </div>
             </div>
           )}
@@ -2575,26 +2581,32 @@ function GenericPartnerPage({partner,onBack}){
 }
 
 function JoindreView({onHome}){
-  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
+  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:''});
+  const [joinHoraires,setJoinHoraires]=useState({});
   const [loading,setLoading]=useState(false);
   const [sent,setSent]=useState(false);
   const [err,setErr]=useState('');
   function handleChange(e){const{name,value}=e.target;setForm(f=>({...f,[name]:value}));}
+  function setJoinDay(day,key,val){setJoinHoraires(h=>({...h,[day]:{...(h[day]||{ouvert:false,creneaux:''}),[key]:val}}));}
   async function handleSubmit(e){
     e.preventDefault();
     setErr('');
     if(form.categorie==='Autre'&&!form.categorie_autre.trim()){setErr('Veuillez préciser la catégorie.');return;}
+    if(!form.reduction.trim()){setErr('Veuillez indiquer une réduction.');return;}
     setLoading(true);
     try{
       const cat=form.categorie==='Autre'?form.categorie_autre.trim():form.categorie;
+      const reduction=form.reduction.trim()+'%';
       const{error}=await supabase.from('candidates').insert([{
         nom:form.nom.trim(),
         categorie:cat,
         google_maps:form.google_maps.trim(),
         telephone:form.telephone.trim(),
         description:form.description.trim(),
-        reduction:form.reduction.trim(),
+        reduction,
         email:form.email.trim(),
+        horaires:Object.keys(joinHoraires).length?joinHoraires:null,
+        infos_complementaires:form.infos_complementaires.trim()||null,
         status:'pending',
         created_at:new Date().toISOString()
       }]);
@@ -2659,7 +2671,33 @@ function JoindreView({onHome}){
               </div>
               <div className="join-field">
                 <div className="join-label fb">Réduction proposée</div>
-                <input className="join-input fb" name="reduction" value={form.reduction} onChange={handleChange} placeholder="Ex: 10% sur tous les achats" required maxLength={100}/>
+                <div className="join-input-group">
+                  <input className="join-input fb" type="number" name="reduction" min="1" max="100" value={form.reduction} onChange={handleChange} placeholder="10" required style={{MozAppearance:'textfield'}}/>
+                  <span className="join-input-suffix fb">%</span>
+                </div>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Horaires d'ouverture</div>
+                <div className="prt-hours-grid">
+                  {DAYS.map(day=>{
+                    const h=joinHoraires[day]||{ouvert:false,creneaux:''};
+                    return(
+                      <div key={day} className="prt-hours-row">
+                        <div className="prt-hours-day-name fb">{day}</div>
+                        <div className="prt-hours-toggle">
+                          <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',true)}>Ouvert</button>
+                          <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',false)}>Fermé</button>
+                        </div>
+                        <input className="prt-hours-slot-input fb" disabled={!h.ouvert} value={h.creneaux||''} onChange={e=>setJoinDay(day,'creneaux',e.target.value)} placeholder="11h00 – 14h00, 18h00 – 22h00"/>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Informations complémentaires <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>— optionnel</span></div>
+                <textarea className="join-textarea fb" name="infos_complementaires" value={form.infos_complementaires} onChange={handleChange} placeholder="Ex: Fermé les jours fériés, congés du 1 au 15 août…" maxLength={300}/>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(122,101,85,.35)',textAlign:'right',marginTop:4}}>{form.infos_complementaires.length}/300</div>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Email de contact</div>
