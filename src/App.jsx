@@ -1023,7 +1023,7 @@ function HomePage({ onNavigate }) {
         </div>
 
         <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
-          <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux à des prix négociés. Commandez en 2 minutes, récupérez sans attendre.</p>
+          <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux et profitez de réductions exclusives chez nos partenaires locaux.</p>
           <div className="hero-actions">
             <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
               Explorer les adresses <IconArrow/>
