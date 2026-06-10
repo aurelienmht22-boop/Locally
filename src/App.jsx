@@ -179,6 +179,25 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .catcard-soon{font-family:'DM Sans',sans-serif;font-size:10px;color:rgba(122,101,85,.42);letter-spacing:.12em;text-transform:uppercase;}
 .catcard-arrow{width:32px;height:32px;border-radius:50%;border:1px solid rgba(107,29,29,.17);display:flex;align-items:center;justify-content:center;color:#6B1D1D;transition:all .35s cubic-bezier(.16,1,.3,1);font-size:15px;}
 .catcard.active:hover .catcard-arrow{background:#6B1D1D;color:#F7F3EE;transform:rotate(45deg);border-color:#6B1D1D;}
+.hero-photo .hero-badge{background:rgba(247,243,238,.1);border-color:rgba(247,243,238,.18);}
+.hero-photo .badge-txt{color:rgba(247,243,238,.85);}
+.hero-photo .badge-dot{background:rgba(247,243,238,.9);}
+.hero-photo .hero-title{color:#F7F3EE;}
+.hero-photo .hero-title em{color:rgba(247,243,238,.82);}
+.hero-photo .hero-title em::after{background:linear-gradient(90deg,rgba(247,243,238,.55),rgba(247,243,238,.06));}
+.hero-photo .hero-desc{color:rgba(247,243,238,.65);}
+.hero-photo .hero-note{color:rgba(247,243,238,.35);}
+.catcard-photo{position:relative;height:280px;border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s;}
+.catcard-photo.active:hover{transform:translateY(-5px);box-shadow:0 24px 60px rgba(28,18,8,.18);}
+.catcard-photo.inactive{cursor:default;}
+.catcard-photo-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.catcard-photo.active:hover .catcard-photo-img{transform:scale(1.06);}
+.catcard-photo-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(28,18,8,.08) 0%,rgba(28,18,8,.72) 100%);}
+.catcard-photo.inactive .catcard-photo-overlay{background:linear-gradient(to bottom,rgba(28,18,8,.22) 0%,rgba(28,18,8,.78) 100%);}
+.catcard-photo-content{position:absolute;bottom:0;left:0;right:0;padding:24px 28px;}
+.catcard-photo-name{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;color:#F7F3EE;line-height:1;margin-bottom:6px;}
+.catcard-photo-cta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:rgba(247,243,238,.6);letter-spacing:.04em;}
+.catcard-photo-soon{display:inline-flex;align-items:center;background:rgba(247,243,238,.14);backdrop-filter:blur(6px);border-radius:100px;padding:4px 12px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:rgba(247,243,238,.7);letter-spacing:.12em;text-transform:uppercase;margin-top:6px;}
 .catpage-hero{background:#1C1208;padding:120px 52px 60px;}
 .catpage-back{display:inline-flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(247,243,238,.5);margin-bottom:28px;cursor:pointer;border:none;background:none;padding:0;transition:color .2s;}
 .catpage-back:hover{color:#F7F3EE;}
@@ -988,40 +1007,28 @@ function HomePage({ onNavigate }) {
   return (
     <>
       {/* ── HERO ───────────────────────────────────────── */}
-      <section className="hero" style={{background:"#F7F3EE"}}>
-        <div style={{
-          position:"absolute",inset:0,
-          backgroundImage:"url("+BOURSE_IMG+")",
-          backgroundSize:"cover",backgroundPosition:"center 55%",
-          filter:"saturate(0.65) brightness(1.1)",
-          opacity:0.2,pointerEvents:"none"
-        }}/>
+      <section className="hero hero-photo">
+        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1600&q=80)",backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,background:"rgba(28,18,8,.45)",pointerEvents:"none"}}/>
 
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s"}}>
+        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
           <div className="hero-badge">
             <div className="badge-dot"/>
             <span className="badge-txt fb">Bordeaux · Partenaires locaux</span>
           </div>
         </div>
 
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s"}}>
+        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s",position:'relative',zIndex:1}}>
           <h1 className="hero-title fd">Le meilleur<br/>de <em>Bordeaux</em>,<br/>à portée de main.</h1>
         </div>
 
-        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s"}}>
+        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
           <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux à des prix négociés. Commandez en 2 minutes, récupérez sans attendre.</p>
           <div className="hero-actions">
             <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
               Explorer les adresses <IconArrow/>
             </button>
             <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
-          </div>
-        </div>
-
-        <div className="hero-stats" style={{opacity:loaded?1:0,transition:"opacity 1s ease .68s"}}>
-          <div className="stat-item">
-            <div className="stat-num fd">{partnerCount??'…'}</div>
-            <div className="stat-label fb">{partnerCount===1?'Partenaire actif':'Partenaires actifs'}</div>
           </div>
         </div>
       </section>
@@ -1072,21 +1079,26 @@ function HomePage({ onNavigate }) {
         </FadeUp>
         <FadeUp delay={.1}>
           <div className="cat-grid">
-            {CATEGORIES.map(cat=>(
-              <div key={cat.id} className={"catcard "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
-                <div className="catcard-icon-wrap">
-                  {CatIcons[cat.id] || null}
+            {CATEGORIES.map(cat=>{
+              const photos={
+                restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
+                sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+                bienetre:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+              };
+              return(
+                <div key={cat.id} className={"catcard-photo "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
+                  <img src={photos[cat.id]} className="catcard-photo-img" alt={cat.label} loading="lazy"/>
+                  <div className="catcard-photo-overlay"/>
+                  <div className="catcard-photo-content">
+                    <div className="catcard-photo-name">{cat.label}</div>
+                    {cat.active
+                      ?<div className="catcard-photo-cta fb">Voir les adresses →</div>
+                      :<div className="catcard-photo-soon fb">Bientôt disponible</div>
+                    }
+                  </div>
                 </div>
-                <div className="catcard-name fd">{cat.label}</div>
-                <div className="catcard-desc fb">{cat.desc}</div>
-                <div className="catcard-foot">
-                  {cat.active
-                    ?<><span className="catcard-cta fb">Voir les adresses</span><div className="catcard-arrow">→</div></>
-                    :<span className="catcard-soon fb">Bientôt disponible</span>
-                  }
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </FadeUp>
       </section>
