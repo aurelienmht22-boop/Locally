@@ -1033,6 +1033,30 @@ function HomePage({ onNavigate }) {
         </div>
       </div>
 
+      {/* ── HOW IT WORKS ───────────────────────────────── */}
+      <section className="section" style={{background:"#F7F3EE"}}>
+        <FadeUp>
+          <div className="sec-tag fb">Simple &amp; rapide</div>
+          <div className="sec-title fd">Comment ça <em>marche</em> ?</div>
+        </FadeUp>
+        <FadeUp delay={.1}>
+          <div className="how-grid">
+            {[
+              ["01",IconBrowse,"Choisissez","Parcourez les adresses partenaires et trouvez le commerce qui vous convient."],
+              ["02",IconCart,"Obtenez votre pass","Générez un QR code depuis la page du partenaire et présentez-le sur place."],
+              ["03",IconCheck,"Profitez","Le partenaire scanne votre code et vous accorde votre réduction. C'est tout."]
+            ].map(([n,Icon,t,d])=>(
+              <div className="how-card" key={n}>
+                <div className="how-icon"><Icon/></div>
+                <div className="how-num fd">{n}</div>
+                <div className="how-title fd">{t}</div>
+                <div className="how-desc fb">{d}</div>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+      </section>
+
       {/* ── DIVIDER ────────────────────────────────────── */}
       <div className="div-label">
         <div className="div-line"/>
