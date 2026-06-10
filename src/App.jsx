@@ -1008,7 +1008,7 @@ function HomePage({ onNavigate }) {
     <>
       {/* ── HERO ───────────────────────────────────────── */}
       <section className="hero hero-photo">
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80)",backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1555993539-1732b0258235?w=1600&q=80)",backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
         <div style={{position:"absolute",inset:0,background:"rgba(28,18,8,.45)",pointerEvents:"none"}}/>
 
         <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
