@@ -939,7 +939,11 @@ function Cart({ cart, onRemove, onOrder, ordered }) {
 
 function HomePage({ onNavigate }) {
   const [loaded,setLoaded]=useState(false);
+  const [partnerCount,setPartnerCount]=useState(null);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
+  useEffect(()=>{
+    supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve').then(({count})=>setPartnerCount(count??0));
+  },[]);
   const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local","Sans inscription"];
 
   const IconBrowse = () => (
@@ -1015,12 +1019,10 @@ function HomePage({ onNavigate }) {
         </div>
 
         <div className="hero-stats" style={{opacity:loaded?1:0,transition:"opacity 1s ease .68s"}}>
-          {[["1","Partenaire actif"],["2 min","Pour commander"],["0 €","Sans frais"]].map(([n,l])=>(
-            <div className="stat-item" key={l}>
-              <div className="stat-num fd">{n}</div>
-              <div className="stat-label fb">{l}</div>
-            </div>
-          ))}
+          <div className="stat-item">
+            <div className="stat-num fd">{partnerCount??'…'}</div>
+            <div className="stat-label fb">{partnerCount===1?'Partenaire actif':'Partenaires actifs'}</div>
+          </div>
         </div>
       </section>
 
@@ -1030,30 +1032,6 @@ function HomePage({ onNavigate }) {
           {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
         </div>
       </div>
-
-      {/* ── HOW IT WORKS ───────────────────────────────── */}
-      <section className="section" style={{background:"#F7F3EE"}}>
-        <FadeUp>
-          <div className="sec-tag fb">Simple &amp; rapide</div>
-          <div className="sec-title fd">Commander en <em>3 étapes</em></div>
-        </FadeUp>
-        <FadeUp delay={.1}>
-          <div className="how-grid">
-            {[
-              ["01",IconBrowse,"Choisissez","Parcourez nos catégories et trouvez le partenaire qui vous convient."],
-              ["02",IconCart,"Commandez","Sélectionnez vos plats, configurez-les et ajoutez-les au panier."],
-              ["03",IconCheck,"Profitez","Votre commande est prête. Récupérez-la sans file d'attente."]
-            ].map(([n,Icon,t,d])=>(
-              <div className="how-card" key={n}>
-                <div className="how-icon"><Icon/></div>
-                <div className="how-num fd">{n}</div>
-                <div className="how-title fd">{t}</div>
-                <div className="how-desc fb">{d}</div>
-              </div>
-            ))}
-          </div>
-        </FadeUp>
-      </section>
 
       {/* ── DIVIDER ────────────────────────────────────── */}
       <div className="div-label">
@@ -1271,8 +1249,8 @@ function SnackPage({ onBack }) {
                       <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
                   </div>
-                  <div className="visit-mode-title fd">Commander en ligne</div>
-                  <div className="visit-mode-desc fb">Composez votre repas, choisissez un créneau et récupérez sans attente.</div>
+                  <div className="visit-mode-title fd">Commander et récupérer</div>
+                  <div className="visit-mode-desc fb">Composez votre commande ici, récupérez-la sans faire la queue.</div>
                   <div className="visit-mode-foot"><span className="visit-mode-cta fb">Composer ma commande</span><div className="visit-mode-arrow">→</div></div>
                 </div>
                 <div className="visit-mode-card" onClick={()=>setVisitMode('visit')}>
@@ -1282,7 +1260,7 @@ function SnackPage({ onBack }) {
                     </svg>
                   </div>
                   <div className="visit-mode-title fd">Je me déplace</div>
-                  <div className="visit-mode-desc fb">Obtenez un QR code à présenter sur place et profitez des tarifs négociés.</div>
+                  <div className="visit-mode-desc fb">Obtenez un QR code et profitez de votre réduction sur place.</div>
                   <div className="visit-mode-foot"><span className="visit-mode-cta fb">Générer mon QR code</span><div className="visit-mode-arrow">→</div></div>
                 </div>
               </div>
@@ -2575,7 +2553,7 @@ function GenericPartnerPage({partner,onBack}){
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </div>
                 <div className="visit-mode-title fd">Je me déplace</div>
-                <div className="visit-mode-desc fb">Obtenez un QR code à présenter sur place et profitez des avantages négociés.</div>
+                <div className="visit-mode-desc fb">Obtenez un QR code et profitez de votre réduction sur place.</div>
                 <div className="visit-mode-foot"><span className="visit-mode-cta fb">Générer mon QR code</span><div className="visit-mode-arrow">→</div></div>
               </div>
             </>
@@ -2859,7 +2837,10 @@ export default function App() {
           {page==="snack"&&<li><a onClick={()=>setPage("category")}>Restauration</a></li>}
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
-        <button className="nav-cta fb" onClick={()=>setPage("home")}>
+        <button className="nav-cta fb" onClick={()=>{
+          if(page==="home"){document.getElementById("categories")?.scrollIntoView({behavior:"smooth"});}
+          else setPage("home");
+        }}>
           {page==="home"?"Explorer →":"Accueil"}
         </button>
       </nav>
