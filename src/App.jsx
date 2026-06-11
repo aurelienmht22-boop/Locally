@@ -1807,6 +1807,9 @@ function AdminView(){
   const [loadingCand,setLoadingCand]=useState(false);
   const [sel,setSel]=useState(null);
   const [confirmReject,setConfirmReject]=useState(false);
+  const [selAccess,setSelAccess]=useState({slug:'',access_code:''});
+  const [savingAccess,setSavingAccess]=useState(false);
+  const [accessSaved,setAccessSaved]=useState(false);
   const [partners,setPartners]=useState([]);
   const [loadingPartners,setLoadingPartners]=useState(false);
   const [selPartner,setSelPartner]=useState(null);
@@ -1852,6 +1855,15 @@ function AdminView(){
     else fetchVisits();
   },[authed,tab]);
 
+  async function saveAccess(){
+    setSavingAccess(true);
+    await supabase.from('candidates').update({slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}).eq('id',sel.id);
+    setSel(s=>({...s,slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}));
+    setSavingAccess(false);setAccessSaved(true);setTimeout(()=>setAccessSaved(false),2500);
+  }
+  function copyPartnerLink(){
+    navigator.clipboard.writeText(`locally-gules.vercel.app/partner/${selAccess.slug.trim()}`);
+  }
   async function updateStatus(id,status){
     await supabase.from('candidates').update({status}).eq('id',id);
     setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
@@ -1903,7 +1915,7 @@ function AdminView(){
               <div className="adm-list">
                 {filtered.length===0&&<div className="adm-empty fb">Aucune candidature.</div>}
                 {filtered.map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1989,6 +2001,29 @@ function AdminView(){
                 <div className="adm-field-label">Statut</div>
                 <div style={{marginTop:2}}><StatusBadge status={sel.status}/></div>
               </div>
+              {sel.status==='approuve'&&(
+                <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès partenaire</div>
+                  <div className="adm-field">
+                    <div className="adm-field-label">Identifiant URL (slug)</div>
+                    <input className="adm-input fb" value={selAccess.slug} onChange={e=>setSelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: snack-bodrum" style={{marginBottom:0}}/>
+                  </div>
+                  <div className="adm-field">
+                    <div className="adm-field-label">Code d'accès partenaire</div>
+                    <input className="adm-input fb" value={selAccess.access_code} onChange={e=>setSelAccess(a=>({...a,access_code:e.target.value}))} placeholder="ex: BODRUM24" style={{marginBottom:0}}/>
+                  </div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveAccess} disabled={savingAccess}>
+                      {savingAccess?'Sauvegarde…':accessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
+                    </button>
+                    {selAccess.slug.trim()&&(
+                      <button className="fb" style={{flex:1,padding:'9px 14px',background:'transparent',border:'1px solid rgba(247,243,238,.12)',borderRadius:8,color:'rgba(247,243,238,.5)',cursor:'pointer',fontSize:12,transition:'all .2s'}} onClick={copyPartnerLink}>
+                        Copier le lien ↗
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             {!confirmReject?(
               <div className="adm-modal-actions">
