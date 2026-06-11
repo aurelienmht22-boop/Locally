@@ -1874,7 +1874,7 @@ function LoginView({onLogin}){
               <div className="lgn-success">
                 <div className="lgn-success-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                 <div className="lgn-success-title fd">Candidature envoyée</div>
-                <div className="lgn-success-desc fb">Merci pour votre intérêt. Nous examinerons votre dossier et vous recontacterons sous 48h.</div>
+                <div className="lgn-success-desc fb">Nous étudierons votre dossier et reviendrons vers vous rapidement.</div>
               </div>
             ):(
               <>
@@ -1912,7 +1912,7 @@ function LoginView({onLogin}){
               <div className="lgn-success">
                 <div className="lgn-success-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                 <div className="lgn-success-title fd">Candidature reçue</div>
-                <div className="lgn-success-desc fb">Vous recevrez votre code d'accès par email sous 48h.</div>
+                <div className="lgn-success-desc fb">Nous étudierons votre dossier et reviendrons vers vous rapidement.</div>
               </div>
             ):(
               <>
