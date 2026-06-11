@@ -1953,7 +1953,8 @@ function AdminView(){
   const [loginErr,setLoginErr]=useState('');
   const [tab,setTab]=useState('candidatures');
   const [cands,setCands]=useState([]);
-  const [candFilter,setCandFilter]=useState('tous');
+  const [candSubTab,setCandSubTab]=useState('commerces');
+  const [rejectedSubTab,setRejectedSubTab]=useState('commerces');
   const [loadingCand,setLoadingCand]=useState(false);
   const [sel,setSel]=useState(null);
   const [confirmReject,setConfirmReject]=useState(false);
@@ -1970,7 +1971,6 @@ function AdminView(){
   const [loadingVisits,setLoadingVisits]=useState(false);
   const [hotels,setHotels]=useState([]);
   const [loadingHotels,setLoadingHotels]=useState(false);
-  const [hotelFilter,setHotelFilter]=useState('tous');
   const [selHotel,setSelHotel]=useState(null);
   const [confirmHotelReject,setConfirmHotelReject]=useState(false);
   const [hotelAccess,setHotelAccess]=useState({slug:'',access_code:''});
@@ -2025,7 +2025,7 @@ function AdminView(){
 
   useEffect(()=>{
     if(!authed)return;
-    if(tab==='candidatures')fetchCands();
+    if(tab==='candidatures'||tab==='rejetes'){fetchCands();fetchHotels();}
     else if(tab==='partenaires')fetchPartners();
     else if(tab==='hotels')fetchHotels();
     else fetchVisits();
@@ -2050,7 +2050,6 @@ function AdminView(){
     setConfirmPDisable(false);
   }
 
-  const filtered=candFilter==='tous'?cands:cands.filter(c=>c.status===candFilter);
 
   if(!authed) return(
     <div style={{minHeight:'100dvh',background:'#1C1208',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
@@ -2072,7 +2071,7 @@ function AdminView(){
       <div className="adm-header">
         <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
         <div className="adm-tabs">
-          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['visites','Visites']].map(([v,l])=>(
+          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['rejetes','Rejetés'],['visites','Visites']].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
           ))}
         </div>
@@ -2083,14 +2082,13 @@ function AdminView(){
         {tab==='candidatures'&&(
           <>
             <div className="adm-filters">
-              {[['tous','Tous'],['pending','Pending'],['en_attente','En attente'],['approuve','Approuvé'],['rejete','Rejeté']].map(([v,l])=>(
-                <button key={v} className={'adm-filter fb'+(candFilter===v?' act':'')} onClick={()=>setCandFilter(v)}>{l}</button>
-              ))}
+              <button className={'adm-filter fb'+(candSubTab==='commerces'?' act':'')} onClick={()=>setCandSubTab('commerces')}>Commerces</button>
+              <button className={'adm-filter fb'+(candSubTab==='hotels'?' act':'')} onClick={()=>setCandSubTab('hotels')}>Hôtels</button>
             </div>
-            {loadingCand?<div className="adm-empty fb">Chargement…</div>:(
+            {candSubTab==='commerces'&&(loadingCand?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {filtered.length===0&&<div className="adm-empty fb">Aucune candidature.</div>}
-                {filtered.map(c=>(
+                {cands.filter(c=>c.status==='pending'||c.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
+                {cands.filter(c=>c.status==='pending'||c.status==='en_attente').map(c=>(
                   <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
@@ -2101,7 +2099,23 @@ function AdminView(){
                   </div>
                 ))}
               </div>
-            )}
+            ))}
+            {candSubTab==='hotels'&&(loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {hotels.filter(h=>h.status==='pending'||h.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature hôtel.</div>}
+                {hotels.filter(h=>h.status==='pending'||h.status==='en_attente').map(h=>(
+                  <div key={h.id} className="adm-row" onClick={()=>{setSelHotel(h);setConfirmHotelReject(false);setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{h.nom}</div>
+                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-sub fb">{h.email} · {admFmt(h.created_at)}</div>
+                    </div>
+                    <StatusBadge status={h.status}/>
+                    <span className="adm-arrow">›</span>
+                  </div>
+                ))}
+              </div>
+            ))}
           </>
         )}
 
@@ -2127,15 +2141,49 @@ function AdminView(){
 
         {tab==='hotels'&&(
           <>
-            <div className="adm-filters">
-              {[['tous','Tous'],['pending','Pending'],['approuve','Approuvé'],['rejete','Rejeté']].map(([v,l])=>(
-                <button key={v} className={'adm-filter fb'+(hotelFilter===v?' act':'')} onClick={()=>setHotelFilter(v)}>{l}</button>
-              ))}
-            </div>
             {loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {(hotelFilter==='tous'?hotels:hotels.filter(h=>h.status===hotelFilter)).length===0&&<div className="adm-empty fb">Aucun hôtel.</div>}
-                {(hotelFilter==='tous'?hotels:hotels.filter(h=>h.status===hotelFilter)).map(h=>(
+                {hotels.filter(h=>h.status==='approuve').length===0&&<div className="adm-empty fb">Aucun hôtel approuvé.</div>}
+                {hotels.filter(h=>h.status==='approuve').map(h=>(
+                  <div key={h.id} className="adm-row" onClick={()=>{setSelHotel(h);setConfirmHotelReject(false);setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{h.nom}</div>
+                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-sub fb">{h.email} · Depuis le {admFmt(h.created_at)}</div>
+                    </div>
+                    <span className="adm-arrow">›</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab==='rejetes'&&(
+          <>
+            <div className="adm-filters">
+              <button className={'adm-filter fb'+(rejectedSubTab==='commerces'?' act':'')} onClick={()=>setRejectedSubTab('commerces')}>Commerces</button>
+              <button className={'adm-filter fb'+(rejectedSubTab==='hotels'?' act':'')} onClick={()=>setRejectedSubTab('hotels')}>Hôtels</button>
+            </div>
+            {rejectedSubTab==='commerces'&&(loadingCand?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {cands.filter(c=>c.status==='rejete').length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
+                {cands.filter(c=>c.status==='rejete').map(c=>(
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{c.nom}</div>
+                      <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
+                    </div>
+                    <StatusBadge status={c.status}/>
+                    <span className="adm-arrow">›</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {rejectedSubTab==='hotels'&&(loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {hotels.filter(h=>h.status==='rejete').length===0&&<div className="adm-empty fb">Aucun hôtel rejeté.</div>}
+                {hotels.filter(h=>h.status==='rejete').map(h=>(
                   <div key={h.id} className="adm-row" onClick={()=>{setSelHotel(h);setConfirmHotelReject(false);setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{h.nom}</div>
@@ -2147,7 +2195,7 @@ function AdminView(){
                   </div>
                 ))}
               </div>
-            )}
+            ))}
           </>
         )}
 
