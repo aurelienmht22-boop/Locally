@@ -1838,7 +1838,7 @@ function LoginView({onLogin}){
   async function handleHotelSubmit(e){
     e.preventDefault();setHErr('');setHLoading(true);
     try{
-      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,nom_responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending',created_at:new Date().toISOString()}]);
+      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending',created_at:new Date().toISOString()}]);
       if(error)throw error;
       setHSent(true);
     }catch{setHErr('Une erreur est survenue. Veuillez réessayer.');}
