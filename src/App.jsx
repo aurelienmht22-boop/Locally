@@ -641,6 +641,9 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .gpp-status-badge-sm.soon{background:rgba(180,83,9,.1);color:#B45309;}
 .gpp-status-badge-sm.closed{background:rgba(155,35,53,.09);color:#9B2335;}
 @media(max-width:640px){.gpp-hero{padding:90px 20px 40px;min-height:40vh;}.gpp-body{padding:28px 16px;}.gpp-info-grid{grid-template-columns:1fr;}.gpp-section-title{font-size:28px;}}
+.lgn-wrap{min-height:100dvh;background:#1C1208;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}.lgn-logo{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#F7F3EE;letter-spacing:-.01em;cursor:pointer;margin-bottom:48px;}.lgn-logo em{font-style:italic;color:rgba(247,243,238,.5);}.lgn-card{background:rgba(247,243,238,.05);border:1px solid rgba(247,243,238,.1);border-radius:20px;padding:36px;width:100%;max-width:440px;}.lgn-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F7F3EE;margin-bottom:8px;}.lgn-sub{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.5);margin-bottom:28px;line-height:1.6;}.lgn-divider{border:none;border-top:1px solid rgba(247,243,238,.08);margin:28px 0;}.lgn-section-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:14px;}.lgn-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.07);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:12px;display:block;box-sizing:border-box;}.lgn-input:focus{border-color:rgba(247,243,238,.3);}.lgn-input::placeholder{color:rgba(247,243,238,.25);}.lgn-select{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.1);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;margin-bottom:12px;display:block;box-sizing:border-box;}.lgn-select option{background:#2A1A0E;color:#F7F3EE;}.lgn-textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.07);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;resize:vertical;min-height:88px;margin-bottom:12px;display:block;transition:border-color .2s;box-sizing:border-box;}.lgn-textarea:focus{border-color:rgba(247,243,238,.3);}.lgn-textarea::placeholder{color:rgba(247,243,238,.25);}.lgn-btn{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;margin-top:4px;}.lgn-btn:hover{background:#8B2929;}.lgn-btn:disabled{opacity:.5;cursor:not-allowed;}.lgn-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#F09090;margin-bottom:12px;}.lgn-choice-btn{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;background:transparent;color:rgba(247,243,238,.7);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;box-sizing:border-box;}.lgn-choice-btn:last-child{margin-bottom:0;}.lgn-choice-btn:hover{border-color:rgba(247,243,238,.28);color:#F7F3EE;background:rgba(247,243,238,.04);}.lgn-back{font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(247,243,238,.35);background:none;border:none;cursor:pointer;padding:0;margin-bottom:20px;transition:color .2s;display:block;}.lgn-back:hover{color:rgba(247,243,238,.6);}.lgn-success{text-align:center;padding:12px 0;}.lgn-success-icon{width:48px;height:48px;border-radius:50%;background:rgba(45,106,79,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}.lgn-success-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#F7F3EE;margin-bottom:8px;}.lgn-success-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.55);line-height:1.7;}.lgn-field-label{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(247,243,238,.4);margin-bottom:6px;letter-spacing:.04em;}.lgn-input-group{position:relative;display:flex;align-items:center;margin-bottom:12px;}.lgn-input-group .lgn-input{margin-bottom:0;padding-right:40px;}.lgn-input-suffix{position:absolute;right:14px;font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(247,243,238,.4);}
+.htl-wrap{min-height:100dvh;background:#F7F3EE;}.htl-header{background:#1C1208;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;}.htl-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#F7F3EE;}.htl-logo em{font-style:italic;color:rgba(247,243,238,.45);}.htl-logout{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(247,243,238,.4);background:none;border:none;cursor:pointer;letter-spacing:.04em;transition:color .2s;}.htl-logout:hover{color:rgba(247,243,238,.7);}.htl-content{padding:48px 28px;max-width:800px;margin:0 auto;}.htl-name{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,5vw,52px);font-weight:600;color:#1C1208;margin-bottom:6px;line-height:1.05;}.htl-type{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:36px;}.htl-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:32px;}.htl-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:24px 20px;}.htl-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:10px;}.htl-stat-num{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:4px;}.htl-stat-desc{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;}.htl-coming{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:28px 24px;text-align:center;}.htl-coming-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C1208;margin-bottom:8px;}.htl-coming-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.65;}
+@media(max-width:640px){.lgn-card{padding:28px 20px;}.htl-content{padding:32px 16px;}.htl-stats-grid{grid-template-columns:1fr;}}
 `;
 
 function getSlots(){
@@ -1791,6 +1794,153 @@ const STATUS_BADGES={
   approuve:  {label:'Approuvé',   bg:'rgba(16,185,129,.15)', color:'#10B981'},
   rejete:    {label:'Rejeté',     bg:'rgba(239,68,68,.15)',  color:'#EF4444'},
 };
+function LoginView({onLogin}){
+  const [view,setView]=useState('home');
+  const [code,setCode]=useState('');
+  const [err,setErr]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [cForm,setCForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
+  const [cSent,setCSent]=useState(false);
+  const [cErr,setCErr]=useState('');
+  const [cLoading,setCLoading]=useState(false);
+  const [hForm,setHForm]=useState({nom:'',type:'',adresse:'',nombre_chambres:'',nom_responsable:'',email:'',telephone:''});
+  const [hSent,setHSent]=useState(false);
+  const [hErr,setHErr]=useState('');
+  const [hLoading,setHLoading]=useState(false);
+
+  async function handleLogin(e){
+    e.preventDefault();setErr('');setLoading(true);
+    try{
+      if(code.trim()==='locally2024'){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
+      const{data:cand}=await supabase.from('candidates').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
+      if(cand?.slug){sessionStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
+      const{data:hotel}=await supabase.from('hotels').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
+      if(hotel?.slug){sessionStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
+      setErr('Code incorrect.');
+    }catch{setErr('Code incorrect.');}
+    finally{setLoading(false);}
+  }
+
+  async function handleCommerceSubmit(e){
+    e.preventDefault();setCErr('');
+    if(cForm.categorie==='Autre'&&!cForm.categorie_autre.trim()){setCErr('Veuillez préciser la catégorie.');return;}
+    if(!cForm.reduction.trim()){setCErr('Veuillez indiquer une réduction.');return;}
+    setCLoading(true);
+    try{
+      const cat=cForm.categorie==='Autre'?cForm.categorie_autre.trim():cForm.categorie;
+      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:cForm.reduction.trim()+'%',email:cForm.email.trim(),status:'pending',created_at:new Date().toISOString()}]);
+      if(error)throw error;
+      setCSent(true);
+    }catch{setCErr('Une erreur est survenue. Veuillez réessayer.');}
+    finally{setCLoading(false);}
+  }
+
+  async function handleHotelSubmit(e){
+    e.preventDefault();setHErr('');setHLoading(true);
+    try{
+      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,nom_responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending',created_at:new Date().toISOString()}]);
+      if(error)throw error;
+      setHSent(true);
+    }catch{setHErr('Une erreur est survenue. Veuillez réessayer.');}
+    finally{setHLoading(false);}
+  }
+
+  return(
+    <div className="lgn-wrap">
+      <style>{CSS}</style>
+      <div className="lgn-logo fd" onClick={()=>{window.history.pushState({},'','/');onLogin('home');}}>local<em>ly</em></div>
+      <div className="lgn-card">
+        {view==='home'&&(
+          <>
+            <div className="lgn-title fd">Bienvenue</div>
+            <div className="lgn-sub fb">Connectez-vous ou faites une candidature pour rejoindre Locally.</div>
+            <hr className="lgn-divider"/>
+            <div className="lgn-section-label fb">Se connecter</div>
+            <form onSubmit={handleLogin}>
+              <input className="lgn-input fb" type="password" autoComplete="current-password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setErr('');}} required/>
+              {err&&<div className="lgn-err fb">{err}</div>}
+              <button type="submit" className="lgn-btn fb" disabled={loading}>{loading?'Vérification…':'Se connecter →'}</button>
+            </form>
+            <hr className="lgn-divider"/>
+            <div className="lgn-section-label fb">Faire une candidature</div>
+            <button className="lgn-choice-btn fb" onClick={()=>setView('commerce')}><span>Je suis un commerce</span><span>→</span></button>
+            <button className="lgn-choice-btn fb" onClick={()=>setView('hotel')}><span>Je suis un hôtel / Airbnb</span><span>→</span></button>
+          </>
+        )}
+        {view==='commerce'&&(
+          <>
+            <button className="lgn-back fb" onClick={()=>setView('home')}>← Retour</button>
+            {cSent?(
+              <div className="lgn-success">
+                <div className="lgn-success-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div className="lgn-success-title fd">Candidature envoyée</div>
+                <div className="lgn-success-desc fb">Merci pour votre intérêt. Nous examinerons votre dossier et vous recontacterons sous 48h.</div>
+              </div>
+            ):(
+              <>
+                <div className="lgn-title fd">Commerce</div>
+                <div className="lgn-sub fb">Remplissez ce formulaire pour rejoindre Locally en tant que commerce partenaire.</div>
+                <form onSubmit={handleCommerceSubmit} noValidate>
+                  {[{label:"Nom de l'établissement",name:"nom",placeholder:"Le Café du Marché",type:"text"},{label:"Adresse",name:"google_maps",placeholder:"12 Rue de la Paix, Bordeaux",type:"text"},{label:"Téléphone",name:"telephone",placeholder:"06 00 00 00 00",type:"tel"},{label:"Email",name:"email",placeholder:"contact@moncommerce.fr",type:"email"}].map(({label,name,placeholder,type})=>(
+                    <div key={name}><div className="lgn-field-label fb">{label}</div><input className="lgn-input fb" type={type} value={cForm[name]} onChange={e=>setCForm(f=>({...f,[name]:e.target.value}))} placeholder={placeholder} required/></div>
+                  ))}
+                  <div><div className="lgn-field-label fb">Catégorie</div>
+                    <select className="lgn-select fb" value={cForm.categorie} onChange={e=>setCForm(f=>({...f,categorie:e.target.value}))} required>
+                      <option value="" disabled>Choisir une catégorie</option>
+                      {['Restauration','Boulangerie','Sport','Bien-être','Autre'].map(c=><option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  {cForm.categorie==='Autre'&&<div><div className="lgn-field-label fb">Précisez la catégorie</div><input className="lgn-input fb" value={cForm.categorie_autre} onChange={e=>setCForm(f=>({...f,categorie_autre:e.target.value}))} placeholder="Ex: Librairie, Fleuriste…" required/></div>}
+                  <div><div className="lgn-field-label fb">Description courte</div><textarea className="lgn-textarea fb" value={cForm.description} onChange={e=>setCForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" required/></div>
+                  <div><div className="lgn-field-label fb">Réduction proposée</div>
+                    <div className="lgn-input-group">
+                      <input className="lgn-input fb" type="number" min="1" max="100" value={cForm.reduction} onChange={e=>setCForm(f=>({...f,reduction:e.target.value}))} placeholder="10" required style={{MozAppearance:'textfield'}}/>
+                      <span className="lgn-input-suffix fb">%</span>
+                    </div>
+                  </div>
+                  {cErr&&<div className="lgn-err fb">{cErr}</div>}
+                  <button type="submit" className="lgn-btn fb" disabled={cLoading}>{cLoading?'Envoi en cours…':'Envoyer la candidature →'}</button>
+                </form>
+              </>
+            )}
+          </>
+        )}
+        {view==='hotel'&&(
+          <>
+            <button className="lgn-back fb" onClick={()=>setView('home')}>← Retour</button>
+            {hSent?(
+              <div className="lgn-success">
+                <div className="lgn-success-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FD4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div className="lgn-success-title fd">Candidature reçue</div>
+                <div className="lgn-success-desc fb">Vous recevrez votre code d'accès par email sous 48h.</div>
+              </div>
+            ):(
+              <>
+                <div className="lgn-title fd">Hôtel / Airbnb</div>
+                <div className="lgn-sub fb">Proposez le pass Locally à vos voyageurs.</div>
+                <form onSubmit={handleHotelSubmit} noValidate>
+                  {[{label:"Nom de l'établissement",name:"nom",placeholder:"Hôtel des Quais"},{label:"Adresse",name:"adresse",placeholder:"12 Quai des Chartrons, Bordeaux"},{label:"Nom du responsable",name:"nom_responsable",placeholder:"Jean Dupont"},{label:"Email",name:"email",placeholder:"contact@hotel.fr",type:"email"},{label:"Téléphone",name:"telephone",placeholder:"05 56 00 00 00",type:"tel"}].map(({label,name,placeholder,type="text"})=>(
+                    <div key={name}><div className="lgn-field-label fb">{label}</div><input className="lgn-input fb" type={type} value={hForm[name]} onChange={e=>setHForm(f=>({...f,[name]:e.target.value}))} placeholder={placeholder} required/></div>
+                  ))}
+                  <div><div className="lgn-field-label fb">Type d'établissement</div>
+                    <select className="lgn-select fb" value={hForm.type} onChange={e=>setHForm(f=>({...f,type:e.target.value}))} required>
+                      <option value="" disabled>Choisir un type</option>
+                      {['Hôtel','Airbnb','Résidence'].map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div><div className="lgn-field-label fb">Nombre de chambres <span style={{color:'rgba(247,243,238,.25)',fontWeight:300,textTransform:'none',letterSpacing:0}}>— optionnel</span></div><input className="lgn-input fb" type="number" min="1" value={hForm.nombre_chambres} onChange={e=>setHForm(f=>({...f,nombre_chambres:e.target.value}))} placeholder="Ex: 20"/></div>
+                  {hErr&&<div className="lgn-err fb">{hErr}</div>}
+                  <button type="submit" className="lgn-btn fb" disabled={hLoading}>{hLoading?'Envoi en cours…':'Envoyer la candidature →'}</button>
+                </form>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StatusBadge({status}){
   const b=STATUS_BADGES[status]||STATUS_BADGES.pending;
   return <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,letterSpacing:'.1em',textTransform:'uppercase',padding:'4px 10px',borderRadius:100,background:b.bg,color:b.color,whiteSpace:'nowrap'}}>{b.label}</span>;
@@ -1818,6 +1968,14 @@ function AdminView(){
   const [confirmPDisable,setConfirmPDisable]=useState(false);
   const [visits,setVisits]=useState([]);
   const [loadingVisits,setLoadingVisits]=useState(false);
+  const [hotels,setHotels]=useState([]);
+  const [loadingHotels,setLoadingHotels]=useState(false);
+  const [hotelFilter,setHotelFilter]=useState('tous');
+  const [selHotel,setSelHotel]=useState(null);
+  const [confirmHotelReject,setConfirmHotelReject]=useState(false);
+  const [hotelAccess,setHotelAccess]=useState({slug:'',access_code:''});
+  const [savingHotelAccess,setSavingHotelAccess]=useState(false);
+  const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
 
   function login(e){
     e.preventDefault();
@@ -1841,6 +1999,23 @@ function AdminView(){
     const{data}=await supabase.from('visits').select('*').order('created_at',{ascending:false});
     setVisits(data||[]);setLoadingVisits(false);
   }
+  async function fetchHotels(){
+    setLoadingHotels(true);
+    const{data}=await supabase.from('hotels').select('*').order('created_at',{ascending:false});
+    setHotels(data||[]);setLoadingHotels(false);
+  }
+  async function saveHotelAccess(){
+    setSavingHotelAccess(true);
+    await supabase.from('hotels').update({slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}).eq('id',selHotel.id);
+    setSelHotel(s=>({...s,slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}));
+    setSavingHotelAccess(false);setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
+  }
+  async function updateHotelStatus(id,status){
+    await supabase.from('hotels').update({status}).eq('id',id);
+    setHotels(hs=>hs.map(h=>h.id===id?{...h,status}:h));
+    setSelHotel(s=>s?.id===id?{...s,status}:s);
+    setConfirmHotelReject(false);
+  }
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);
     setLoadingPV(true);
@@ -1852,6 +2027,7 @@ function AdminView(){
     if(!authed)return;
     if(tab==='candidatures')fetchCands();
     else if(tab==='partenaires')fetchPartners();
+    else if(tab==='hotels')fetchHotels();
     else fetchVisits();
   },[authed,tab]);
 
@@ -1896,7 +2072,7 @@ function AdminView(){
       <div className="adm-header">
         <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
         <div className="adm-tabs">
-          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['visites','Visites']].map(([v,l])=>(
+          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['visites','Visites']].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
           ))}
         </div>
@@ -1941,6 +2117,32 @@ function AdminView(){
                       <div className="adm-row-meta fb">{p.categorie} · {p.telephone}</div>
                       <div className="adm-row-sub fb">{p.email} · Depuis le {admFmt(p.created_at)}</div>
                     </div>
+                    <span className="adm-arrow">›</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {tab==='hotels'&&(
+          <>
+            <div className="adm-filters">
+              {[['tous','Tous'],['pending','Pending'],['approuve','Approuvé'],['rejete','Rejeté']].map(([v,l])=>(
+                <button key={v} className={'adm-filter fb'+(hotelFilter===v?' act':'')} onClick={()=>setHotelFilter(v)}>{l}</button>
+              ))}
+            </div>
+            {loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
+              <div className="adm-list">
+                {(hotelFilter==='tous'?hotels:hotels.filter(h=>h.status===hotelFilter)).length===0&&<div className="adm-empty fb">Aucun hôtel.</div>}
+                {(hotelFilter==='tous'?hotels:hotels.filter(h=>h.status===hotelFilter)).map(h=>(
+                  <div key={h.id} className="adm-row" onClick={()=>{setSelHotel(h);setConfirmHotelReject(false);setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);}}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-name">{h.nom}</div>
+                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-sub fb">{h.email} · {admFmt(h.created_at)}</div>
+                    </div>
+                    <StatusBadge status={h.status}/>
                     <span className="adm-arrow">›</span>
                   </div>
                 ))}
@@ -2130,6 +2332,49 @@ function AdminView(){
           </div>
         );
       })()}
+
+      {selHotel&&(
+        <div className="adm-overlay" onClick={e=>{if(e.target===e.currentTarget){setSelHotel(null);setConfirmHotelReject(false);}}}>
+          <div className="adm-modal">
+            <div className="adm-modal-head">
+              <div className="adm-modal-title">{selHotel.nom}</div>
+              <button className="adm-modal-close fb" onClick={()=>{setSelHotel(null);setConfirmHotelReject(false);}}>✕</button>
+            </div>
+            <div className="adm-modal-body">
+              {[['Type',selHotel.type],['Adresse',selHotel.adresse],['Responsable',selHotel.nom_responsable],['Email',selHotel.email],['Téléphone',selHotel.telephone],['Chambres',selHotel.nombre_chambres||'—'],['Date',admFmt(selHotel.created_at)]].map(([k,v])=>(
+                <div key={k} className="adm-field"><div className="adm-field-label">{k}</div><div className="adm-field-val fb">{v}</div></div>
+              ))}
+              <div className="adm-field"><div className="adm-field-label">Statut</div><div style={{marginTop:2}}><StatusBadge status={selHotel.status}/></div></div>
+              {selHotel.status==='approuve'&&(
+                <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès hôtel</div>
+                  <div className="adm-field"><div className="adm-field-label">Identifiant URL (slug)</div><input className="adm-input fb" value={hotelAccess.slug} onChange={e=>setHotelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: hotel-des-quais" style={{marginBottom:0}}/></div>
+                  <div className="adm-field"><div className="adm-field-label">Code d'accès hôtel</div><input className="adm-input fb" value={hotelAccess.access_code} onChange={e=>setHotelAccess(a=>({...a,access_code:e.target.value}))} placeholder="ex: HOTEL24" style={{marginBottom:0}}/></div>
+                  <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12}} onClick={saveHotelAccess} disabled={savingHotelAccess}>
+                    {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
+                  </button>
+                </div>
+              )}
+            </div>
+            {!confirmHotelReject?(
+              <div className="adm-modal-actions">
+                <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateHotelStatus(selHotel.id,'pending')}>Pending</button>
+                <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateHotelStatus(selHotel.id,'en_attente')}>En attente</button>
+                <button className="adm-sbtn adm-s-ok fb" onClick={()=>updateHotelStatus(selHotel.id,'approuve')}>Approuver</button>
+                <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmHotelReject(true)}>Rejeter</button>
+              </div>
+            ):(
+              <div className="adm-confirm">
+                <div className="adm-confirm-txt fb">Êtes-vous sûr de vouloir rejeter cet hôtel ? Action irréversible.</div>
+                <div className="adm-confirm-row">
+                  <button className="adm-confirm-cancel fb" onClick={()=>setConfirmHotelReject(false)}>Annuler</button>
+                  <button className="adm-confirm-ok fb" onClick={()=>updateHotelStatus(selHotel.id,'rejete')}>Confirmer</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2707,6 +2952,63 @@ function GenericPartnerPage({partner,onBack}){
   );
 }
 
+function HotelView({onLogout}){
+  const slug=window.location.pathname.replace(/^\/hotel\//,'').split('/')[0];
+  const [authed]=useState(()=>sessionStorage.getItem('hotel_slug')===slug);
+  const [hotel,setHotel]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    if(!authed)return;
+    supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle().then(({data})=>{setHotel(data);setLoading(false);});
+  },[authed]);
+
+  function logout(){sessionStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
+
+  if(!authed){window.history.pushState({},'','/login');onLogout();return null;}
+
+  const passCount=0;
+  const revenue=(passCount*2.5).toFixed(2);
+
+  return(
+    <div className="htl-wrap">
+      <style>{CSS}</style>
+      <div className="htl-header">
+        <div className="htl-logo fd">local<em>ly</em></div>
+        <button className="htl-logout fb" onClick={logout}>Déconnexion</button>
+      </div>
+      <div className="htl-content">
+        {loading?(
+          <div className="fb" style={{color:'#7A6555',padding:'40px 0'}}>Chargement…</div>
+        ):!hotel?(
+          <div className="fb" style={{color:'#7A6555',padding:'40px 0'}}>Établissement introuvable.</div>
+        ):(
+          <>
+            <div className="htl-name fd">{hotel.nom}</div>
+            <div className="htl-type fb">{hotel.type}</div>
+            <div className="htl-stats-grid">
+              <div className="htl-stat-card">
+                <div className="htl-stat-label fb">Pass vendus ce mois</div>
+                <div className="htl-stat-num fd">{passCount}</div>
+                <div className="htl-stat-desc fb">Disponible prochainement</div>
+              </div>
+              <div className="htl-stat-card">
+                <div className="htl-stat-label fb">Revenus générés</div>
+                <div className="htl-stat-num fd">{revenue} €</div>
+                <div className="htl-stat-desc fb">{passCount} × 2,50 €</div>
+              </div>
+            </div>
+            <div className="htl-coming">
+              <div className="htl-coming-title fd">Fonctionnalités à venir</div>
+              <div className="htl-coming-desc fb">Le suivi en temps réel des pass et la gestion des réservations seront disponibles prochainement.</div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function JoindreView({onHome}){
   const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:''});
   const [joinHoraires,setJoinHoraires]=useState({});
@@ -2863,9 +3165,11 @@ export default function App() {
     const path=window.location.pathname;
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
     if(path==="/scan")return "scan";
+    if(path==="/login")return "login";
     if(path==="/rejoindre")return "rejoindre";
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
+    if(path.startsWith("/hotel/"))return "hotel";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -2880,9 +3184,11 @@ export default function App() {
       const path=window.location.pathname;
       if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
       if(path==="/scan"){setPage("scan");return;}
+      if(path==="/login"){setPage("login");return;}
       if(path==="/rejoindre"){setPage("rejoindre");return;}
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
+      if(path.startsWith("/hotel/")){setPage("hotel");return;}
       setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -2894,9 +3200,11 @@ export default function App() {
     else setPage(pageId);
   }
   if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
+  if(page==="login")return <LoginView onLogin={p=>{setPage(p);}}/>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="admin")return <AdminView/>;
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
