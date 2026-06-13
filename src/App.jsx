@@ -1359,7 +1359,7 @@ function SnackPage({ onBack }) {
                       <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
                     </div>
                     <div className="visit-qr-box">
-                      <QRCodeSVG value={visitData.qr_code_id} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                      <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
                     </div>
                     <div className="visit-qr-client">
                       <div className="visit-qr-name fd">{visitName}</div>
@@ -2026,11 +2026,13 @@ function AdminView(){
     else if(status==='rejete') message=`Bonjour ${nom}, nous avons bien étudié votre candidature Locally mais ne pouvons pas donner suite pour le moment. Merci de votre intérêt.`;
     else if(status==='en_attente') message=`Bonjour ${nom}, nous avons bien reçu votre candidature Locally. Nous revenons vers vous rapidement.`;
     else return;
-    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/Send-SMS',{
+    console.log('[SMS] Envoi →', {to:telephone,message});
+    const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/Send-SMS',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
       body:JSON.stringify({to:telephone,message}),
     });
+    console.log('[SMS] Réponse →',res.status,await res.text().catch(()=>''));
   }
   async function updateHotelStatus(id,status){
     await supabase.from('hotels').update({status}).eq('id',id);
@@ -2975,7 +2977,7 @@ function GenericPartnerPage({partner,onBack}){
                       <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
                     </div>
                     <div className="visit-qr-box">
-                      <QRCodeSVG value={visitData.qr_code_id} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                      <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
                     </div>
                     <div className="visit-qr-client">
                       <div className="visit-qr-name fd">{visitName}</div>
