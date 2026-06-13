@@ -443,6 +443,10 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .adm-tab.act{background:#6B1D1D;color:#F7F3EE;}
 .adm-logout{font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(247,243,238,.28);background:none;border:none;cursor:pointer;margin-left:auto;letter-spacing:.06em;transition:color .2s;padding:8px 0;}
 .adm-logout:hover{color:rgba(247,243,238,.7);}
+.adm-refresh{background:none;border:none;cursor:pointer;color:rgba(247,243,238,.28);padding:6px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:color .2s,background .2s;}
+.adm-refresh:hover{color:rgba(247,243,238,.7);background:rgba(247,243,238,.05);}
+.adm-refresh:disabled{cursor:default;}
+@keyframes adm-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .adm-content{padding:24px;max-width:860px;margin:0 auto;width:100%;}
 .adm-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
 .adm-filter{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;padding:6px 14px;border-radius:100px;border:1px solid rgba(247,243,238,.09);background:transparent;color:rgba(247,243,238,.38);cursor:pointer;transition:all .2s;}
@@ -1976,6 +1980,7 @@ function AdminView(){
   const [hotelAccess,setHotelAccess]=useState({slug:'',access_code:''});
   const [savingHotelAccess,setSavingHotelAccess]=useState(false);
   const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);
 
   function login(e){
     e.preventDefault();
@@ -1983,6 +1988,11 @@ function AdminView(){
     else setLoginErr('Mot de passe incorrect.');
   }
   function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
+  async function refresh(){
+    setRefreshing(true);
+    await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits()]);
+    setRefreshing(false);
+  }
 
   async function fetchCands(){
     setLoadingCand(true);
@@ -2010,11 +2020,25 @@ function AdminView(){
     setSelHotel(s=>({...s,slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}));
     setSavingHotelAccess(false);setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
   }
+  async function sendSms(telephone,nom,status,access_code){
+    let message;
+    if(status==='approuve') message=`Bonjour ${nom}, votre candidature Locally a été acceptée ! Votre code d'accès : ${access_code}. Connectez-vous sur : locally-gules.vercel.app/login`;
+    else if(status==='rejete') message=`Bonjour ${nom}, nous avons bien étudié votre candidature Locally mais ne pouvons pas donner suite pour le moment. Merci de votre intérêt.`;
+    else if(status==='en_attente') message=`Bonjour ${nom}, nous avons bien reçu votre candidature Locally. Nous revenons vers vous rapidement.`;
+    else return;
+    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/Send-SMS',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
+      body:JSON.stringify({to:telephone,message}),
+    });
+  }
   async function updateHotelStatus(id,status){
     await supabase.from('hotels').update({status}).eq('id',id);
+    const item=hotels.find(h=>h.id===id);
     setHotels(hs=>hs.map(h=>h.id===id?{...h,status}:h));
     setSelHotel(s=>s?.id===id?{...s,status}:s);
     setConfirmHotelReject(false);
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS hotel error:',err));
   }
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);
@@ -2042,12 +2066,14 @@ function AdminView(){
   }
   async function updateStatus(id,status){
     await supabase.from('candidates').update({status}).eq('id',id);
+    const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
     setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
     setSel(s=>s?.id===id?{...s,status}:s);
     setPartners(ps=>ps.filter(p=>p.id!==id));
     setSelPartner(null);
     setConfirmReject(false);
     setConfirmPDisable(false);
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS commerce error:',err));
   }
 
 
@@ -2075,6 +2101,11 @@ function AdminView(){
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
           ))}
         </div>
+        <button className="adm-refresh" onClick={refresh} disabled={refreshing} title="Actualiser">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={refreshing?{animation:'adm-spin .7s linear infinite'}:{}}>
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+        </button>
         <button className="adm-logout fb" onClick={logout}>Déconnexion</button>
       </div>
 
