@@ -2125,7 +2125,7 @@ function AdminView(){
       <div className="adm-header">
         <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
         <div className="adm-tabs">
-          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['rejetes','Rejetés'],['visites','Visites']].map(([v,l])=>(
+          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['rejetes','Rejetés'],['visites','Visites'],['parametres','Paramètres']].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
           ))}
         </div>
@@ -2281,6 +2281,18 @@ function AdminView(){
               </div>
             )}
           </>
+        )}
+
+        {tab==='parametres'&&(
+          <div style={{maxWidth:480}}>
+            <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.08)',borderRadius:14,padding:'24px 20px',display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(247,243,238,.35)'}}>Mot de passe admin</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.55)',lineHeight:1.6}}>
+                Le mot de passe admin est défini via la variable d'environnement <span style={{fontFamily:'monospace',background:'rgba(247,243,238,.07)',padding:'2px 6px',borderRadius:4,color:'rgba(247,243,238,.75)'}}>VITE_DASHBOARD_PASSWORD</span> dans Vercel.<br/>
+                Pour le modifier, rendez-vous dans <strong style={{color:'rgba(247,243,238,.75)'}}>Vercel → Settings → Environment Variables</strong>.
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -2510,6 +2522,10 @@ function PartnerView({onLogout}){
   const [pageViews,setPageViews]=useState(0);
   const [loadingStats,setLoadingStats]=useState(false);
   const [horaires,setHoraires]=useState({});
+  const [codeForm,setCodeForm]=useState({code1:'',code2:''});
+  const [savingCode,setSavingCode]=useState(false);
+  const [codeErr,setCodeErr]=useState('');
+  const [codeSaved,setCodeSaved]=useState(false);
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
@@ -2549,6 +2565,14 @@ function PartnerView({onLogout}){
     setPartner(p=>({...p,...profileForm,horaires}));
     setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
     setSavingProfile(false);
+  }
+  async function saveAccessCode(){
+    if(!codeForm.code1.trim()){setCodeErr('Le code ne peut pas être vide.');return;}
+    if(codeForm.code1!==codeForm.code2){setCodeErr('Les codes ne correspondent pas.');return;}
+    setCodeErr('');setSavingCode(true);
+    await supabase.from('candidates').update({access_code:codeForm.code1.trim()}).eq('id',partner.id);
+    setSavingCode(false);setCodeSaved(true);setCodeForm({code1:'',code2:''});
+    setTimeout(()=>setCodeSaved(false),2500);
   }
 
   async function handlePhotoUpload(e){
@@ -2711,6 +2735,23 @@ function PartnerView({onLogout}){
                 <button className="prt-btn-primary fb" onClick={saveProfile} disabled={savingProfile}>
                   {savingProfile?'Sauvegarde…':profileSaved?'✓ Sauvegardé':'Sauvegarder'}
                 </button>
+              </div>
+              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:12,display:'flex',flexDirection:'column',gap:14}}>
+                <div className="prt-section-label fb">Changer mon code d'accès</div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Nouveau code</div>
+                  <input className="prt-input fb" type="password" value={codeForm.code1} onChange={e=>{setCodeForm(f=>({...f,code1:e.target.value}));setCodeErr('');}} placeholder="Nouveau code d'accès"/>
+                </div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Confirmer le code</div>
+                  <input className="prt-input fb" type="password" value={codeForm.code2} onChange={e=>{setCodeForm(f=>({...f,code2:e.target.value}));setCodeErr('');}} placeholder="Confirmer le code"/>
+                </div>
+                {codeErr&&<div className="prt-err fb">{codeErr}</div>}
+                <div>
+                  <button className="prt-btn-primary fb" onClick={saveAccessCode} disabled={savingCode||!codeForm.code1||!codeForm.code2}>
+                    {savingCode?'Sauvegarde…':codeSaved?'✓ Code mis à jour':'Enregistrer'}
+                  </button>
+                </div>
               </div>
             </div>
           </>
@@ -3067,6 +3108,10 @@ function HotelView({onLogout}){
   const [loading,setLoading]=useState(true);
   const [stats,setStats]=useState(null);
   const [loadingStats,setLoadingStats]=useState(true);
+  const [htlCodeForm,setHtlCodeForm]=useState({code1:'',code2:''});
+  const [savingHtlCode,setSavingHtlCode]=useState(false);
+  const [htlCodeErr,setHtlCodeErr]=useState('');
+  const [htlCodeSaved,setHtlCodeSaved]=useState(false);
 
   useEffect(()=>{
     if(!authed)return;
@@ -3091,6 +3136,15 @@ function HotelView({onLogout}){
     const lastVisit=visits[0]?.created_at?new Date(visits[0].created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):null;
     setStats({monthCount:thisMonth.length,topPartner,lastVisit});
     setLoadingStats(false);
+  }
+
+  async function saveHtlAccessCode(){
+    if(!htlCodeForm.code1.trim()){setHtlCodeErr('Le code ne peut pas être vide.');return;}
+    if(htlCodeForm.code1!==htlCodeForm.code2){setHtlCodeErr('Les codes ne correspondent pas.');return;}
+    setHtlCodeErr('');setSavingHtlCode(true);
+    await supabase.from('hotels').update({access_code:htlCodeForm.code1.trim()}).eq('slug',slug);
+    setSavingHtlCode(false);setHtlCodeSaved(true);setHtlCodeForm({code1:'',code2:''});
+    setTimeout(()=>setHtlCodeSaved(false),2500);
   }
 
   function logout(){sessionStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
@@ -3134,6 +3188,15 @@ function HotelView({onLogout}){
                 </div>
               </div>
             )}
+            <div style={{background:'#FDFAF6',border:'1px solid rgba(107,29,29,.09)',borderRadius:16,padding:'28px 24px',marginTop:20,display:'flex',flexDirection:'column',gap:14}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Changer mon code d'accès</div>
+              <input style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#1C1208',background:'white',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'12px 14px',outline:'none',width:'100%',boxSizing:'border-box'}} type="password" value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès"/>
+              <input style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#1C1208',background:'white',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'12px 14px',outline:'none',width:'100%',boxSizing:'border-box'}} type="password" value={htlCodeForm.code2} onChange={e=>{setHtlCodeForm(f=>({...f,code2:e.target.value}));setHtlCodeErr('');}} placeholder="Confirmer le code"/>
+              {htlCodeErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B2335'}}>{htlCodeErr}</div>}
+              <button onClick={saveHtlAccessCode} disabled={savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2} style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'13px 28px',borderRadius:10,border:'none',cursor:'pointer',opacity:(savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2)?0.5:1,alignSelf:'flex-start'}}>
+                {savingHtlCode?'Sauvegarde…':htlCodeSaved?'✓ Code mis à jour':'Enregistrer'}
+              </button>
+            </div>
           </>
         )}
       </div>
