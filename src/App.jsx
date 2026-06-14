@@ -387,6 +387,7 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .scan-err .scan-result-status{color:rgba(180,40,40,.7);}
 .scan-result-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:#1C1208;margin-bottom:8px;line-height:1.1;}
 .scan-result-meta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#7A6555;line-height:1.8;}
+.scan-result-reduction{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#6B1D1D;margin-bottom:6px;letter-spacing:.01em;}
 .scan-err-msg{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:rgba(180,40,40,.85);line-height:1.6;margin-top:8px;}
 .scan-again{display:inline-flex;align-items:center;gap:8px;background:#1C1208;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:15px 32px;border-radius:12px;border:none;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px rgba(28,18,8,.2);letter-spacing:.015em;}
 .scan-again:hover{background:#6B1D1D;transform:translateY(-1px);}
@@ -1711,9 +1712,15 @@ function DashboardPage() {
 }
 
 function ScanPage() {
-  const [scanning,setScanning]=useState(true);
+  const urlId=new URLSearchParams(window.location.search).get('id');
+  const [scanning,setScanning]=useState(!urlId);
   const [result,setResult]=useState(null);
+  const [verifying,setVerifying]=useState(!!urlId);
   const qrRef=useRef(null);
+
+  useEffect(()=>{
+    if(urlId){verifyQR(urlId);}
+  },[]);
 
   useEffect(()=>{
     if(!scanning)return;
@@ -1732,7 +1739,10 @@ function ScanPage() {
     return()=>{ try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){} };
   },[scanning]);
 
-  async function verifyQR(qrCodeId){
+  async function verifyQR(raw){
+    let qrCodeId=raw;
+    try{const u=new URL(raw);const p=u.searchParams.get('id');if(p)qrCodeId=p;}catch(e){}
+    setVerifying(false);
     const{data,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrCodeId).single();
     if(error||!data){setResult({ok:false,msg:'QR code introuvable.',detail:'Ce code ne correspond à aucune visite enregistrée.'});return;}
     if(data.scanned){
@@ -1743,7 +1753,8 @@ function ScanPage() {
     if(new Date(data.expires_at)<new Date()){setResult({ok:false,msg:'QR code expiré.',detail:'Délai de validité dépassé.'});return;}
     const now=new Date().toISOString();
     await supabase.from('visits').update({scanned:true,scanned_at:now}).eq('qr_code_id',qrCodeId);
-    setResult({ok:true,client:data.client_name,time:new Date(now).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
+    const{data:partner}=await supabase.from('candidates').select('reduction').eq('id',data.partner_id).maybeSingle();
+    setResult({ok:true,client:data.client_name,reduction:partner?.reduction||null,time:new Date(now).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
   }
 
   function reset(){setResult(null);setScanning(true);}
@@ -1755,6 +1766,11 @@ function ScanPage() {
         <span className="scan-header-tag fb">Espace partenaire</span>
       </div>
       <div className="scan-body">
+        {verifying&&(
+          <div className="scan-result-wrap">
+            <div className="scan-sub fb" style={{textAlign:'center',marginTop:40}}>Vérification en cours…</div>
+          </div>
+        )}
         {scanning&&(
           <>
             <div className="scan-title fd">Scanner un <em>QR code</em></div>
@@ -1771,6 +1787,7 @@ function ScanPage() {
                 </div>
                 <div className="scan-result-status fb">Accès validé</div>
                 <div className="scan-result-name fd">{result.client}</div>
+                {result.reduction&&<div className="scan-result-reduction fb">Réduction : {result.reduction}</div>}
                 <div className="scan-result-meta fb">Visite enregistrée · {result.time}</div>
               </div>
             ):(
