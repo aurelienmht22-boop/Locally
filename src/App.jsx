@@ -1237,8 +1237,10 @@ function SnackPage({ onBack }) {
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
     const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
+    const hotel_slug=localStorage.getItem('source_hotel')||null;
     const{error}=await supabase.from('visits').insert({
       qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at,
+      ...(hotel_slug?{hotel_slug}:{}),
     });
     if(error)console.error('[Locally] Visit insert error:',error);
     setVisitData({qr_code_id,expires_at});
@@ -2866,7 +2868,8 @@ function GenericPartnerPage({partner,onBack}){
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
     const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
-    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at});
+    const hotel_slug=localStorage.getItem('source_hotel')||null;
+    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at,...(hotel_slug?{hotel_slug}:{})});
     setVisitData({qr_code_id,expires_at});setVisitLoading(false);
   }
 
@@ -3062,18 +3065,37 @@ function HotelView({onLogout}){
   const [authed]=useState(()=>sessionStorage.getItem('hotel_slug')===slug);
   const [hotel,setHotel]=useState(null);
   const [loading,setLoading]=useState(true);
+  const [stats,setStats]=useState(null);
+  const [loadingStats,setLoadingStats]=useState(true);
 
   useEffect(()=>{
     if(!authed)return;
     supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle().then(({data})=>{setHotel(data);setLoading(false);});
+    loadStats();
   },[authed]);
+
+  async function loadStats(){
+    setLoadingStats(true);
+    const{data:visits}=await supabase.from('visits').select('*,candidates(nom)').eq('hotel_slug',slug).order('created_at',{ascending:false});
+    if(!visits){setLoadingStats(false);return;}
+    const now=new Date();
+    const thisMonth=visits.filter(v=>{const d=new Date(v.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
+    const countByPartner={};
+    visits.forEach(v=>{
+      if(!v.partner_id)return;
+      if(!countByPartner[v.partner_id])countByPartner[v.partner_id]={count:0,nom:v.candidates?.nom||v.partner_id};
+      countByPartner[v.partner_id].count++;
+    });
+    let topPartner=null;let topCount=0;
+    Object.values(countByPartner).forEach(p=>{if(p.count>topCount){topCount=p.count;topPartner=p.nom;}});
+    const lastVisit=visits[0]?.created_at?new Date(visits[0].created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):null;
+    setStats({monthCount:thisMonth.length,topPartner,lastVisit});
+    setLoadingStats(false);
+  }
 
   function logout(){sessionStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
 
   if(!authed){window.history.pushState({},'','/login');onLogout();return null;}
-
-  const passCount=0;
-  const revenue=(passCount*2.5).toFixed(2);
 
   return(
     <div className="htl-wrap">
@@ -3091,22 +3113,27 @@ function HotelView({onLogout}){
           <>
             <div className="htl-name fd">{hotel.nom}</div>
             <div className="htl-type fb">{hotel.type}</div>
-            <div className="htl-stats-grid">
-              <div className="htl-stat-card">
-                <div className="htl-stat-label fb">Pass vendus ce mois</div>
-                <div className="htl-stat-num fd">{passCount}</div>
-                <div className="htl-stat-desc fb">Disponible prochainement</div>
+            {loadingStats?(
+              <div className="fb" style={{color:'#7A6555',padding:'24px 0',fontSize:13}}>Chargement des stats…</div>
+            ):(
+              <div className="htl-stats-grid">
+                <div className="htl-stat-card">
+                  <div className="htl-stat-label fb">Visites ce mois</div>
+                  <div className="htl-stat-num fd">{stats?.monthCount??0}</div>
+                  <div className="htl-stat-desc fb">clients depuis votre hôtel</div>
+                </div>
+                <div className="htl-stat-card">
+                  <div className="htl-stat-label fb">Partenaire le + visité</div>
+                  <div className="htl-stat-num fd" style={{fontSize:stats?.topPartner?20:32}}>{stats?.topPartner||'—'}</div>
+                  <div className="htl-stat-desc fb">{stats?.topPartner?'via vos recommandations':'aucune visite encore'}</div>
+                </div>
+                <div className="htl-stat-card">
+                  <div className="htl-stat-label fb">Dernière visite</div>
+                  <div className="htl-stat-num fd" style={{fontSize:stats?.lastVisit?16:32}}>{stats?.lastVisit||'—'}</div>
+                  <div className="htl-stat-desc fb">{stats?.lastVisit?'date de la dernière sortie':'aucune visite encore'}</div>
+                </div>
               </div>
-              <div className="htl-stat-card">
-                <div className="htl-stat-label fb">Revenus générés</div>
-                <div className="htl-stat-num fd">{revenue} €</div>
-                <div className="htl-stat-desc fb">{passCount} × 2,50 €</div>
-              </div>
-            </div>
-            <div className="htl-coming">
-              <div className="htl-coming-title fd">Fonctionnalités à venir</div>
-              <div className="htl-coming-desc fb">Le suivi en temps réel des pass et la gestion des réservations seront disponibles prochainement.</div>
-            </div>
+            )}
           </>
         )}
       </div>
@@ -3281,6 +3308,8 @@ export default function App() {
   const [activePartner,setActivePartner]=useState(null);
   const [supabasePartners,setSupabasePartners]=useState([]);
   useEffect(()=>{
+    const hotelParam=new URLSearchParams(window.location.search).get('hotel');
+    if(hotelParam) localStorage.setItem('source_hotel',hotelParam);
     supabase.from('candidates').select('*').eq('status','approuve').then(({data})=>setSupabasePartners(data||[]));
   },[]);
   useEffect(()=>{window.scrollTo(0,0);},[page]);
