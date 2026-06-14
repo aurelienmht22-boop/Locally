@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "./lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
+import html2canvas from "html2canvas";
 
 const IMGS = {
   devanture: "/snack-bodrum.jpg",
@@ -3112,6 +3113,7 @@ function HotelView({onLogout}){
   const [savingHtlCode,setSavingHtlCode]=useState(false);
   const [htlCodeErr,setHtlCodeErr]=useState('');
   const [htlCodeSaved,setHtlCodeSaved]=useState(false);
+  const qrCardRef=useRef(null);
 
   useEffect(()=>{
     if(!authed)return;
@@ -3136,6 +3138,15 @@ function HotelView({onLogout}){
     const lastVisit=visits[0]?.created_at?new Date(visits[0].created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):null;
     setStats({monthCount:thisMonth.length,topPartner,lastVisit});
     setLoadingStats(false);
+  }
+
+  async function downloadQrCard(){
+    if(!qrCardRef.current)return;
+    const canvas=await html2canvas(qrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
+    const link=document.createElement('a');
+    link.download=`locally-qr-${slug}.png`;
+    link.href=canvas.toDataURL('image/png');
+    link.click();
   }
 
   async function saveHtlAccessCode(){
@@ -3188,6 +3199,30 @@ function HotelView({onLogout}){
                 </div>
               </div>
             )}
+            <div style={{marginTop:32}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:16}}>Mon QR code</div>
+              <div ref={qrCardRef} style={{background:'#ffffff',border:'1.5px solid #e8ddd6',borderRadius:20,padding:'40px 32px 32px',display:'flex',flexDirection:'column',alignItems:'center',gap:0,maxWidth:340,boxShadow:'0 2px 24px rgba(107,29,29,.07)'}}>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:600,color:'#1C1208',marginBottom:28,letterSpacing:'-.01em'}}>
+                  local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
+                </div>
+                <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
+                  <QRCodeSVG value={`https://locally-gules.vercel.app/?hotel=${slug}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                </div>
+                <div style={{marginTop:24,fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:600,color:'#1C1208',textAlign:'center',lineHeight:1.2}}>
+                  Découvrez le meilleur<br/>de Bordeaux
+                </div>
+                <div style={{marginTop:10,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:240}}>
+                  Scannez pour accéder aux adresses locales sélectionnées et profitez de réductions exclusives
+                </div>
+                <div style={{marginTop:24,paddingTop:16,borderTop:'1px solid #f0e9e3',width:'100%',textAlign:'center',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:400,color:'rgba(107,29,29,.5)',letterSpacing:'.04em'}}>
+                  Offert par votre hôtel · locally-gules.vercel.app
+                </div>
+              </div>
+              <button onClick={downloadQrCard} style={{marginTop:14,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
+                Télécharger en PNG
+              </button>
+            </div>
+
             <div style={{background:'#FDFAF6',border:'1px solid rgba(107,29,29,.09)',borderRadius:16,padding:'28px 24px',marginTop:20,display:'flex',flexDirection:'column',gap:14}}>
               <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Changer mon code d'accès</div>
               <input style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#1C1208',background:'white',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'12px 14px',outline:'none',width:'100%',boxSizing:'border-box'}} type="password" value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès"/>
