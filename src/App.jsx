@@ -2008,6 +2008,9 @@ function AdminView(){
   const [savingHotelAccess,setSavingHotelAccess]=useState(false);
   const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
+  const [unreadMessages,setUnreadMessages]=useState({});
+  const [partnerMessages,setPartnerMessages]=useState([]);
+  const [loadingPM,setLoadingPM]=useState(false);
   const [adminPwdForm,setAdminPwdForm]=useState({code1:'',code2:''});
   const [adminPwdErr,setAdminPwdErr]=useState('');
   const [adminPwdSaved,setAdminPwdSaved]=useState(false);
@@ -2037,8 +2040,13 @@ function AdminView(){
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const{data}=await supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false});
+    const[{data},{data:msgs}]=await Promise.all([
+      supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false}),
+      supabase.from('messages').select('partner_id').eq('status','non_lu'),
+    ]);
     setPartners(data||[]);setLoadingPartners(false);
+    const counts={};(msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
+    setUnreadMessages(counts);
   }
   async function fetchVisits(){
     setLoadingVisits(true);
@@ -2079,10 +2087,19 @@ function AdminView(){
     if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS hotel error:',err));
   }
   async function openPartner(p){
-    setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);
-    setLoadingPV(true);
-    const{data}=await supabase.from('visits').select('*').eq('partner_id',p.id).order('created_at',{ascending:false});
-    setPartnerVisits(data||[]);setLoadingPV(false);
+    setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);setPartnerMessages([]);
+    setLoadingPV(true);setLoadingPM(true);
+    const[{data:visits},{data:msgs}]=await Promise.all([
+      supabase.from('visits').select('*').eq('partner_id',p.id).order('created_at',{ascending:false}),
+      supabase.from('messages').select('*').eq('partner_id',p.id).order('created_at',{ascending:false}),
+    ]);
+    setPartnerVisits(visits||[]);setLoadingPV(false);
+    setPartnerMessages(msgs||[]);setLoadingPM(false);
+  }
+  async function markAsRead(msgId,partnerId){
+    await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
+    setPartnerMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
+    setUnreadMessages(u=>{const n={...u};n[partnerId]=Math.max(0,(n[partnerId]||1)-1);if(!n[partnerId])delete n[partnerId];return n;});
   }
 
   useEffect(()=>{
@@ -2196,7 +2213,10 @@ function AdminView(){
                 {partners.map(p=>(
                   <div key={p.id} className="adm-row" onClick={()=>openPartner(p)}>
                     <div className="adm-row-body">
-                      <div className="adm-row-name">{p.nom}</div>
+                      <div className="adm-row-name" style={{display:'flex',alignItems:'center',gap:8}}>
+                        {p.nom}
+                        {unreadMessages[p.id]&&<span style={{background:'#EF4444',color:'#fff',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,borderRadius:100,padding:'2px 7px',lineHeight:1.4}}>{unreadMessages[p.id]}</span>}
+                      </div>
                       <div className="adm-row-meta fb">{p.categorie} · {p.telephone}</div>
                       <div className="adm-row-sub fb">{p.email} · Depuis le {admFmt(p.created_at)}</div>
                     </div>
@@ -2444,6 +2464,26 @@ function AdminView(){
                     </>
                   )}
                 </div>
+                {partnerMessages.length>0&&(
+                  <div style={{marginTop:16}}>
+                    <div className="adm-section-label">Messages</div>
+                    {loadingPM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
+                      <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
+                        {partnerMessages.map(m=>(
+                          <div key={m.id} style={{background:m.status==='non_lu'?'rgba(239,68,68,.06)':'rgba(247,243,238,.03)',border:`1px solid ${m.status==='non_lu'?'rgba(239,68,68,.18)':'rgba(247,243,238,.07)'}`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:6}}>
+                            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.8)',lineHeight:1.55}}>{m.message}</div>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>{admFmt(m.created_at)}</span>
+                              {m.status==='non_lu'&&(
+                                <button onClick={()=>markAsRead(m.id,selPartner.id)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,background:'none',border:'1px solid rgba(247,243,238,.15)',borderRadius:6,color:'rgba(247,243,238,.5)',cursor:'pointer',padding:'3px 10px'}}>Marquer comme lu</button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {!confirmPDisable?(
                 <div className="adm-modal-actions">
@@ -2544,6 +2584,9 @@ function PartnerView({onLogout}){
   const [savingCode,setSavingCode]=useState(false);
   const [codeErr,setCodeErr]=useState('');
   const [codeSaved,setCodeSaved]=useState(false);
+  const [msgText,setMsgText]=useState('');
+  const [sendingMsg,setSendingMsg]=useState(false);
+  const [msgSent,setMsgSent]=useState(false);
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
@@ -2600,6 +2643,13 @@ function PartnerView({onLogout}){
     setPartner(p=>({...p,photo_url:b64}));
   }
 
+  async function sendMessage(){
+    if(!msgText.trim())return;
+    setSendingMsg(true);
+    await supabase.from('messages').insert({partner_id:partner.id,partner_name:partner.nom,message:msgText.trim()});
+    setMsgText('');setSendingMsg(false);setMsgSent(true);
+    setTimeout(()=>setMsgSent(false),3000);
+  }
   async function fetchMenu(){
     setLoadingMenu(true);
     const{data}=await supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false});
@@ -2681,7 +2731,7 @@ function PartnerView({onLogout}){
         </div>
       </div>
       <div className="prt-tabs-bar">
-        {[['profil','Mon profil'],['menu','Mon menu'],['stats','Mes stats']].map(([v,l])=>(
+        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats']].map(([v,l])=>(
           <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
         ))}
       </div>
@@ -2843,6 +2893,26 @@ function PartnerView({onLogout}){
               </div>
             )}
           </>
+        )}
+
+        {tab==='messages'&&(
+          <div style={{maxWidth:560,display:'flex',flexDirection:'column',gap:16}}>
+            <div className="prt-section-label fb">Envoyer un message à Locally</div>
+            <textarea
+              className="prt-textarea fb"
+              value={msgText}
+              onChange={e=>setMsgText(e.target.value)}
+              placeholder="Votre message…"
+              rows={5}
+              style={{resize:'vertical'}}
+            />
+            {msgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981'}}>✓ Message envoyé à l'équipe Locally.</div>}
+            <div>
+              <button className="prt-btn-primary fb" onClick={sendMessage} disabled={sendingMsg||!msgText.trim()}>
+                {sendingMsg?'Envoi…':'Envoyer à Locally'}
+              </button>
+            </div>
+          </div>
         )}
 
         {tab==='stats'&&(
