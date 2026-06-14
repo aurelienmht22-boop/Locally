@@ -387,7 +387,9 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .scan-err .scan-result-status{color:rgba(180,40,40,.7);}
 .scan-result-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:#1C1208;margin-bottom:8px;line-height:1.1;}
 .scan-result-meta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#7A6555;line-height:1.8;}
-.scan-result-reduction{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#6B1D1D;margin-bottom:6px;letter-spacing:.01em;}
+.scan-result-reduction{margin:16px 0 8px;padding:16px 24px;background:rgba(107,29,29,.07);border-radius:14px;border:1px solid rgba(107,29,29,.15);}
+.scan-result-reduction-label{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(107,29,29,.6);margin-bottom:6px;}
+.scan-result-reduction-value{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;color:#6B1D1D;line-height:1;}
 .scan-err-msg{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:rgba(180,40,40,.85);line-height:1.6;margin-top:8px;}
 .scan-again{display:inline-flex;align-items:center;gap:8px;background:#1C1208;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:15px 32px;border-radius:12px;border:none;cursor:pointer;transition:all .3s;box-shadow:0 4px 20px rgba(28,18,8,.2);letter-spacing:.015em;}
 .scan-again:hover{background:#6B1D1D;transform:translateY(-1px);}
@@ -1787,7 +1789,12 @@ function ScanPage() {
                 </div>
                 <div className="scan-result-status fb">Accès validé</div>
                 <div className="scan-result-name fd">{result.client}</div>
-                {result.reduction&&<div className="scan-result-reduction fb">Réduction : {result.reduction}</div>}
+                {result.reduction&&(
+                  <div className="scan-result-reduction">
+                    <div className="scan-result-reduction-label fb">Réduction à appliquer</div>
+                    <div className="scan-result-reduction-value fd">{result.reduction}</div>
+                  </div>
+                )}
                 <div className="scan-result-meta fb">Visite enregistrée · {result.time}</div>
               </div>
             ):(
