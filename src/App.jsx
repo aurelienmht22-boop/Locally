@@ -1818,7 +1818,7 @@ function ScanPage() {
   );
 }
 
-const ADMIN_PWD="locally2024";
+let ADMIN_PWD="locally2024";
 const STATUS_BADGES={
   pending:   {label:'Pending',    bg:'rgba(217,119,6,.15)',  color:'#D97706'},
   en_attente:{label:'En attente', bg:'rgba(59,130,246,.15)', color:'#3B82F6'},
@@ -2008,6 +2008,9 @@ function AdminView(){
   const [savingHotelAccess,setSavingHotelAccess]=useState(false);
   const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
+  const [adminPwdForm,setAdminPwdForm]=useState({code1:'',code2:''});
+  const [adminPwdErr,setAdminPwdErr]=useState('');
+  const [adminPwdSaved,setAdminPwdSaved]=useState(false);
 
   function login(e){
     e.preventDefault();
@@ -2015,6 +2018,12 @@ function AdminView(){
     else setLoginErr('Mot de passe incorrect.');
   }
   function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
+  function saveAdminPwd(){
+    if(!adminPwdForm.code1.trim()){setAdminPwdErr('Le code ne peut pas être vide.');return;}
+    if(adminPwdForm.code1!==adminPwdForm.code2){setAdminPwdErr('Les codes ne correspondent pas.');return;}
+    ADMIN_PWD=adminPwdForm.code1.trim();
+    setAdminPwdErr('');setAdminPwdSaved(true);setAdminPwdForm({code1:'',code2:''});
+  }
   async function refresh(){
     setRefreshing(true);
     await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits()]);
@@ -2285,13 +2294,14 @@ function AdminView(){
         )}
 
         {tab==='parametres'&&(
-          <div style={{maxWidth:480}}>
-            <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.08)',borderRadius:14,padding:'24px 20px',display:'flex',flexDirection:'column',gap:10}}>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(247,243,238,.35)'}}>Mot de passe admin</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.55)',lineHeight:1.6}}>
-                Le mot de passe admin est défini via la variable d'environnement <span style={{fontFamily:'monospace',background:'rgba(247,243,238,.07)',padding:'2px 6px',borderRadius:4,color:'rgba(247,243,238,.75)'}}>VITE_DASHBOARD_PASSWORD</span> dans Vercel.<br/>
-                Pour le modifier, rendez-vous dans <strong style={{color:'rgba(247,243,238,.75)'}}>Vercel → Settings → Environment Variables</strong>.
-              </div>
+          <div style={{maxWidth:480,display:'flex',flexDirection:'column',gap:16}}>
+            <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.08)',borderRadius:14,padding:'24px 20px',display:'flex',flexDirection:'column',gap:14}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(247,243,238,.35)'}}>Changer le mot de passe admin</div>
+              <input className="adm-input fb" type="password" placeholder="Nouveau code" value={adminPwdForm.code1} onChange={e=>{setAdminPwdForm(f=>({...f,code1:e.target.value}));setAdminPwdErr('');setAdminPwdSaved(false);}}/>
+              <input className="adm-input fb" type="password" placeholder="Confirmer le code" value={adminPwdForm.code2} onChange={e=>{setAdminPwdForm(f=>({...f,code2:e.target.value}));setAdminPwdErr('');setAdminPwdSaved(false);}}/>
+              {adminPwdErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444'}}>{adminPwdErr}</div>}
+              <button className="adm-btn fb" onClick={saveAdminPwd} disabled={!adminPwdForm.code1||!adminPwdForm.code2}>Enregistrer</button>
+              {adminPwdSaved&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',lineHeight:1.5}}>✓ Code mis à jour — pensez à mettre à jour <span style={{fontFamily:'monospace'}}>VITE_DASHBOARD_PASSWORD</span> sur Vercel pour que le changement soit permanent.</div>}
             </div>
           </div>
         )}
@@ -2470,9 +2480,16 @@ function AdminView(){
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès hôtel</div>
                   <div className="adm-field"><div className="adm-field-label">Identifiant URL (slug)</div><input className="adm-input fb" value={hotelAccess.slug} onChange={e=>setHotelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: hotel-des-quais" style={{marginBottom:0}}/></div>
                   <div className="adm-field"><div className="adm-field-label">Code d'accès hôtel</div><input className="adm-input fb" value={hotelAccess.access_code} onChange={e=>setHotelAccess(a=>({...a,access_code:e.target.value}))} placeholder="ex: HOTEL24" style={{marginBottom:0}}/></div>
-                  <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12}} onClick={saveHotelAccess} disabled={savingHotelAccess}>
-                    {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
-                  </button>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveHotelAccess} disabled={savingHotelAccess}>
+                      {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
+                    </button>
+                    {hotelAccess.slug.trim()&&(
+                      <button className="fb" style={{flex:1,padding:'9px 14px',background:'transparent',border:'1px solid rgba(247,243,238,.12)',borderRadius:8,color:'rgba(247,243,238,.5)',cursor:'pointer',fontSize:12,transition:'all .2s'}} onClick={()=>navigator.clipboard.writeText(`locally-gules.vercel.app/hotel/${hotelAccess.slug.trim()}`)}>
+                        Copier le lien ↗
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
