@@ -3592,9 +3592,18 @@ function useAuth(){
   const[profile,setProfile]=useState(null);
   const[authLoading,setAuthLoading]=useState(true);
 
-  async function loadProfile(uid){
+  async function loadProfile(uid,userMeta=null){
     const{data}=await supabase.from('profiles').select('*').eq('id',uid).maybeSingle();
-    setProfile(data);
+    if(data){setProfile(data);setAuthLoading(false);return;}
+    // Profil absent — le créer depuis user_metadata si le prenom y est stocké
+    // (cas confirmation email : le profil n'a pas pu être inséré lors de l'inscription)
+    if(userMeta?.prenom){
+      await supabase.from('profiles').insert({
+        id:uid,prenom:userMeta.prenom,rgpd_consent_at:new Date().toISOString()
+      });
+      const{data:created}=await supabase.from('profiles').select('*').eq('id',uid).maybeSingle();
+      setProfile(created);
+    }
     setAuthLoading(false);
   }
 
@@ -3602,13 +3611,13 @@ function useAuth(){
     supabase.auth.getSession().then(({data:{session}})=>{
       const u=session?.user??null;
       setUser(u);
-      if(u)loadProfile(u.id);
+      if(u)loadProfile(u.id,u.user_metadata);
       else setAuthLoading(false);
     });
     const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
       const u=session?.user??null;
       setUser(u);
-      if(u)loadProfile(u.id);
+      if(u)loadProfile(u.id,u.user_metadata);
       else{setProfile(null);setAuthLoading(false);}
     });
     return()=>subscription.unsubscribe();
@@ -3619,7 +3628,7 @@ function useAuth(){
     setUser(null);setProfile(null);
   }
 
-  return{user,profile,authLoading,signOut,reloadProfile:()=>user&&loadProfile(user.id)};
+  return{user,profile,authLoading,signOut,setUser,setProfile};
 }
 
 function AuthModal({onClose,onSuccess,defaultTab='login'}){
@@ -3678,7 +3687,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     if(regPwd!==regPwd2){setErr('Les mots de passe ne correspondent pas.');return;}
     if(!rgpd){setErr('Vous devez accepter la politique de confidentialité pour créer un compte.');return;}
     setLoading(true);
-    const{data,error}=await supabase.auth.signUp({email:regEmail.trim(),password:regPwd});
+    const{data,error}=await supabase.auth.signUp({email:regEmail.trim(),password:regPwd,options:{data:{prenom:regPrenom.trim()}}});
     if(error){setErr(xlErr(error.message));setLoading(false);return;}
     if(!data.session){
       // Email confirmation required
@@ -4164,10 +4173,13 @@ function JoindreView({onHome}){
 }
 
 export default function App() {
-  const{user,profile,authLoading,signOut}=useAuth();
+  const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
   function openAuth(tab='login',onSuccess=null){setAuthModal({open:true,tab,onSuccess});}
   function handleAuthSuccess(u,prof){
+    // Mise à jour immédiate du nav sans attendre onAuthStateChange
+    if(u)setAuthUser(u);
+    if(prof)setAuthProfile(prof);
     setAuthModal({open:false,tab:'login',onSuccess:null});
     if(authModal.onSuccess)authModal.onSuccess(u,prof);
   }
