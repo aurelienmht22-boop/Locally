@@ -33,6 +33,9 @@ const CATEGORIES = [
   { id:"bienetre",     label:"Bien-être",     icon:"🌿", desc:"Spa, massage, soins et relaxation",     active:false },
 ];
 
+// Pour réactiver Sport et Bien-être, ajouter leurs ids ici : ['restauration','sport','bienetre']
+const CATEGORIES_ACTIVES = ['restauration'];
+
 const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre'};
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 function getOpenStatus(horaires){
@@ -318,6 +321,11 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .footer{border-top:1px solid rgba(107,29,29,.07);padding:52px 52px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;background:#F7F3EE;}
 .footer-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#1C1208;}.footer-logo em{font-style:italic;color:#6B1D1D;}
 .footer-copy{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.33);}
+.footer-links{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.footer-link{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:rgba(122,101,85,.55);text-decoration:none;cursor:pointer;transition:color .2s;background:none;border:none;padding:0;}
+.footer-link:hover{color:#6B1D1D;}
+.footer-link-commerce{color:rgba(122,101,85,.36);}
+.footer-link-commerce:hover{color:rgba(107,29,29,.58);}
 .visit-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
 .visit-mode-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:20px;padding:36px 32px;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;display:flex;flex-direction:column;}
 .visit-mode-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(28,18,8,.09);border-color:rgba(107,29,29,.2);background:#FAF4EC;}
@@ -356,11 +364,17 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .hero-actions{align-items:flex-start;}
 .hero-stats{gap:28px;padding-top:44px;margin-top:44px;}
 .how-grid{grid-template-columns:1fr;}
-.section{padding:72px 24px;}
+.how-section .sec-title{margin-bottom:28px;}
+.how-card{padding:20px 18px;}
+.how-icon{width:38px;height:38px;margin-bottom:10px;}
+.how-num{font-size:40px;margin-bottom:4px;}
+.how-title{font-size:20px;margin-bottom:5px;}
+.how-desc{font-size:12px;line-height:1.6;}
+.section{padding:52px 24px;}
 .catpage-hero{padding:100px 24px 48px;}
 .snack-hero{padding:100px 24px 40px;}
 .div-label{padding:0 24px;}
-.footer{padding:40px 24px;flex-direction:column;align-items:flex-start;gap:12px;}
+.footer{padding:40px 24px;flex-direction:column;align-items:flex-start;gap:12px;}.footer-links{gap:14px;}
 .checkout-box{padding:24px 16px;}
 .cart-section{padding:24px 16px;}
 .tabs{flex-wrap:wrap;}
@@ -593,6 +607,23 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-hours-slot-add:hover{background:rgba(107,29,29,.05);}
 .prt-hours-slot-rm{font-family:'DM Sans',sans-serif;font-size:16px;line-height:1;color:rgba(122,101,85,.38);background:none;border:none;cursor:pointer;padding:0 2px;transition:color .18s;}
 .prt-hours-slot-rm:hover{color:#9B2335;}
+.txn-mode-bar{display:flex;gap:0;background:rgba(107,29,29,.06);border-radius:8px;padding:2px;width:fit-content;margin-bottom:4px;}
+.txn-mode-btn{font-family:'DM Sans',sans-serif;font-size:12px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;background:transparent;color:rgba(122,101,85,.55);transition:all .18s;white-space:nowrap;}
+.txn-mode-btn.on{background:#1C1208;color:#F7F3EE;}
+.txn-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px;}
+.txn-qr-wrap{border-radius:12px;overflow:hidden;border:1px solid rgba(107,29,29,.1);background:#1C1208;}
+.txn-client-chip{display:flex;align-items:flex-start;gap:12px;background:rgba(45,106,79,.07);border:1px solid rgba(45,106,79,.18);border-radius:12px;padding:14px 16px;}
+.txn-client-check{width:28px;height:28px;border-radius:50%;background:rgba(45,106,79,.12);border:1px solid rgba(45,106,79,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.txn-client-name{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:3px;}
+.txn-client-sub{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:300;color:#7A6555;}
+.txn-calc-box{background:rgba(107,29,29,.03);border:1px solid rgba(107,29,29,.1);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:9px;}
+.txn-calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.txn-calc-label{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;flex-shrink:0;}
+.txn-calc-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C1208;}
+.txn-calc-row.hilite .txn-calc-val{color:#6B1D1D;}
+.txn-calc-row.due .txn-calc-val{color:#9B2335;}
+.txn-calc-divider{height:1px;background:rgba(107,29,29,.08);}
+.txn-success-icon{width:52px;height:52px;border-radius:50%;background:rgba(45,106,79,.1);border:1px solid rgba(45,106,79,.22);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;}
 .gpp-hero{background:#1C1208;min-height:50vh;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:120px 52px 52px;}
 .gpp-hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .gpp-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(28,18,8,.2) 0%,rgba(28,18,8,.78) 100%);}
@@ -652,6 +683,34 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .lgn-wrap{min-height:100dvh;background:#1C1208;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}.lgn-logo{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#F7F3EE;letter-spacing:-.01em;cursor:pointer;margin-bottom:48px;}.lgn-logo em{font-style:italic;color:rgba(247,243,238,.5);}.lgn-card{background:rgba(247,243,238,.05);border:1px solid rgba(247,243,238,.1);border-radius:20px;padding:36px;width:100%;max-width:440px;}.lgn-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F7F3EE;margin-bottom:8px;}.lgn-sub{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.5);margin-bottom:28px;line-height:1.6;}.lgn-divider{border:none;border-top:1px solid rgba(247,243,238,.08);margin:28px 0;}.lgn-section-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:14px;}.lgn-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.07);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;transition:border-color .2s;margin-bottom:12px;display:block;box-sizing:border-box;}.lgn-input:focus{border-color:rgba(247,243,238,.3);}.lgn-input::placeholder{color:rgba(247,243,238,.25);}.lgn-select{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.1);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;margin-bottom:12px;display:block;box-sizing:border-box;}.lgn-select option{background:#2A1A0E;color:#F7F3EE;}.lgn-textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#F7F3EE;background:rgba(247,243,238,.07);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:13px 16px;outline:none;resize:vertical;min-height:88px;margin-bottom:12px;display:block;transition:border-color .2s;box-sizing:border-box;}.lgn-textarea:focus{border-color:rgba(247,243,238,.3);}.lgn-textarea::placeholder{color:rgba(247,243,238,.25);}.lgn-btn{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#6B1D1D;color:#F7F3EE;border:none;border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;margin-top:4px;}.lgn-btn:hover{background:#8B2929;}.lgn-btn:disabled{opacity:.5;cursor:not-allowed;}.lgn-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#F09090;margin-bottom:12px;}.lgn-choice-btn{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;background:transparent;color:rgba(247,243,238,.7);border:1px solid rgba(247,243,238,.12);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;box-sizing:border-box;}.lgn-choice-btn:last-child{margin-bottom:0;}.lgn-choice-btn:hover{border-color:rgba(247,243,238,.28);color:#F7F3EE;background:rgba(247,243,238,.04);}.lgn-back{font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(247,243,238,.35);background:none;border:none;cursor:pointer;padding:0;margin-bottom:20px;transition:color .2s;display:block;}.lgn-back:hover{color:rgba(247,243,238,.6);}.lgn-success{text-align:center;padding:12px 0;}.lgn-success-icon{width:48px;height:48px;border-radius:50%;background:rgba(45,106,79,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}.lgn-success-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#F7F3EE;margin-bottom:8px;}.lgn-success-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:rgba(247,243,238,.55);line-height:1.7;}.lgn-field-label{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(247,243,238,.4);margin-bottom:6px;letter-spacing:.04em;}.lgn-input-group{position:relative;display:flex;align-items:center;margin-bottom:12px;}.lgn-input-group .lgn-input{margin-bottom:0;padding-right:40px;}.lgn-input-suffix{position:absolute;right:14px;font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(247,243,238,.4);}
 .htl-wrap{min-height:100dvh;background:#F7F3EE;}.htl-header{background:#1C1208;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;}.htl-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#F7F3EE;}.htl-logo em{font-style:italic;color:rgba(247,243,238,.45);}.htl-logout{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(247,243,238,.4);background:none;border:none;cursor:pointer;letter-spacing:.04em;transition:color .2s;}.htl-logout:hover{color:rgba(247,243,238,.7);}.htl-content{padding:48px 28px;max-width:800px;margin:0 auto;}.htl-name{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,5vw,52px);font-weight:600;color:#1C1208;margin-bottom:6px;line-height:1.05;}.htl-type{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:36px;}.htl-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:32px;}.htl-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:24px 20px;}.htl-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:10px;}.htl-stat-num{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:4px;}.htl-stat-desc{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;}.htl-coming{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:28px 24px;text-align:center;}.htl-coming-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C1208;margin-bottom:8px;}.htl-coming-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.65;}
 @media(max-width:640px){.lgn-card{padding:28px 20px;}.htl-content{padding:32px 16px;}.htl-stats-grid{grid-template-columns:1fr;}}
+.auth-overlay{position:fixed;inset:0;background:rgba(28,18,8,.52);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);}
+.auth-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.1);border-radius:20px;padding:36px;width:100%;max-width:420px;position:relative;max-height:92dvh;overflow-y:auto;}
+.auth-close{position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;font-size:22px;color:rgba(122,101,85,.4);line-height:1;padding:4px 6px;transition:color .2s;}
+.auth-close:hover{color:#6B1D1D;}
+.auth-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#1C1208;margin-bottom:6px;}
+.auth-sub{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;margin-bottom:22px;line-height:1.6;}
+.auth-tabs{display:flex;border-bottom:1px solid rgba(107,29,29,.1);margin-bottom:22px;}
+.auth-tab{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:rgba(122,101,85,.55);background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px 10px;cursor:pointer;transition:all .2s;margin-bottom:-1px;}
+.auth-tab.active{color:#6B1D1D;border-bottom-color:#6B1D1D;font-weight:500;}
+.auth-label{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(122,101,85,.7);margin-bottom:5px;display:block;letter-spacing:.03em;}
+.auth-input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#1C1208;background:#fff;border:1px solid rgba(107,29,29,.15);border-radius:10px;padding:12px 14px;outline:none;transition:border-color .2s;margin-bottom:14px;display:block;box-sizing:border-box;}
+.auth-input:focus{border-color:rgba(107,29,29,.4);}
+.auth-input::placeholder{color:rgba(122,101,85,.38);}
+.auth-btn{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:10px;padding:14px;cursor:pointer;transition:background .2s;margin-top:6px;}
+.auth-btn:hover:not(:disabled){background:#2A1A0E;}
+.auth-btn:disabled{opacity:.45;cursor:not-allowed;}
+.auth-err{font-family:'DM Sans',sans-serif;font-size:12px;color:#9B2335;margin-bottom:14px;padding:10px 12px;background:rgba(155,35,53,.07);border-radius:8px;line-height:1.5;}
+.auth-ok{font-family:'DM Sans',sans-serif;font-size:12px;color:#2D6A4F;margin-bottom:14px;padding:10px 12px;background:rgba(45,106,79,.07);border-radius:8px;line-height:1.5;}
+.auth-rgpd{display:flex;gap:10px;align-items:flex-start;margin-bottom:16px;}
+.auth-rgpd-check{width:15px;height:15px;flex-shrink:0;margin-top:3px;accent-color:#6B1D1D;cursor:pointer;}
+.auth-rgpd-text{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:#7A6555;line-height:1.65;}
+.auth-rgpd-link{color:#6B1D1D;text-decoration:underline;text-decoration-color:rgba(107,29,29,.3);cursor:pointer;background:none;border:none;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:300;padding:0;}
+.auth-switch{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:rgba(122,101,85,.55);text-align:center;margin-top:18px;}
+.auth-switch-btn{color:#6B1D1D;background:none;border:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:400;text-decoration:underline;text-decoration-color:rgba(107,29,29,.3);padding:0;}
+.nav-auth-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:rgba(28,18,8,.6);background:none;border:1px solid rgba(107,29,29,.2);border-radius:8px;padding:7px 14px;cursor:pointer;transition:all .2s;margin-left:8px;}
+.nav-auth-btn:hover{background:rgba(107,29,29,.06);border-color:rgba(107,29,29,.35);color:#1C1208;}
+.nav-auth-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#6B1D1D;cursor:pointer;margin-left:8px;padding:7px 2px;border-bottom:1px solid rgba(107,29,29,.25);transition:color .2s;}
+.nav-auth-name:hover{color:#1C1208;}
 `;
 
 function getSlots(){
@@ -1052,7 +1111,7 @@ function HomePage({ onNavigate }) {
       </div>
 
       {/* ── HOW IT WORKS ───────────────────────────────── */}
-      <section className="section" style={{background:"#F7F3EE"}}>
+      <section className="section how-section" style={{background:"#F7F3EE"}}>
         <FadeUp>
           <div className="sec-tag fb">Simple &amp; rapide</div>
           <div className="sec-title fd">Comment ça <em>marche</em> ?</div>
@@ -1061,7 +1120,7 @@ function HomePage({ onNavigate }) {
           <div className="how-grid">
             {[
               ["01",IconBrowse,"Choisissez","Parcourez les adresses partenaires et trouvez le commerce qui vous convient."],
-              ["02",IconCart,"Obtenez votre pass","Générez un QR code depuis la page du partenaire et présentez-le sur place."],
+              ["02",IconCart,"Générez votre QR code","Générez un QR code depuis la page du partenaire et présentez-le sur place."],
               ["03",IconCheck,"Profitez","Le partenaire scanne votre code et vous accorde votre réduction. C'est tout."]
             ].map(([n,Icon,t,d])=>(
               <div className="how-card" key={n}>
@@ -1090,7 +1149,7 @@ function HomePage({ onNavigate }) {
         </FadeUp>
         <FadeUp delay={.1}>
           <div className="cat-grid">
-            {CATEGORIES.map(cat=>{
+            {CATEGORIES.filter(cat=>CATEGORIES_ACTIVES.includes(cat.id)).map(cat=>{
               const photos={
                 restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
                 sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
@@ -1115,10 +1174,7 @@ function HomePage({ onNavigate }) {
       </section>
 
       {/* ── FOOTER ─────────────────────────────────────── */}
-      <footer className="footer" style={{background:"#F7F3EE"}}>
-        <div className="footer-logo fd">local<em>ly</em></div>
-        <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
-      </footer>
+      <SiteFooter/>
     </>
   );
 }
@@ -1190,15 +1246,12 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
           ))}
         </motion.div>
       </div>
-      <footer className="footer" style={{background:"#F7F3EE"}}>
-        <div className="footer-logo fd">local<em>ly</em></div>
-        <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
-      </footer>
+      <SiteFooter/>
     </>
   );
 }
 
-function SnackPage({ onBack }) {
+function SnackPage({ onBack, user, profile, onAuthRequired }) {
   const [activeTab,setActiveTab]=useState("kebab");
   const [cart,setCart]=useState([]);
   const [ordered,setOrdered]=useState(false);
@@ -1206,10 +1259,9 @@ function SnackPage({ onBack }) {
   const open=isOpen();
   const currentCat=MENU.find(c=>c.id===activeTab);
   const [visitMode,setVisitMode]=useState(null);
-  const [visitName,setVisitName]=useState('');
   const [visitData,setVisitData]=useState(null);
   const [visitLoading,setVisitLoading]=useState(false);
-  const [countdown,setCountdown]=useState('02:00:00');
+  const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
 
   useEffect(()=>{
@@ -1218,7 +1270,7 @@ function SnackPage({ onBack }) {
 
   useEffect(()=>{
     if(!visitData)return;
-    const DURATION=2*60*60*1000;
+    const DURATION=1*60*60*1000;
     const tick=()=>{
       const remaining=new Date(visitData.expires_at)-Date.now();
       if(remaining<=0){setCountdown('Expiré');setCountdownPct(0);return;}
@@ -1233,19 +1285,24 @@ function SnackPage({ onBack }) {
     return()=>clearInterval(id);
   },[visitData]);
 
-  async function generateVisit(){
-    if(!visitName.trim())return;
+  async function generateVisit(u=user,prof=profile){
+    if(!u||!prof)return;
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
-    const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
+    const expires_at=new Date(Date.now()+1*60*60*1000).toISOString();
     const hotel_slug=localStorage.getItem('source_hotel')||null;
     const{error}=await supabase.from('visits').insert({
-      qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at,
+      qr_code_id,partner_id:partner.id,client_name:prof.prenom,user_id:u.id,expires_at,
       ...(hotel_slug?{hotel_slug}:{}),
     });
     if(error)console.error('[Locally] Visit insert error:',error);
-    setVisitData({qr_code_id,expires_at});
+    setVisitData({qr_code_id,expires_at,clientName:prof.prenom});
     setVisitLoading(false);
+  }
+
+  function handleGenerateClick(){
+    if(user&&profile)generateVisit();
+    else onAuthRequired((u,prof)=>generateVisit(u,prof));
   }
 
   const snackSection = {
@@ -1341,18 +1398,18 @@ function SnackPage({ onBack }) {
           {/* ── Mode : visite QR ── */}
           {visitMode==='visit'&&(
             <>
-              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
               {!visitData?(
                 <>
                   <div className="sec-tag fb">Visite</div>
                   <div className="sec-title fd" style={{marginBottom:32}}>Votre <em>QR code</em></div>
                   <div style={{maxWidth:400}}>
-                    <div className="op-label fb">Votre prénom</div>
-                    <input className="input fb" style={{marginBottom:16}}
-                      value={visitName} onChange={e=>setVisitName(e.target.value.slice(0,50))}
-                      placeholder="Ex : Julien"
-                      onKeyDown={e=>e.key==='Enter'&&visitName.trim()&&generateVisit()}/>
-                    <button className="btn-call fb" onClick={generateVisit} disabled={!visitName.trim()||visitLoading}>
+                    {user&&profile?(
+                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong> — votre QR sera généré à votre nom.</div>
+                    ):(
+                      <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
+                    )}
+                    <button className="btn-call fb" onClick={handleGenerateClick} disabled={visitLoading}>
                       {visitLoading?'Génération…':'Générer mon QR code'}
                     </button>
                   </div>
@@ -1368,7 +1425,7 @@ function SnackPage({ onBack }) {
                       <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
                     </div>
                     <div className="visit-qr-client">
-                      <div className="visit-qr-name fd">{visitName}</div>
+                      <div className="visit-qr-name fd">{visitData.clientName}</div>
                       <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
                     </div>
                     <div className="visit-qr-countdown-wrap">
@@ -1379,8 +1436,8 @@ function SnackPage({ onBack }) {
                       </div>
                     </div>
                   </div>
-                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>
-                    Générer un nouveau code
+                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                    Régénérer mon code
                   </button>
                 </div>
               )}
@@ -1463,10 +1520,7 @@ function SnackPage({ onBack }) {
           </motion.div>
         )}
       </div>
-      <footer className="footer" style={{background:"#F7F3EE"}}>
-        <div className="footer-logo fd">local<em>ly</em></div>
-        <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
-      </footer>
+      <SiteFooter/>
     </>
   );
 }
@@ -1716,107 +1770,6 @@ function DashboardPage() {
   );
 }
 
-function ScanPage() {
-  const urlId=new URLSearchParams(window.location.search).get('id');
-  const [scanning,setScanning]=useState(!urlId);
-  const [result,setResult]=useState(null);
-  const [verifying,setVerifying]=useState(!!urlId);
-  const qrRef=useRef(null);
-
-  useEffect(()=>{
-    if(urlId){verifyQR(urlId);}
-  },[]);
-
-  useEffect(()=>{
-    if(!scanning)return;
-    const qr=new Html5Qrcode('qr-reader');
-    qrRef.current=qr;
-    qr.start(
-      {facingMode:'environment'},
-      {fps:10,qrbox:{width:240,height:240}},
-      async(decoded)=>{
-        try{await qr.stop();}catch(e){}
-        setScanning(false);
-        await verifyQR(decoded);
-      },
-      ()=>{}
-    ).catch(err=>console.error('Camera:',err));
-    return()=>{ try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){} };
-  },[scanning]);
-
-  async function verifyQR(raw){
-    let qrCodeId=raw;
-    try{const u=new URL(raw);const p=u.searchParams.get('id');if(p)qrCodeId=p;}catch(e){}
-    setVerifying(false);
-    const{data,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrCodeId).single();
-    if(error||!data){setResult({ok:false,msg:'QR code introuvable.',detail:'Ce code ne correspond à aucune visite enregistrée.'});return;}
-    if(data.scanned){
-      const t=data.scanned_at?new Date(data.scanned_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
-      setResult({ok:false,msg:'QR code déjà utilisé.',detail:t?`Scanné à ${t}`:'Déjà validé.'});
-      return;
-    }
-    if(new Date(data.expires_at)<new Date()){setResult({ok:false,msg:'QR code expiré.',detail:'Délai de validité dépassé.'});return;}
-    const now=new Date().toISOString();
-    await supabase.from('visits').update({scanned:true,scanned_at:now}).eq('qr_code_id',qrCodeId);
-    const{data:partner}=await supabase.from('candidates').select('reduction').eq('id',data.partner_id).maybeSingle();
-    setResult({ok:true,client:data.client_name,reduction:partner?.reduction||null,time:new Date(now).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
-  }
-
-  function reset(){setResult(null);setScanning(true);}
-
-  return(
-    <div className="scan-page">
-      <div className="scan-header">
-        <div className="logo fd">local<em>ly</em></div>
-        <span className="scan-header-tag fb">Espace partenaire</span>
-      </div>
-      <div className="scan-body">
-        {verifying&&(
-          <div className="scan-result-wrap">
-            <div className="scan-sub fb" style={{textAlign:'center',marginTop:40}}>Vérification en cours…</div>
-          </div>
-        )}
-        {scanning&&(
-          <>
-            <div className="scan-title fd">Scanner un <em>QR code</em></div>
-            <div className="scan-sub fb">Pointez la caméra vers le code présenté par le client</div>
-            <div className="scan-reader-wrap"><div id="qr-reader"/></div>
-          </>
-        )}
-        {result&&(
-          <div className="scan-result-wrap">
-            {result.ok?(
-              <div className="scan-result scan-ok">
-                <div className="scan-result-icon">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(34,130,70,.9)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div className="scan-result-status fb">Accès validé</div>
-                <div className="scan-result-name fd">{result.client}</div>
-                {result.reduction&&(
-                  <div className="scan-result-reduction">
-                    <div className="scan-result-reduction-label fb">Réduction à appliquer</div>
-                    <div className="scan-result-reduction-value fd">{result.reduction}</div>
-                  </div>
-                )}
-                <div className="scan-result-meta fb">Visite enregistrée · {result.time}</div>
-              </div>
-            ):(
-              <div className="scan-result scan-err">
-                <div className="scan-result-icon">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(180,40,40,.8)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </div>
-                <div className="scan-result-status fb">Accès refusé</div>
-                <div className="scan-err-msg fb">{result.msg}</div>
-                <div className="scan-err-detail fb">{result.detail}</div>
-              </div>
-            )}
-            <button className="scan-again fb" onClick={reset}>↩ Scanner à nouveau</button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 let ADMIN_PWD="locally2024";
 const STATUS_BADGES={
@@ -2560,6 +2513,12 @@ function toBase64(file){
   return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(file);});
 }
 
+function parseReduction(r){
+  if(!r)return 0;
+  const m=String(r).match(/(\d+(?:\.\d+)?)/);
+  return m?parseFloat(m[1]):0;
+}
+
 function PartnerView({onLogout}){
   const slug=window.location.pathname.replace(/^\/partner\//,'').split('/')[0];
   const [authed,setAuthed]=useState(()=>sessionStorage.getItem('partner_slug')===slug);
@@ -2587,6 +2546,15 @@ function PartnerView({onLogout}){
   const [msgText,setMsgText]=useState('');
   const [sendingMsg,setSendingMsg]=useState(false);
   const [msgSent,setMsgSent]=useState(false);
+  const [txnStep,setTxnStep]=useState('scan');
+  const [txnScanMode,setTxnScanMode]=useState('camera');
+  const [txnManualId,setTxnManualId]=useState('');
+  const [txnVisit,setTxnVisit]=useState(null);
+  const [txnScanErr,setTxnScanErr]=useState('');
+  const [txnMontant,setTxnMontant]=useState('');
+  const [txnTaux,setTxnTaux]=useState('');
+  const [txnSaving,setTxnSaving]=useState(false);
+  const txnQrRef=useRef(null);
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
@@ -2599,6 +2567,62 @@ function PartnerView({onLogout}){
     if(tab==='menu')fetchMenu();
     else if(tab==='stats')fetchStats();
   },[tab,partner]);
+
+  useEffect(()=>{
+    if(tab!=='valider'||txnStep!=='scan'||txnScanMode!=='camera')return;
+    const qr=new Html5Qrcode('txn-qr-reader');
+    txnQrRef.current=qr;
+    qr.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},
+      async(decoded)=>{try{await qr.stop();}catch(e){}await txnVerifyQR(decoded);},
+      ()=>{}
+    ).catch(err=>console.error('TxnCamera:',err));
+    return()=>{try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){}};
+  },[tab,txnStep,txnScanMode]);
+
+  async function txnVerifyQR(raw){
+    let qrId=raw.trim();
+    try{const u=new URL(raw);const p=u.searchParams.get('id');if(p)qrId=p;}catch(e){}
+    setTxnScanErr('');
+    const{data:visit}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
+    if(!visit){setTxnScanErr('QR code introuvable.');return;}
+    if(new Date(visit.expires_at)<new Date()){setTxnScanErr('QR code expiré, le client peut en générer un nouveau gratuitement.');return;}
+    if(visit.partner_id!==partner.id){setTxnScanErr("Ce QR code n'est pas destiné à votre établissement.");return;}
+    setTxnVisit(visit);
+    setTxnTaux(String(parseReduction(partner.reduction)));
+    setTxnStep('amount');
+  }
+
+  async function txnConfirm(){
+    const m=parseFloat(txnMontant),t=parseFloat(txnTaux);
+    if(isNaN(m)||m<=0||isNaN(t)||t<=0)return;
+    setTxnSaving(true);
+    const montant_reduction=+(m*t/100).toFixed(2);
+    const commission_hotel=txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
+    const commission_locally=+(m*0.04).toFixed(2);
+    const montant_client=+(montant_reduction-(m*0.05)).toFixed(2);
+    await supabase.from('transactions').insert([{
+      visit_id:txnVisit.id,
+      qr_code_id:txnVisit.qr_code_id,
+      partner_id:partner.id,
+      client_name:txnVisit.client_name,
+      hotel_slug:txnVisit.hotel_slug||null,
+      montant_transaction:m,
+      taux_reduction_applique:t,
+      montant_reduction,
+      commission_locally,
+      commission_hotel,
+      montant_client,
+    }]);
+    if(!txnVisit.scanned){
+      await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',txnVisit.id);
+    }
+    setTxnSaving(false);setTxnStep('done');
+  }
+
+  function txnReset(){
+    setTxnStep('scan');setTxnScanMode('camera');setTxnManualId('');
+    setTxnVisit(null);setTxnScanErr('');setTxnMontant('');setTxnTaux('');
+  }
 
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
@@ -2731,7 +2755,7 @@ function PartnerView({onLogout}){
         </div>
       </div>
       <div className="prt-tabs-bar">
-        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats']].map(([v,l])=>(
+        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats'],['valider','Valider']].map(([v,l])=>(
           <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
         ))}
       </div>
@@ -2955,19 +2979,127 @@ function PartnerView({onLogout}){
           </>
         )}
 
+        {tab==='valider'&&(
+          <div style={{maxWidth:520,display:'flex',flexDirection:'column',gap:20}}>
+
+            {txnStep==='scan'&&(
+              <>
+                <div className="prt-section-label fb">Identifier le client</div>
+                <div className="txn-mode-bar">
+                  <button className={'txn-mode-btn fb'+(txnScanMode==='camera'?' on':'')} onClick={()=>{setTxnScanMode('camera');setTxnScanErr('');}}>📷 Scanner</button>
+                  <button className={'txn-mode-btn fb'+(txnScanMode==='manual'?' on':'')} onClick={()=>{setTxnScanMode('manual');setTxnScanErr('');}}>✏ Saisir manuellement</button>
+                </div>
+
+                {txnScanMode==='camera'&&(
+                  <div className="txn-card">
+                    <div className="prt-label fb">Pointez la caméra vers le QR code du client</div>
+                    <div className="txn-qr-wrap"><div id="txn-qr-reader"/></div>
+                  </div>
+                )}
+
+                {txnScanMode==='manual'&&(
+                  <div className="txn-card">
+                    <div className="prt-label fb">URL ou identifiant du QR code client</div>
+                    <div style={{display:'flex',gap:8}}>
+                      <input className="prt-input fb" value={txnManualId} onChange={e=>setTxnManualId(e.target.value)} placeholder="Collez l'URL ou l'identifiant UUID" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&txnManualId.trim()&&txnVerifyQR(txnManualId)}/>
+                      <button className="prt-btn-primary fb" style={{whiteSpace:'nowrap',paddingLeft:16,paddingRight:16}} onClick={()=>txnVerifyQR(txnManualId)} disabled={!txnManualId.trim()}>Vérifier</button>
+                    </div>
+                  </div>
+                )}
+
+                {txnScanErr&&<div className="prt-err fb" style={{textAlign:'center',marginTop:4}}>{txnScanErr}</div>}
+              </>
+            )}
+
+            {txnStep==='amount'&&txnVisit&&(()=>{
+              const m=parseFloat(txnMontant)||0;
+              const t=parseFloat(txnTaux)||0;
+              const valid=m>0&&t>0;
+              const clientPays=valid?+(m-(m*t/100)).toFixed(2):null;
+              const comm=valid?+(m*0.05).toFixed(2):null;
+              return(
+                <>
+                  <div className="txn-client-chip">
+                    <div className="txn-client-check">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(45,106,79,.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div>
+                      <div className="txn-client-name">{txnVisit.client_name}</div>
+                      <div className="txn-client-sub fb">QR validé · généré le {new Date(txnVisit.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+                    </div>
+                  </div>
+
+                  <div className="txn-card">
+                    <div className="prt-field">
+                      <div className="prt-label fb">Montant total de la transaction (€)</div>
+                      <input className="prt-input fb" type="number" min="0.01" step="0.01" value={txnMontant} onChange={e=>setTxnMontant(e.target.value)} placeholder="Ex : 47.50" style={{maxWidth:200}} autoFocus/>
+                    </div>
+                    <div className="prt-field">
+                      <div className="prt-label fb">Taux de réduction (%)</div>
+                      <input className="prt-input fb" type="number" min="1" max="100" step="0.5" value={txnTaux} onChange={e=>setTxnTaux(e.target.value)} placeholder="Ex : 15" style={{maxWidth:140}}/>
+                    </div>
+
+                    {valid&&(
+                      <div className="txn-calc-box">
+                        <div className="txn-calc-row">
+                          <span className="txn-calc-label fb">Montant initial</span>
+                          <span className="txn-calc-val fd">{m.toFixed(2)} €</span>
+                        </div>
+                        <div className="txn-calc-divider"/>
+                        <div className="txn-calc-row hilite">
+                          <span className="txn-calc-label fb">Le client paie</span>
+                          <span className="txn-calc-val fd">{clientPays.toFixed(2)} €</span>
+                        </div>
+                        <div className="txn-calc-row due">
+                          <span className="txn-calc-label fb">Vous devez à Locally</span>
+                          <span className="txn-calc-val fd">{comm.toFixed(2)} €</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{display:'flex',gap:10}}>
+                    <button className="prt-btn-secondary fb" onClick={txnReset}>Annuler</button>
+                    <button className="prt-btn-primary fb" onClick={txnConfirm} disabled={txnSaving||!valid}>
+                      {txnSaving?'Enregistrement…':'Confirmer la transaction'}
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+
+            {txnStep==='done'&&txnVisit&&(()=>{
+              const m=parseFloat(txnMontant),t=parseFloat(txnTaux);
+              return(
+                <div className="txn-card" style={{alignItems:'center',textAlign:'center',paddingTop:32,paddingBottom:32}}>
+                  <div className="txn-success-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(45,106,79,.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div className="prt-section-label fb" style={{justifyContent:'center',marginBottom:6}}>Transaction enregistrée</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:600,color:'#1C1208',marginBottom:6}}>{txnVisit.client_name}</div>
+                  <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Montant initial : {m.toFixed(2)} €</div>
+                  <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Le client a payé : {(m-m*t/100).toFixed(2)} €</div>
+                  <div className="prt-empty fb" style={{padding:0,marginBottom:24}}>Dû à Locally : {(m*0.05).toFixed(2)} €</div>
+                  <button className="prt-btn-primary fb" onClick={txnReset}>Valider une autre transaction</button>
+                </div>
+              );
+            })()}
+
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-function GenericPartnerPage({partner,onBack}){
+function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(true);
   const [visitMode,setVisitMode]=useState(null);
-  const [visitName,setVisitName]=useState('');
   const [visitData,setVisitData]=useState(null);
   const [visitLoading,setVisitLoading]=useState(false);
-  const [countdown,setCountdown]=useState('02:00:00');
+  const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
 
   useEffect(()=>{
@@ -2981,7 +3113,7 @@ function GenericPartnerPage({partner,onBack}){
 
   useEffect(()=>{
     if(!visitData)return;
-    const DURATION=2*60*60*1000;
+    const DURATION=1*60*60*1000;
     const tick=()=>{
       const rem=new Date(visitData.expires_at)-Date.now();
       if(rem<=0){setCountdown('Expiré');setCountdownPct(0);return;}
@@ -2992,14 +3124,19 @@ function GenericPartnerPage({partner,onBack}){
     tick();const id=setInterval(tick,1000);return()=>clearInterval(id);
   },[visitData]);
 
-  async function generateVisit(){
-    if(!visitName.trim())return;
+  async function generateVisit(u=user,prof=profile){
+    if(!u||!prof)return;
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
-    const expires_at=new Date(Date.now()+2*60*60*1000).toISOString();
+    const expires_at=new Date(Date.now()+1*60*60*1000).toISOString();
     const hotel_slug=localStorage.getItem('source_hotel')||null;
-    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:visitName.trim(),expires_at,...(hotel_slug?{hotel_slug}:{})});
-    setVisitData({qr_code_id,expires_at});setVisitLoading(false);
+    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:prof.prenom,user_id:u.id,expires_at,...(hotel_slug?{hotel_slug}:{})});
+    setVisitData({qr_code_id,expires_at,clientName:prof.prenom});setVisitLoading(false);
+  }
+
+  function handleGenerateClick(){
+    if(user&&profile)generateVisit();
+    else onAuthRequired((u,prof)=>generateVisit(u,prof));
   }
 
   const fmtR=r=>r&&/^[\d.]+$/.test(r.trim())?r.trim()+'%':r;
@@ -3046,10 +3183,10 @@ function GenericPartnerPage({partner,onBack}){
           )}
           {partner.reduction&&(
             <div className="gpp-info-card" style={{gridColumn:'1/-1'}}>
-              <div className="gpp-info-label fb">Avantage membre</div>
+              <div className="gpp-info-label fb">Votre réduction</div>
               <div className="fb" style={{marginTop:6,fontSize:13,fontWeight:300,color:'#6B1D1D',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{width:16,height:1,background:'#6B1D1D',display:'inline-block',flexShrink:0}}/>
-                Réduction membre : {fmtR(partner.reduction)}
+                Votre réduction : {fmtR(partner.reduction)}
               </div>
             </div>
           )}
@@ -3113,14 +3250,17 @@ function GenericPartnerPage({partner,onBack}){
           )}
           {visitMode==='visit'&&(
             <>
-              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>← Retour</button>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>← Retour</button>
               {!visitData?(
                 <>
                   <div className="gpp-section-title fd">Votre <em>QR code</em></div>
                   <div style={{maxWidth:400}}>
-                    <div className="op-label fb">Votre prénom</div>
-                    <input className="input fb" style={{marginBottom:16}} value={visitName} onChange={e=>setVisitName(e.target.value.slice(0,50))} placeholder="Ex : Julien" onKeyDown={e=>e.key==='Enter'&&visitName.trim()&&generateVisit()}/>
-                    <button className="btn-call fb" onClick={generateVisit} disabled={!visitName.trim()||visitLoading}>
+                    {user&&profile?(
+                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong> — votre QR sera généré à votre nom.</div>
+                    ):(
+                      <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
+                    )}
+                    <button className="btn-call fb" onClick={handleGenerateClick} disabled={visitLoading}>
                       {visitLoading?'Génération…':'Générer mon QR code'}
                     </button>
                   </div>
@@ -3136,7 +3276,7 @@ function GenericPartnerPage({partner,onBack}){
                       <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
                     </div>
                     <div className="visit-qr-client">
-                      <div className="visit-qr-name fd">{visitName}</div>
+                      <div className="visit-qr-name fd">{visitData.clientName}</div>
                       <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
                     </div>
                     <div className="visit-qr-countdown-wrap">
@@ -3145,8 +3285,8 @@ function GenericPartnerPage({partner,onBack}){
                       <div className="visit-qr-progress"><div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/></div>
                     </div>
                   </div>
-                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setVisitName('');setCountdown('02:00:00');setCountdownPct(100);}}>
-                    Générer un nouveau code
+                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                    Régénérer mon code
                   </button>
                 </div>
               )}
@@ -3179,10 +3319,7 @@ function GenericPartnerPage({partner,onBack}){
           </div>
         )}
 
-        <footer className="footer" style={{background:"#F7F3EE",borderTop:"1px solid rgba(107,29,29,.07)",padding:"32px 0 0"}}>
-          <div className="footer-logo fd">local<em>ly</em></div>
-          <div className="footer-copy fb">© 2025 · Bordeaux · Tous droits réservés</div>
-        </footer>
+        <SiteFooter/>
       </div>
 
     </>
@@ -3210,9 +3347,12 @@ function HotelView({onLogout}){
 
   async function loadStats(){
     setLoadingStats(true);
-    const{data:visits}=await supabase.from('visits').select('*,candidates(nom)').eq('hotel_slug',slug).order('created_at',{ascending:false});
-    if(!visits){setLoadingStats(false);return;}
     const now=new Date();
+    const[{data:visits},{data:txns}]=await Promise.all([
+      supabase.from('visits').select('*,candidates(nom)').eq('hotel_slug',slug).order('created_at',{ascending:false}),
+      supabase.from('transactions').select('commission_hotel,created_at').eq('hotel_slug',slug),
+    ]);
+    if(!visits){setLoadingStats(false);return;}
     const thisMonth=visits.filter(v=>{const d=new Date(v.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
     const countByPartner={};
     visits.forEach(v=>{
@@ -3223,7 +3363,8 @@ function HotelView({onLogout}){
     let topPartner=null;let topCount=0;
     Object.values(countByPartner).forEach(p=>{if(p.count>topCount){topCount=p.count;topPartner=p.nom;}});
     const lastVisit=visits[0]?.created_at?new Date(visits[0].created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):null;
-    setStats({monthCount:thisMonth.length,topPartner,lastVisit});
+    const commissionMois=(txns||[]).filter(t=>{const d=new Date(t.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();}).reduce((s,t)=>s+Number(t.commission_hotel||0),0);
+    setStats({monthCount:thisMonth.length,topPartner,lastVisit,commissionMois});
     setLoadingStats(false);
   }
 
@@ -3284,6 +3425,11 @@ function HotelView({onLogout}){
                   <div className="htl-stat-num fd" style={{fontSize:stats?.lastVisit?16:32}}>{stats?.lastVisit||'—'}</div>
                   <div className="htl-stat-desc fb">{stats?.lastVisit?'date de la dernière sortie':'aucune visite encore'}</div>
                 </div>
+                <div className="htl-stat-card">
+                  <div className="htl-stat-label fb">Revenus générés ce mois</div>
+                  <div className="htl-stat-num fd">{stats?.commissionMois!=null?stats.commissionMois.toFixed(2)+' €':'—'}</div>
+                  <div className="htl-stat-desc fb">commission 1% sur transactions</div>
+                </div>
               </div>
             )}
             <div style={{marginTop:32}}>
@@ -3321,6 +3467,407 @@ function HotelView({onLogout}){
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
+
+function useAuth(){
+  const[user,setUser]=useState(null);
+  const[profile,setProfile]=useState(null);
+  const[authLoading,setAuthLoading]=useState(true);
+
+  async function loadProfile(uid){
+    const{data}=await supabase.from('profiles').select('*').eq('id',uid).maybeSingle();
+    setProfile(data);
+    setAuthLoading(false);
+  }
+
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      const u=session?.user??null;
+      setUser(u);
+      if(u)loadProfile(u.id);
+      else setAuthLoading(false);
+    });
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
+      const u=session?.user??null;
+      setUser(u);
+      if(u)loadProfile(u.id);
+      else{setProfile(null);setAuthLoading(false);}
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  async function signOut(){
+    await supabase.auth.signOut();
+    setUser(null);setProfile(null);
+  }
+
+  return{user,profile,authLoading,signOut,reloadProfile:()=>user&&loadProfile(user.id)};
+}
+
+function AuthModal({onClose,onSuccess,defaultTab='login'}){
+  const[tab,setTab]=useState(defaultTab);
+  const[loading,setLoading]=useState(false);
+  const[err,setErr]=useState('');
+  const[info,setInfo]=useState('');
+  const[loginEmail,setLoginEmail]=useState('');
+  const[loginPwd,setLoginPwd]=useState('');
+  const[regPrenom,setRegPrenom]=useState('');
+  const[regEmail,setRegEmail]=useState('');
+  const[regPwd,setRegPwd]=useState('');
+  const[regPwd2,setRegPwd2]=useState('');
+  const[rgpd,setRgpd]=useState(false);
+
+  function xlErr(msg){
+    if(!msg)return'Une erreur est survenue.';
+    if(msg.includes('Invalid login credentials'))return'Email ou mot de passe incorrect.';
+    if(msg.includes('already registered')||msg.includes('already exists'))return'Cet email est déjà utilisé. Connectez-vous.';
+    if(msg.includes('Password should be at least'))return'Le mot de passe doit contenir au moins 8 caractères.';
+    if(msg.includes('Unable to validate email')||msg.includes('invalid email'))return'Adresse email invalide.';
+    if(msg.includes('Email rate limit'))return'Trop de tentatives, réessayez dans quelques minutes.';
+    if(msg.includes('User not found'))return'Aucun compte trouvé avec cet email.';
+    return'Une erreur est survenue. Réessayez ou contactez contact.locally33@gmail.com.';
+  }
+
+  async function handleLogin(e){
+    e.preventDefault();setErr('');setLoading(true);
+    const{data,error}=await supabase.auth.signInWithPassword({email:loginEmail.trim(),password:loginPwd});
+    if(error){setErr(xlErr(error.message));setLoading(false);return;}
+    const{data:prof}=await supabase.from('profiles').select('*').eq('id',data.user.id).maybeSingle();
+    setLoading(false);
+    onSuccess(data.user,prof);
+  }
+
+  async function handleRegister(e){
+    e.preventDefault();setErr('');
+    if(!regPrenom.trim()||regPrenom.trim().length<2){setErr('Le prénom doit contenir au moins 2 caractères.');return;}
+    if(regPwd.length<8){setErr('Le mot de passe doit contenir au moins 8 caractères.');return;}
+    if(regPwd!==regPwd2){setErr('Les mots de passe ne correspondent pas.');return;}
+    if(!rgpd){setErr('Vous devez accepter la politique de confidentialité pour créer un compte.');return;}
+    setLoading(true);
+    const{data,error}=await supabase.auth.signUp({email:regEmail.trim(),password:regPwd});
+    if(error){setErr(xlErr(error.message));setLoading(false);return;}
+    if(!data.session){
+      // Email confirmation required
+      setLoading(false);
+      setInfo('Un email de confirmation vous a été envoyé. Vérifiez votre boîte mail puis revenez vous connecter.');
+      setTab('login');
+      return;
+    }
+    await supabase.from('profiles').insert({id:data.user.id,prenom:regPrenom.trim(),rgpd_consent_at:new Date().toISOString()});
+    const{data:prof}=await supabase.from('profiles').select('*').eq('id',data.user.id).maybeSingle();
+    setLoading(false);
+    onSuccess(data.user,prof);
+  }
+
+  return(
+    <div className="auth-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="auth-card">
+        <button className="auth-close" onClick={onClose}>×</button>
+        <div className="auth-title fd">{tab==='login'?<>Bon retour <em>!</em></>:<>Rejoindre <em>Locally</em></>}</div>
+        <div className="auth-sub fb">{tab==='login'?'Connectez-vous pour générer votre QR code.':'Créez votre compte pour profiter des réductions.'}</div>
+        <div className="auth-tabs">
+          <button className={'auth-tab fb'+(tab==='login'?' active':'')} onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button>
+          <button className={'auth-tab fb'+(tab==='register'?' active':'')} onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button>
+        </div>
+
+        {err&&<div className="auth-err fb">{err}</div>}
+        {info&&<div className="auth-ok fb">{info}</div>}
+
+        {tab==='login'?(
+          <form onSubmit={handleLogin} noValidate>
+            <label className="auth-label fb">Email</label>
+            <input className="auth-input fb" type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email" autoFocus/>
+            <label className="auth-label fb">Mot de passe</label>
+            <input className="auth-input fb" type="password" value={loginPwd} onChange={e=>setLoginPwd(e.target.value)} placeholder="••••••••" required autoComplete="current-password"/>
+            <button className="auth-btn fb" type="submit" disabled={loading||!loginEmail||!loginPwd}>
+              {loading?'Connexion…':'Se connecter →'}
+            </button>
+          </form>
+        ):(
+          <form onSubmit={handleRegister} noValidate>
+            <label className="auth-label fb">Prénom</label>
+            <input className="auth-input fb" type="text" value={regPrenom} onChange={e=>setRegPrenom(e.target.value)} placeholder="Votre prénom" required maxLength={50} autoFocus/>
+            <label className="auth-label fb">Email</label>
+            <input className="auth-input fb" type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email"/>
+            <label className="auth-label fb">Mot de passe</label>
+            <input className="auth-input fb" type="password" value={regPwd} onChange={e=>setRegPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password"/>
+            <label className="auth-label fb">Confirmer le mot de passe</label>
+            <input className="auth-input fb" type="password" value={regPwd2} onChange={e=>setRegPwd2(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
+            <div className="auth-rgpd">
+              <input className="auth-rgpd-check" type="checkbox" id="auth-rgpd" checked={rgpd} onChange={e=>setRgpd(e.target.checked)}/>
+              <label htmlFor="auth-rgpd" className="auth-rgpd-text fb">
+                J'accepte que mes données (email, prénom, historique de visites) soient utilisées pour le fonctionnement du service Locally, conformément à la{' '}
+                <button type="button" className="auth-rgpd-link" onClick={()=>siteNav('/confidentialite')}>politique de confidentialité</button>.
+              </label>
+            </div>
+            <button className="auth-btn fb" type="submit" disabled={loading||!regPrenom||!regEmail||!regPwd||!regPwd2||!rgpd}>
+              {loading?'Création…':'Créer mon compte →'}
+            </button>
+          </form>
+        )}
+
+        <div className="auth-switch fb">
+          {tab==='login'
+            ?<>Pas encore de compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button></>
+            :<>Déjà un compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button></>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MonCompteView({user,profile,signOut,onHome}){
+  const[txns,setTxns]=useState([]);
+  const[loading,setLoading]=useState(true);
+  const[deleting,setDeleting]=useState(false);
+  const[showConfirm,setShowConfirm]=useState(false);
+  const[deleteErr,setDeleteErr]=useState('');
+
+  useEffect(()=>{
+    if(!user)return;
+    supabase.from('transactions')
+      .select('*, candidates(nom)')
+      .eq('user_id',user.id)
+      .order('created_at',{ascending:false})
+      .then(({data})=>{setTxns(data||[]);setLoading(false);});
+  },[user?.id]);
+
+  async function handleDeleteAccount(){
+    setDeleting(true);setDeleteErr('');
+    const{data:{session}}=await supabase.auth.getSession();
+    const{error}=await supabase.functions.invoke('delete-account',{
+      headers:{Authorization:`Bearer ${session.access_token}`},
+    });
+    if(error){
+      setDeleteErr('Erreur lors de la suppression. Contactez contact.locally33@gmail.com');
+      setDeleting(false);return;
+    }
+    await signOut();
+    onHome();
+  }
+
+  const totalVisites=txns.length;
+  const totalEconomise=txns.reduce((s,t)=>s+t.montant_transaction*t.taux_reduction_applique/100,0);
+
+  const row=(label,val)=>(
+    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:typeof val==='undefined'?0:16}}>{label}</div>
+  );
+
+  return(
+    <div style={{background:'#F7F3EE',minHeight:'100vh'}}>
+      <style>{CSS}</style>
+      <div style={{background:'#1C1208',padding:'20px 28px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div className="htl-logo fd" style={{cursor:'pointer'}} onClick={onHome}>local<em>ly</em></div>
+        <button className="htl-logout fb" onClick={()=>{signOut();onHome();}}>Déconnexion</button>
+      </div>
+
+      <div style={{maxWidth:720,margin:'0 auto',padding:'48px 24px 80px'}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:8}}>Mon compte</div>
+        <div className="sec-title fd" style={{marginBottom:36}}>Bonjour, <em>{profile?.prenom}</em></div>
+
+        {/* Stat cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14,marginBottom:40}}>
+          <div className="htl-stat-card">
+            <div className="htl-stat-label fb">Visites totales</div>
+            <div className="htl-stat-num fd">{totalVisites}</div>
+            <div className="htl-stat-desc fb">transactions enregistrées</div>
+          </div>
+          <div className="htl-stat-card">
+            <div className="htl-stat-label fb">Économies réalisées</div>
+            <div className="htl-stat-num fd" style={{fontSize:totalEconomise>=100?28:36}}>{totalEconomise.toFixed(2)} €</div>
+            <div className="htl-stat-desc fb">grâce à vos réductions</div>
+          </div>
+        </div>
+
+        {/* Historique */}
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:16}}>Historique de mes visites</div>
+        {loading?(
+          <div className="fb" style={{color:'#7A6555',fontSize:13,padding:'16px 0'}}>Chargement…</div>
+        ):txns.length===0?(
+          <div className="fb" style={{color:'#7A6555',fontSize:13,padding:'32px 0',textAlign:'center',lineHeight:1.7}}>
+            Aucune visite encore enregistrée.<br/>Scannez votre QR code chez un partenaire pour commencer.
+          </div>
+        ):(
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {txns.map(t=>{
+              const paid=+(t.montant_transaction*(1-t.taux_reduction_applique/100)).toFixed(2);
+              const saved=+(t.montant_transaction*t.taux_reduction_applique/100).toFixed(2);
+              const date=new Date(t.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+              return(
+                <div key={t.id} style={{background:'#FDFAF6',border:'1px solid rgba(107,29,29,.09)',borderRadius:14,padding:'18px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+                  <div>
+                    <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:19,fontWeight:600,color:'#1C1208',marginBottom:3}}>{t.candidates?.nom||'Commerce'}</div>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555'}}>{date} · {t.taux_reduction_applique}% de réduction</div>
+                  </div>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:500,color:'#1C1208'}}>{paid.toFixed(2)} €</div>
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#2D6A4F'}}>− {saved.toFixed(2)} € économisés</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Suppression compte */}
+        <div style={{marginTop:64,paddingTop:24,borderTop:'1px solid rgba(107,29,29,.08)'}}>
+          {!showConfirm?(
+            <button
+              onClick={()=>setShowConfirm(true)}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'rgba(155,35,53,.42)',background:'none',border:'none',cursor:'pointer',padding:0,textDecoration:'underline',textDecorationColor:'rgba(155,35,53,.18)'}}>
+              Supprimer mon compte et mes données
+            </button>
+          ):(
+            <div style={{background:'rgba(155,35,53,.04)',border:'1px solid rgba(155,35,53,.12)',borderRadius:12,padding:'20px 24px'}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:500,color:'#1C1208',marginBottom:8}}>Confirmer la suppression ?</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',marginBottom:18,lineHeight:1.65}}>
+                Cette action est irréversible. Votre compte sera supprimé et vos données anonymisées conformément à notre politique de confidentialité.
+              </div>
+              {deleteErr&&<div className="auth-err fb" style={{marginBottom:14}}>{deleteErr}</div>}
+              <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#9B2335',color:'#F7F3EE',border:'none',borderRadius:8,padding:'10px 20px',cursor:'pointer',opacity:deleting?.5:1,transition:'opacity .2s'}}>
+                  {deleting?'Suppression en cours…':'Oui, supprimer définitivement'}
+                </button>
+                <button
+                  onClick={()=>{setShowConfirm(false);setDeleteErr('');}}
+                  style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,background:'none',color:'#7A6555',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'10px 20px',cursor:'pointer'}}>
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function siteNav(path){
+  window.history.pushState({},'' ,path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+function SiteFooter(){
+  return(
+    <footer className="footer" style={{background:"#F7F3EE"}}>
+      <div className="footer-logo fd">local<em>ly</em></div>
+      <div className="footer-links">
+        <button className="footer-link" onClick={()=>siteNav('/mentions-legales')}>Mentions légales</button>
+        <button className="footer-link" onClick={()=>siteNav('/confidentialite')}>Confidentialité</button>
+        <a className="footer-link" href="mailto:contact.locally33@gmail.com">Contact</a>
+        <button className="footer-link footer-link-commerce" onClick={()=>siteNav('/rejoindre')}>Vous êtes commerçant ?</button>
+      </div>
+      <div className="footer-copy fb">© 2026 · Bordeaux · Tous droits réservés</div>
+    </footer>
+  );
+}
+
+function MentionsLegalesView({onHome}){
+  return(
+    <div style={{background:"#F7F3EE",minHeight:"100vh",padding:"80px 24px 64px",maxWidth:680,margin:"0 auto"}}>
+      <style>{CSS}</style>
+      <button className="visit-back fb" style={{marginBottom:32}} onClick={onHome}>← Retour</button>
+      <div className="sec-tag fb">Légal</div>
+      <div className="sec-title fd" style={{marginBottom:32}}>Mentions <em>légales</em></div>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:"#7A6555",lineHeight:1.8,display:"flex",flexDirection:"column",gap:28}}>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Éditeur</div>
+          <p>Locally — plateforme locale de réductions partenaires, Bordeaux, France.</p>
+          <p>Contact : <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a></p>
+        </div>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Hébergement</div>
+          <p>Ce site est hébergé par <strong>Vercel Inc.</strong>, 340 Pine Street, Suite 701, San Francisco, CA 94104, États-Unis.</p>
+        </div>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Propriété intellectuelle</div>
+          <p>L'ensemble des contenus présents sur ce site (textes, images, logotype) est la propriété exclusive de Locally et ne peut être reproduit sans autorisation préalable.</p>
+        </div>
+        <div>
+          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Responsabilité</div>
+          <p>Locally s'efforce de maintenir les informations publiées à jour, mais ne peut garantir l'exactitude ou l'exhaustivité des contenus. L'utilisation du site se fait sous la responsabilité de l'utilisateur.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfidentialiteView({onHome}){
+  const sec={fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8};
+  return(
+    <div style={{background:"#F7F3EE",minHeight:"100vh",padding:"80px 24px 64px",maxWidth:680,margin:"0 auto"}}>
+      <style>{CSS}</style>
+      <button className="visit-back fb" style={{marginBottom:32}} onClick={onHome}>← Retour</button>
+      <div className="sec-tag fb">Légal</div>
+      <div className="sec-title fd" style={{marginBottom:8}}>Politique de <em>confidentialité</em></div>
+      <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:"#7A6555",marginBottom:32}}>Dernière mise à jour : juin 2026</p>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:"#7A6555",lineHeight:1.8,display:"flex",flexDirection:"column",gap:28}}>
+        <div>
+          <div style={sec}>1. Responsable du traitement</div>
+          <p>Locally, service opéré par un auto-entrepreneur basé à Bordeaux (France). Contact : <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>.</p>
+        </div>
+        <div>
+          <div style={sec}>2. Données collectées</div>
+          <p>Lors de la création d'un compte client, Locally collecte les données suivantes :</p>
+          <ul style={{paddingLeft:20,marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
+            <li><strong>Adresse e-mail</strong> — utilisée pour l'authentification et les communications liées au compte.</li>
+            <li><strong>Prénom</strong> — affiché sur les QR codes présentés aux partenaires.</li>
+            <li><strong>Historique de transactions</strong> — détail des réductions obtenues chez les partenaires (commerce, montant, date).</li>
+          </ul>
+          <p style={{marginTop:8}}>Ces données sont fournies volontairement lors de la création du compte. La navigation sur le site sans compte ne génère aucune collecte de données personnelles.</p>
+        </div>
+        <div>
+          <div style={sec}>3. Finalité du traitement</div>
+          <p>Les données collectées sont utilisées exclusivement pour :</p>
+          <ul style={{paddingLeft:20,marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
+            <li>Le <strong>fonctionnement du service</strong> : authentification, accès à l'espace personnel, gestion du compte.</li>
+            <li>La <strong>génération des QR codes</strong> : identification du client lors de la validation chez un partenaire.</li>
+            <li>Les <strong>statistiques partenaires et hôtels</strong> : agrégation anonymisée du nombre de passages et des réductions accordées (aucune donnée nominative transmise aux partenaires au-delà du prénom).</li>
+          </ul>
+          <p style={{marginTop:8}}>Ces données ne sont jamais revendues à des tiers, ni utilisées à des fins publicitaires.</p>
+        </div>
+        <div>
+          <div style={sec}>4. Durée de conservation</div>
+          <p>Les données personnelles (email, prénom, historique de transactions) sont conservées pendant <strong>2 ans à compter de la dernière activité</strong> sur le compte (dernière connexion ou dernière transaction enregistrée). À l'expiration de ce délai, les données sont supprimées ou anonymisées.</p>
+        </div>
+        <div>
+          <div style={sec}>5. Suppression du compte</div>
+          <p>Vous pouvez supprimer votre compte à tout moment selon deux modalités :</p>
+          <ul style={{paddingLeft:20,marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
+            <li>Directement depuis votre <strong>espace Mon compte</strong> → section "Supprimer mon compte". La suppression est immédiate et irréversible.</li>
+            <li>Par e-mail à <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>, avec pour objet « Suppression de compte ».</li>
+          </ul>
+          <p style={{marginTop:8}}>Lors de la suppression, votre email et prénom sont effacés. Les transactions passées sont conservées de manière anonymisée (sans lien avec votre identité) à des fins de comptabilité opérationnelle.</p>
+        </div>
+        <div>
+          <div style={sec}>6. Vos droits (RGPD)</div>
+          <p>Conformément au Règlement Général sur la Protection des Données (UE) 2016/679, vous disposez des droits suivants :</p>
+          <ul style={{paddingLeft:20,marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
+            <li><strong>Droit d'accès</strong> : obtenir une copie de vos données personnelles.</li>
+            <li><strong>Droit de rectification</strong> : corriger des informations inexactes.</li>
+            <li><strong>Droit à l'effacement</strong> : demander la suppression de vos données.</li>
+            <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format structuré.</li>
+            <li><strong>Droit d'opposition</strong> : vous opposer à un traitement particulier.</li>
+          </ul>
+          <p style={{marginTop:8}}>Pour exercer ces droits, contactez-nous à <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>. Nous nous engageons à répondre dans un délai de 30 jours. En cas de réclamation non résolue, vous pouvez saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" style={{color:"#6B1D1D"}}>CNIL</a>.</p>
+        </div>
+        <div>
+          <div style={sec}>7. Cookies et stockage local</div>
+          <p>Ce site n'utilise pas de cookies à des fins publicitaires ou de tracking. Le stockage local du navigateur (localStorage) est utilisé uniquement pour mémoriser l'hôtel d'origine du visiteur pendant sa navigation, afin de permettre l'attribution des statistiques hôtelières. Cette information est effacée à la fermeture de la session ou sur simple demande.</p>
+        </div>
+        <div>
+          <div style={sec}>8. Sécurité</div>
+          <p>Les données sont hébergées sur l'infrastructure Supabase (Union Européenne). L'accès est protégé par authentification sécurisée. Les mots de passe ne sont jamais stockés en clair. Locally s'engage à prendre toutes les mesures raisonnables pour protéger vos données contre tout accès non autorisé.</p>
+        </div>
       </div>
     </div>
   );
@@ -3383,7 +3930,7 @@ function JoindreView({onHome}){
         ):(
           <>
             <div className="join-title fd">Rejoindre <em>Locally</em></div>
-            <div className="join-sub fb">Vous souhaitez mettre votre commerce en avant et proposer des avantages exclusifs à nos membres ? Remplissez ce formulaire.</div>
+            <div className="join-sub fb">Vous souhaitez mettre votre commerce en avant et proposer des avantages exclusifs à nos clients ? Remplissez ce formulaire.</div>
             <form onSubmit={handleSubmit} noValidate>
               <div className="join-field">
                 <div className="join-label fb">Nom de l'établissement</div>
@@ -3478,12 +4025,22 @@ function JoindreView({onHome}){
 }
 
 export default function App() {
+  const{user,profile,authLoading,signOut}=useAuth();
+  const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
+  function openAuth(tab='login',onSuccess=null){setAuthModal({open:true,tab,onSuccess});}
+  function handleAuthSuccess(u,prof){
+    setAuthModal({open:false,tab:'login',onSuccess:null});
+    if(authModal.onSuccess)authModal.onSuccess(u,prof);
+  }
+
   const [page,setPage]=useState(()=>{
     const path=window.location.pathname;
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
-    if(path==="/scan")return "scan";
     if(path==="/login")return "login";
     if(path==="/rejoindre")return "rejoindre";
+    if(path==="/mentions-legales")return "mentions";
+    if(path==="/confidentialite")return "confidentialite";
+    if(path==="/compte")return "compte";
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
     if(path.startsWith("/hotel/"))return "hotel";
@@ -3502,9 +4059,11 @@ export default function App() {
     function onPopState(){
       const path=window.location.pathname;
       if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
-      if(path==="/scan"){setPage("scan");return;}
       if(path==="/login"){setPage("login");return;}
       if(path==="/rejoindre"){setPage("rejoindre");return;}
+      if(path==="/mentions-legales"){setPage("mentions");return;}
+      if(path==="/confidentialite"){setPage("confidentialite");return;}
+      if(path==="/compte"){setPage("compte");return;}
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
@@ -3518,9 +4077,15 @@ export default function App() {
     if(pageId==='generic'){setActivePartner(partnerObj);setPage('generic');}
     else setPage(pageId);
   }
-  if(page==="scan")return <><style>{CSS}</style><ScanPage/></>;
   if(page==="login")return <LoginView onLogin={p=>{setPage(p);}}/>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="mentions")return <MentionsLegalesView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="confidentialite")return <ConfidentialiteView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="compte"){
+    if(authLoading)return <div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><style>{CSS}</style><span className="fb" style={{color:'#7A6555',fontSize:13}}>Chargement…</span></div>;
+    if(!user||!profile){window.history.pushState({},'','/');setPage("home");return null;}
+    return <MonCompteView user={user} profile={profile} signOut={signOut} onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  }
   if(page==="admin")return <AdminView/>;
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
@@ -3535,18 +4100,25 @@ export default function App() {
           {page==="snack"&&<li><a onClick={()=>setPage("category")}>Restauration</a></li>}
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
-        <button className="nav-cta fb" onClick={()=>{
-          if(page==="home"){document.getElementById("categories")?.scrollIntoView({behavior:"smooth"});}
-          else setPage("home");
-        }}>
-          {page==="home"?"Explorer →":"Accueil"}
-        </button>
+        <div style={{display:'flex',alignItems:'center',gap:4}}>
+          {!authLoading&&(user&&profile
+            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}>{profile.prenom}</span>
+            :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
+          )}
+          <button className="nav-cta fb" onClick={()=>{
+            if(page==="home"){document.getElementById("categories")?.scrollIntoView({behavior:"smooth"});}
+            else setPage("home");
+          }}>
+            {page==="home"?"Explorer →":"Accueil"}
+          </button>
+        </div>
       </nav>
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
-      {page==="snack"&&<SnackPage onBack={()=>setPage("category")}/>}
-      {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")}/>}
+      {page==="snack"&&<SnackPage onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
+      {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
+      {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
 }
