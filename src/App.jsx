@@ -3639,12 +3639,16 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
 
   function xlErr(msg){
     if(!msg)return'Une erreur est survenue.';
-    if(msg.includes('Invalid login credentials'))return'Email ou mot de passe incorrect.';
-    if(msg.includes('already registered')||msg.includes('already exists'))return'Cet email est déjà utilisé. Connectez-vous.';
-    if(msg.includes('Password should be at least'))return'Le mot de passe doit contenir au moins 8 caractères.';
-    if(msg.includes('Unable to validate email')||msg.includes('invalid email'))return'Adresse email invalide.';
-    if(msg.includes('Email rate limit'))return'Trop de tentatives, réessayez dans quelques minutes.';
-    if(msg.includes('User not found'))return'Aucun compte trouvé avec cet email.';
+    const m=msg.toLowerCase();
+    if(m.includes('invalid login credentials')||m.includes('invalid credentials'))return'Email ou mot de passe incorrect.';
+    if(m.includes('already registered')||m.includes('already exists')||m.includes('user already registered'))return'Un compte existe déjà avec cet email.';
+    if(m.includes('password should be at least'))return'Le mot de passe doit contenir au moins 6 caractères.';
+    if(m.includes('unable to validate email')||m.includes('invalid email'))return'Adresse email invalide.';
+    if(m.includes('email rate limit')||m.includes('rate limit'))return'Trop de tentatives. Réessayez dans quelques minutes.';
+    if(m.includes('user not found'))return'Aucun compte trouvé avec cet email.';
+    if(m.includes('email not confirmed'))return'Email non confirmé. Vérifiez votre boîte mail.';
+    if(m.includes('signup disabled'))return'Les inscriptions sont momentanément désactivées.';
+    if(m.includes('weak password'))return'Mot de passe trop faible. Choisissez-en un plus sécurisé.';
     return'Une erreur est survenue. Réessayez ou contactez contact.locally33@gmail.com.';
   }
 
@@ -3675,7 +3679,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     if(!rgpd){setErr('Vous devez accepter la politique de confidentialité pour créer un compte.');return;}
     setLoading(true);
     const{data,error}=await supabase.auth.signUp({email:regEmail.trim(),password:regPwd});
-    if(error){setErr(error.message);setLoading(false);return;}
+    if(error){setErr(xlErr(error.message));setLoading(false);return;}
     if(!data.session){
       // Email confirmation required
       setLoading(false);
