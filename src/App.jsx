@@ -1951,6 +1951,8 @@ function AdminView(){
   const [partnerVisits,setPartnerVisits]=useState([]);
   const [loadingPV,setLoadingPV]=useState(false);
   const [confirmPDisable,setConfirmPDisable]=useState(false);
+  const [savingComm,setSavingComm]=useState(false);
+  const [commSaved,setCommSaved]=useState(false);
   const [visits,setVisits]=useState([]);
   const [loadingVisits,setLoadingVisits]=useState(false);
   const [hotels,setHotels]=useState([]);
@@ -2071,6 +2073,13 @@ function AdminView(){
   }
   function copyPartnerLink(){
     navigator.clipboard.writeText(`locally-gules.vercel.app/partner/${selAccess.slug.trim()}`);
+  }
+  async function saveCommActive(val){
+    setSavingComm(true);
+    await supabase.from('candidates').update({commission_active:val}).eq('id',selPartner.id);
+    setSelPartner(p=>({...p,commission_active:val}));
+    setPartners(ps=>ps.map(p=>p.id===selPartner.id?{...p,commission_active:val}:p));
+    setSavingComm(false);setCommSaved(true);setTimeout(()=>setCommSaved(false),2500);
   }
   async function updateStatus(id,status){
     await supabase.from('candidates').update({status}).eq('id',id);
@@ -2417,6 +2426,24 @@ function AdminView(){
                     </>
                   )}
                 </div>
+                <div style={{marginTop:16,borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16}}>
+                  <div className="adm-section-label">Commission</div>
+                  <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer',marginTop:10}}>
+                    <input type="checkbox"
+                      checked={selPartner.commission_active||false}
+                      onChange={e=>saveCommActive(e.target.checked)}
+                      disabled={savingComm}
+                    />
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'rgba(247,243,238,.8)'}}>Commission activée</span>
+                    {savingComm&&<span style={{fontSize:11,color:'rgba(247,243,238,.35)'}}>Sauvegarde…</span>}
+                    {commSaved&&<span style={{fontSize:11,color:'#10B981'}}>✓ Sauvegardé</span>}
+                  </label>
+                  {selPartner.commission_active&&(
+                    <div style={{marginTop:10,background:'rgba(107,29,29,.12)',border:'1px solid rgba(107,29,29,.25)',borderRadius:8,padding:'10px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'rgba(247,243,238,.65)',lineHeight:1.6}}>
+                      Commission due à Locally : <strong style={{color:'rgba(247,243,238,.85)'}}>5%</strong> — 4% Locally + 1% hôtel d'origine
+                    </div>
+                  )}
+                </div>
                 {partnerMessages.length>0&&(
                   <div style={{marginTop:16}}>
                     <div className="adm-section-label">Messages</div>
@@ -2537,6 +2564,7 @@ function PartnerView({onLogout}){
   const [deletingId,setDeletingId]=useState(null);
   const [statVisits,setStatVisits]=useState([]);
   const [pageViews,setPageViews]=useState(0);
+  const [statCA,setStatCA]=useState(0);
   const [loadingStats,setLoadingStats]=useState(false);
   const [horaires,setHoraires]=useState({});
   const [codeForm,setCodeForm]=useState({code1:'',code2:''});
@@ -2596,10 +2624,11 @@ function PartnerView({onLogout}){
     const m=parseFloat(txnMontant),t=parseFloat(txnTaux);
     if(isNaN(m)||m<=0||isNaN(t)||t<=0)return;
     setTxnSaving(true);
+    const commActive=partner.commission_active===true;
     const montant_reduction=+(m*t/100).toFixed(2);
-    const commission_hotel=txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
-    const commission_locally=+(m*0.04).toFixed(2);
-    const montant_client=+(montant_reduction-(m*0.05)).toFixed(2);
+    const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
+    const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
+    const montant_client=commActive ? +(montant_reduction-(m*0.05)).toFixed(2) : montant_reduction;
     await supabase.from('transactions').insert([{
       visit_id:txnVisit.id,
       qr_code_id:txnVisit.qr_code_id,
@@ -2682,11 +2711,15 @@ function PartnerView({onLogout}){
 
   async function fetchStats(){
     setLoadingStats(true);
-    const[{data:vData},{count:pvCount}]=await Promise.all([
+    const[{data:vData},{count:pvCount},{data:txnData}]=await Promise.all([
       supabase.from('visits').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}),
       supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
+      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id),
     ]);
-    setStatVisits(vData||[]);setPageViews(pvCount||0);setLoadingStats(false);
+    setStatVisits(vData||[]);
+    setPageViews(pvCount||0);
+    setStatCA((txnData||[]).reduce((s,t)=>s+Number(t.montant_client||0),0));
+    setLoadingStats(false);
   }
 
   async function saveMenuItem(){
@@ -2957,22 +2990,9 @@ function PartnerView({onLogout}){
                     <div className="prt-stat-label fb">QR scannés</div>
                   </div>
                   <div className="prt-stat-card">
-                    <div className="prt-stat-num fd" style={{fontSize:statVisits[0]?15:34,paddingTop:statVisits[0]?7:0,lineHeight:1.35}}>{pFmt(statVisits[0]?.created_at)}</div>
-                    <div className="prt-stat-label fb">Dernière visite</div>
+                    <div className="prt-stat-num fd" style={{fontSize:statCA>0?22:34}}>{statCA>0?statCA.toFixed(2)+' €':'—'}</div>
+                    <div className="prt-stat-label fb">CA généré par Locally</div>
                   </div>
-                </div>
-                <div className="prt-section-label fb" style={{marginBottom:12}}>10 dernières visites</div>
-                <div className="prt-visit-list">
-                  {statVisits.slice(0,10).length===0&&<div className="prt-empty fb">Aucune visite enregistrée.</div>}
-                  {statVisits.slice(0,10).map(v=>(
-                    <div key={v.id} className="prt-visit-row">
-                      <div>
-                        <div className="prt-visit-name fb">{v.client_name}</div>
-                        <div className="prt-visit-date fb">{pFmt(v.created_at)}</div>
-                      </div>
-                      {v.scanned?<span className="prt-scanned fb">✓ Scanné</span>:<span className="prt-not-scanned fb">Non scanné</span>}
-                    </div>
-                  ))}
                 </div>
               </>
             )}
@@ -3015,8 +3035,11 @@ function PartnerView({onLogout}){
               const m=parseFloat(txnMontant)||0;
               const t=parseFloat(txnTaux)||0;
               const valid=m>0&&t>0;
-              const clientPays=valid?+(m-(m*t/100)).toFixed(2):null;
-              const comm=valid?+(m*0.05).toFixed(2):null;
+              const commActive=partner.commission_active===true;
+              const clientPays=valid
+                ? commActive ? +(m-m*(t-5)/100).toFixed(2) : +(m-m*t/100).toFixed(2)
+                : null;
+              const comm=valid&&commActive ? +(m*0.05).toFixed(2) : null;
               return(
                 <>
                   <div className="txn-client-chip">
@@ -3050,10 +3073,12 @@ function PartnerView({onLogout}){
                           <span className="txn-calc-label fb">Le client paie</span>
                           <span className="txn-calc-val fd">{clientPays.toFixed(2)} €</span>
                         </div>
-                        <div className="txn-calc-row due">
-                          <span className="txn-calc-label fb">Vous devez à Locally</span>
-                          <span className="txn-calc-val fd">{comm.toFixed(2)} €</span>
-                        </div>
+                        {commActive&&(
+                          <div className="txn-calc-row due">
+                            <span className="txn-calc-label fb">Vous devez à Locally</span>
+                            <span className="txn-calc-val fd">{comm.toFixed(2)} €</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -3078,8 +3103,12 @@ function PartnerView({onLogout}){
                   <div className="prt-section-label fb" style={{justifyContent:'center',marginBottom:6}}>Transaction enregistrée</div>
                   <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:600,color:'#1C1208',marginBottom:6}}>{txnVisit.client_name}</div>
                   <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Montant initial : {m.toFixed(2)} €</div>
-                  <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Le client a payé : {(m-m*t/100).toFixed(2)} €</div>
-                  <div className="prt-empty fb" style={{padding:0,marginBottom:24}}>Dû à Locally : {(m*0.05).toFixed(2)} €</div>
+                  <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>
+                    Le client a payé : {partner.commission_active===true?(m-m*(t-5)/100).toFixed(2):(m-m*t/100).toFixed(2)} €
+                  </div>
+                  {partner.commission_active===true&&(
+                    <div className="prt-empty fb" style={{padding:0,marginBottom:24}}>Dû à Locally : {(m*0.05).toFixed(2)} €</div>
+                  )}
                   <button className="prt-btn-primary fb" onClick={txnReset}>Valider une autre transaction</button>
                 </div>
               );
