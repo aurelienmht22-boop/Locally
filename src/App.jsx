@@ -3634,6 +3634,8 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
   const[regPwd,setRegPwd]=useState('');
   const[regPwd2,setRegPwd2]=useState('');
   const[rgpd,setRgpd]=useState(false);
+  const[resendCooldown,setResendCooldown]=useState(0);
+  const[resendOk,setResendOk]=useState(false);
 
   function xlErr(msg){
     if(!msg)return'Une erreur est survenue.';
@@ -3655,6 +3657,16 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     onSuccess(data.user,prof);
   }
 
+  async function handleResend(){
+    if(resendCooldown>0)return;
+    await supabase.auth.resend({type:'signup',email:regEmail.trim()});
+    setResendOk(true);setTimeout(()=>setResendOk(false),3000);
+    setResendCooldown(60);
+    const iv=setInterval(()=>{
+      setResendCooldown(c=>{if(c<=1){clearInterval(iv);return 0;}return c-1;});
+    },1000);
+  }
+
   async function handleRegister(e){
     e.preventDefault();setErr('');
     if(!regPrenom.trim()||regPrenom.trim().length<2){setErr('Le prénom doit contenir au moins 2 caractères.');return;}
@@ -3663,7 +3675,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     if(!rgpd){setErr('Vous devez accepter la politique de confidentialité pour créer un compte.');return;}
     setLoading(true);
     const{data,error}=await supabase.auth.signUp({email:regEmail.trim(),password:regPwd});
-    if(error){setErr(xlErr(error.message));setLoading(false);return;}
+    if(error){setErr(error.message);setLoading(false);return;}
     if(!data.session){
       // Email confirmation required
       setLoading(false);
@@ -3689,7 +3701,17 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
         </div>
 
         {err&&<div className="auth-err fb">{err}</div>}
-        {info&&<div className="auth-ok fb">{info}</div>}
+        {info&&(
+          <div>
+            <div className="auth-ok fb">{info}</div>
+            <div style={{marginTop:10,textAlign:'center'}}>
+              {resendOk&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',marginBottom:6}}>✓ Email renvoyé !</div>}
+              <button className="auth-switch-btn fb" onClick={handleResend} disabled={resendCooldown>0} style={{opacity:resendCooldown>0?0.45:1}}>
+                {resendCooldown>0?`Renvoyer l'email (${resendCooldown}s)`:"Renvoyer l'email de confirmation"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {tab==='login'?(
           <form onSubmit={handleLogin} noValidate>
