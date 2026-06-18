@@ -709,8 +709,8 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .auth-switch-btn{color:#6B1D1D;background:none;border:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:400;text-decoration:underline;text-decoration-color:rgba(107,29,29,.3);padding:0;}
 .nav-auth-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:rgba(28,18,8,.6);background:none;border:1px solid rgba(107,29,29,.2);border-radius:8px;padding:7px 14px;cursor:pointer;transition:all .2s;margin-left:8px;}
 .nav-auth-btn:hover{background:rgba(107,29,29,.06);border-color:rgba(107,29,29,.35);color:#1C1208;}
-.nav-auth-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:#6B1D1D;cursor:pointer;margin-left:8px;padding:7px 2px;border-bottom:1px solid rgba(107,29,29,.25);transition:color .2s;}
-.nav-auth-name:hover{color:#1C1208;}
+.nav-auth-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#6B1D1D;cursor:pointer;margin-left:8px;padding:6px 12px;border:1px solid rgba(107,29,29,.3);border-radius:20px;background:transparent;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
+.nav-auth-name:hover{background:rgba(107,29,29,.06);border-color:#6B1D1D;}
 `;
 
 function getSlots(){
@@ -1405,7 +1405,7 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
                   <div className="sec-title fd" style={{marginBottom:32}}>Votre <em>QR code</em></div>
                   <div style={{maxWidth:400}}>
                     {user&&profile?(
-                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong> — votre QR sera généré à votre nom.</div>
+                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong></div>
                     ):(
                       <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
                     )}
@@ -3328,7 +3328,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
                   <div className="gpp-section-title fd">Votre <em>QR code</em></div>
                   <div style={{maxWidth:400}}>
                     {user&&profile?(
-                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong> — votre QR sera généré à votre nom.</div>
+                      <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong></div>
                     ):(
                       <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
                     )}
@@ -4253,7 +4253,7 @@ export default function App() {
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           {!authLoading&&(user&&profile
-            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}>{profile.prenom}</span>
+            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
           <button className="nav-cta fb" onClick={()=>{
