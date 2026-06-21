@@ -109,6 +109,13 @@
 
 
 -- =============================================================================
+-- ÉTAPE 0 : CORRECTIONS DE SCHÉMA (colonnes manquantes après reset)
+-- =============================================================================
+-- À exécuter avant les policies — idempotent (IF NOT EXISTS).
+
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS commission_hotel NUMERIC NOT NULL DEFAULT 0;
+
+-- =============================================================================
 -- ÉTAPE 1 : ACTIVATION DU RLS SUR TOUTES LES TABLES
 -- =============================================================================
 
