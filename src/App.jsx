@@ -1812,7 +1812,7 @@ function LoginView({onLogin}){
     setCLoading(true);
     try{
       const cat=cForm.categorie==='Autre'?cForm.categorie_autre.trim():cForm.categorie;
-      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:cForm.reduction.trim()+'%',email:cForm.email.trim(),status:'pending',created_at:new Date().toISOString()}]);
+      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:cForm.reduction.trim()+'%',email:cForm.email.trim(),status:'pending'}]);
       if(error)throw error;
       setCSent(true);
     }catch{setCErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -1822,7 +1822,7 @@ function LoginView({onLogin}){
   async function handleHotelSubmit(e){
     e.preventDefault();setHErr('');setHLoading(true);
     try{
-      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending',created_at:new Date().toISOString()}]);
+      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending'}]);
       if(error)throw error;
       setHSent(true);
     }catch{setHErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -4051,8 +4051,7 @@ function JoindreView({onHome}){
         email:form.email.trim(),
         horaires:Object.keys(joinHoraires).length?joinHoraires:null,
         infos_complementaires:form.infos_complementaires.trim()||null,
-        status:'pending',
-        created_at:new Date().toISOString()
+        status:'pending'
       }]);
       if(error)throw error;
       setSent(true);
