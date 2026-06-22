@@ -2671,7 +2671,7 @@ function PartnerView({onLogout}){
     const montant_reduction=+(m*t/100).toFixed(2);
     const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
     const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
-    const montant_client=commActive ? +(montant_reduction-(m*0.05)).toFixed(2) : montant_reduction;
+    const montant_client=+(m-montant_reduction).toFixed(2);
     await supabase.from('transactions').insert([{
       visit_id:txnVisit.id,
       qr_code_id:txnVisit.qr_code_id,
