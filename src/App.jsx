@@ -1998,10 +1998,11 @@ function AdminView(){
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const[{data},{data:msgs}]=await Promise.all([
+    const[{data,error},{data:msgs,error:msgsError}]=await Promise.all([
       supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false}),
       supabase.from('messages').select('partner_id').eq('status','non_lu'),
     ]);
+    console.log('[fetchPartners] data:', data, 'error:', error, 'msgs:', msgs, 'msgsError:', msgsError);
     setPartners(data||[]);setLoadingPartners(false);
     const counts={};(msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
