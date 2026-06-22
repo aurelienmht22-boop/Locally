@@ -3,8 +3,10 @@
 -- Coller EN ENTIER dans Supabase > SQL Editor > Run
 -- ============================================================
 
--- ÉTAPE 0 : colonne manquante après reset
+-- ÉTAPE 0 : colonnes manquantes
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS commission_hotel NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS date_arrivee date;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS date_depart date;
 
 -- ÉTAPE 1 : activer RLS
 ALTER TABLE candidates   ENABLE ROW LEVEL SECURITY;
