@@ -3713,6 +3713,9 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
   const[rgpd,setRgpd]=useState(false);
   const[resendCooldown,setResendCooldown]=useState(0);
   const[resendOk,setResendOk]=useState(false);
+  const[forgotMode,setForgotMode]=useState(false);
+  const[resetEmail,setResetEmail]=useState('');
+  const[resetSent,setResetSent]=useState(false);
 
   function xlErr(msg){
     if(!msg)return'Une erreur est survenue.';
@@ -3748,6 +3751,17 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     },1000);
   }
 
+  async function handleResetPassword(e){
+    e.preventDefault();setErr('');
+    if(!resetEmail.trim()){setErr('Veuillez saisir votre adresse email.');return;}
+    if(!/\S+@\S+\.\S+/.test(resetEmail.trim())){setErr('Adresse email invalide.');return;}
+    setLoading(true);
+    const{error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:'https://locally-gules.vercel.app'});
+    setLoading(false);
+    if(error){setErr(xlErr(error.message));return;}
+    setResetSent(true);
+  }
+
   async function handleRegister(e){
     e.preventDefault();setErr('');
     if(!regPrenom.trim()||regPrenom.trim().length<2){setErr('Le prénom doit contenir au moins 2 caractères.');return;}
@@ -3774,65 +3788,94 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     <div className="auth-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="auth-card">
         <button className="auth-close" onClick={onClose}>×</button>
-        <div className="auth-title fd">{tab==='login'?<>Bon retour <em>!</em></>:<>Rejoindre <em>Locally</em></>}</div>
-        <div className="auth-sub fb">{tab==='login'?'Connectez-vous pour générer votre QR code.':'Créez votre compte pour profiter des réductions.'}</div>
-        <div className="auth-tabs">
-          <button className={'auth-tab fb'+(tab==='login'?' active':'')} onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button>
-          <button className={'auth-tab fb'+(tab==='register'?' active':'')} onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button>
-        </div>
-
-        {err&&<div className="auth-err fb">{err}</div>}
-        {info&&(
-          <div>
-            <div className="auth-ok fb">{info}</div>
-            <div style={{marginTop:10,textAlign:'center'}}>
-              {resendOk&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',marginBottom:6}}>✓ Email renvoyé !</div>}
-              <button className="auth-switch-btn fb" onClick={handleResend} disabled={resendCooldown>0} style={{opacity:resendCooldown>0?0.45:1}}>
-                {resendCooldown>0?`Renvoyer l'email (${resendCooldown}s)`:"Renvoyer l'email de confirmation"}
-              </button>
+        {forgotMode?(
+          <>
+            <div className="auth-title fd">Réinitialiser votre <em>mot de passe</em></div>
+            {!resetSent?(
+              <>
+                <div className="auth-sub fb">Saisissez votre email pour recevoir un lien de réinitialisation.</div>
+                {err&&<div className="auth-err fb">{err}</div>}
+                <form onSubmit={handleResetPassword} noValidate>
+                  <label className="auth-label fb">Email</label>
+                  <input className="auth-input fb" type="email" value={resetEmail} onChange={e=>setResetEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email" autoFocus/>
+                  <button className="auth-btn fb" type="submit" disabled={loading||!resetEmail.trim()}>
+                    {loading?'Envoi…':'Envoyer le lien →'}
+                  </button>
+                </form>
+              </>
+            ):(
+              <div className="auth-ok fb" style={{marginTop:16}}>Email envoyé ! Vérifiez votre boîte mail.</div>
+            )}
+            <div className="auth-switch fb">
+              <button className="auth-switch-btn fb" onClick={()=>{setForgotMode(false);setErr('');setResetSent(false);}}>← Retour à la connexion</button>
             </div>
-          </div>
-        )}
-
-        {tab==='login'?(
-          <form onSubmit={handleLogin} noValidate>
-            <label className="auth-label fb">Email</label>
-            <input className="auth-input fb" type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email" autoFocus/>
-            <label className="auth-label fb">Mot de passe</label>
-            <input className="auth-input fb" type="password" value={loginPwd} onChange={e=>setLoginPwd(e.target.value)} placeholder="••••••••" required autoComplete="current-password"/>
-            <button className="auth-btn fb" type="submit" disabled={loading||!loginEmail||!loginPwd}>
-              {loading?'Connexion…':'Se connecter →'}
-            </button>
-          </form>
+          </>
         ):(
-          <form onSubmit={handleRegister} noValidate>
-            <label className="auth-label fb">Prénom</label>
-            <input className="auth-input fb" type="text" value={regPrenom} onChange={e=>setRegPrenom(e.target.value)} placeholder="Votre prénom" required maxLength={50} autoFocus/>
-            <label className="auth-label fb">Email</label>
-            <input className="auth-input fb" type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email"/>
-            <label className="auth-label fb">Mot de passe</label>
-            <input className="auth-input fb" type="password" value={regPwd} onChange={e=>setRegPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password"/>
-            <label className="auth-label fb">Confirmer le mot de passe</label>
-            <input className="auth-input fb" type="password" value={regPwd2} onChange={e=>setRegPwd2(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
-            <div className="auth-rgpd">
-              <input className="auth-rgpd-check" type="checkbox" id="auth-rgpd" checked={rgpd} onChange={e=>setRgpd(e.target.checked)}/>
-              <label htmlFor="auth-rgpd" className="auth-rgpd-text fb">
-                J'accepte que mes données (email, prénom, historique de visites) soient utilisées pour le fonctionnement du service Locally, conformément à la{' '}
-                <button type="button" className="auth-rgpd-link" onClick={()=>siteNav('/confidentialite')}>politique de confidentialité</button>.
-              </label>
+          <>
+            <div className="auth-title fd">{tab==='login'?<>Bon retour <em>!</em></>:<>Rejoindre <em>Locally</em></>}</div>
+            <div className="auth-sub fb">{tab==='login'?'Connectez-vous pour générer votre QR code.':'Créez votre compte pour profiter des réductions.'}</div>
+            <div className="auth-tabs">
+              <button className={'auth-tab fb'+(tab==='login'?' active':'')} onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button>
+              <button className={'auth-tab fb'+(tab==='register'?' active':'')} onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button>
             </div>
-            <button className="auth-btn fb" type="submit" disabled={loading||!regPrenom||!regEmail||!regPwd||!regPwd2||!rgpd}>
-              {loading?'Création…':'Créer mon compte →'}
-            </button>
-          </form>
-        )}
 
-        <div className="auth-switch fb">
-          {tab==='login'
-            ?<>Pas encore de compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button></>
-            :<>Déjà un compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button></>
-          }
-        </div>
+            {err&&<div className="auth-err fb">{err}</div>}
+            {info&&(
+              <div>
+                <div className="auth-ok fb">{info}</div>
+                <div style={{marginTop:10,textAlign:'center'}}>
+                  {resendOk&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',marginBottom:6}}>✓ Email renvoyé !</div>}
+                  <button className="auth-switch-btn fb" onClick={handleResend} disabled={resendCooldown>0} style={{opacity:resendCooldown>0?0.45:1}}>
+                    {resendCooldown>0?`Renvoyer l'email (${resendCooldown}s)`:"Renvoyer l'email de confirmation"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {tab==='login'?(
+              <form onSubmit={handleLogin} noValidate>
+                <label className="auth-label fb">Email</label>
+                <input className="auth-input fb" type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email" autoFocus/>
+                <label className="auth-label fb">Mot de passe</label>
+                <input className="auth-input fb" type="password" value={loginPwd} onChange={e=>setLoginPwd(e.target.value)} placeholder="••••••••" required autoComplete="current-password"/>
+                <div style={{textAlign:'right',marginTop:-8,marginBottom:12}}>
+                  <button type="button" className="auth-rgpd-link" onClick={()=>{setForgotMode(true);setResetEmail(loginEmail);setErr('');setResetSent(false);}}>Mot de passe oublié ?</button>
+                </div>
+                <button className="auth-btn fb" type="submit" disabled={loading||!loginEmail||!loginPwd}>
+                  {loading?'Connexion…':'Se connecter →'}
+                </button>
+              </form>
+            ):(
+              <form onSubmit={handleRegister} noValidate>
+                <label className="auth-label fb">Prénom</label>
+                <input className="auth-input fb" type="text" value={regPrenom} onChange={e=>setRegPrenom(e.target.value)} placeholder="Votre prénom" required maxLength={50} autoFocus/>
+                <label className="auth-label fb">Email</label>
+                <input className="auth-input fb" type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email"/>
+                <label className="auth-label fb">Mot de passe</label>
+                <input className="auth-input fb" type="password" value={regPwd} onChange={e=>setRegPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password"/>
+                <label className="auth-label fb">Confirmer le mot de passe</label>
+                <input className="auth-input fb" type="password" value={regPwd2} onChange={e=>setRegPwd2(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
+                <div className="auth-rgpd">
+                  <input className="auth-rgpd-check" type="checkbox" id="auth-rgpd" checked={rgpd} onChange={e=>setRgpd(e.target.checked)}/>
+                  <label htmlFor="auth-rgpd" className="auth-rgpd-text fb">
+                    J'accepte que mes données (email, prénom, historique de visites) soient utilisées pour le fonctionnement du service Locally, conformément à la{' '}
+                    <button type="button" className="auth-rgpd-link" onClick={()=>siteNav('/confidentialite')}>politique de confidentialité</button>.
+                  </label>
+                </div>
+                <button className="auth-btn fb" type="submit" disabled={loading||!regPrenom||!regEmail||!regPwd||!regPwd2||!rgpd}>
+                  {loading?'Création…':'Créer mon compte →'}
+                </button>
+              </form>
+            )}
+
+            <div className="auth-switch fb">
+              {tab==='login'
+                ?<>Pas encore de compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button></>
+                :<>Déjà un compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button></>
+              }
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
