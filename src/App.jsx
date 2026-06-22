@@ -3648,34 +3648,36 @@ function useAuth(){
   return{user,profile,authLoading,signOut,setUser,setProfile};
 }
 
-function SessionTimer({profile,onClick}){
-  const[label,setLabel]=useState('');
-  const[state,setState]=useState('ok'); // 'ok' | 'warn' | 'expired'
+function SessionBar({profile,onRenew}){
+  const[rem,setRem]=useState(()=>profile?.session_expires_at?new Date(profile.session_expires_at)-Date.now():null);
   useEffect(()=>{
     if(!profile?.session_expires_at)return;
-    function tick(){
-      const rem=new Date(profile.session_expires_at)-Date.now();
-      if(rem<=0){setState('expired');setLabel('Expiré');return;}
-      const h=Math.floor(rem/3600000);
-      const m=Math.floor((rem%3600000)/60000);
-      setState(rem<2*3600000?'warn':'ok');
-      setLabel(h>0?`${h}h ${m}m`:`${m}m`);
-    }
+    const tick=()=>setRem(new Date(profile.session_expires_at)-Date.now());
     tick();
     const id=setInterval(tick,30000);
     return()=>clearInterval(id);
   },[profile?.session_expires_at]);
-  if(!profile?.session_expires_at||!label)return null;
-  const color=state==='expired'?'#B91C1C':state==='warn'?'#B45309':'#6B1D1D';
-  const borderColor=state==='expired'?'rgba(185,28,28,.35)':state==='warn'?'rgba(180,83,9,.3)':'rgba(107,29,29,.2)';
+  if(rem===null)return null;
+  const expired=rem<=0;
+  const warn=!expired&&rem<2*3600000;
+  const pct=expired?0:Math.min(100,rem/864e5*100);
+  const color=expired?'#B91C1C':warn?'#B45309':'#6B1D1D';
+  const h=expired?0:Math.floor(rem/3600000);
+  const m=expired?0:Math.floor((rem%3600000)/60000);
+  const timeStr=h>0?`${h}h ${m}m`:`${m}m`;
+  const labelText=expired
+    ?'Session expirée · Cliquer pour renouveler'
+    :warn?`${timeStr} restantes · Renouveler`
+    :`${timeStr} restantes`;
   return(
-    <span
-      onClick={onClick}
-      title={state==='expired'?'Session expirée — cliquez pour renouveler':`Session active — cliquez pour renouveler`}
-      style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color,marginLeft:6,cursor:'pointer',userSelect:'none',padding:'5px 10px',border:`1px solid ${borderColor}`,borderRadius:20,background:'transparent',display:'inline-flex',alignItems:'center',gap:4,transition:'all .2s',letterSpacing:'.01em'}}
-    >
-      ⏱ {label}
-    </span>
+    <div onClick={onRenew} style={{cursor:'pointer',width:'100%',userSelect:'none'}}>
+      <div style={{width:'100%',height:3,background:'rgba(0,0,0,.06)'}}>
+        <div style={{height:3,width:`${pct}%`,background:color,transition:'width 1s ease'}}/>
+      </div>
+      <div style={{padding:'3px 16px 0',textAlign:'right',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color,opacity:.8,letterSpacing:'.01em'}}>
+        {labelText}
+      </div>
+    </div>
   );
 }
 
@@ -4351,10 +4353,7 @@ export default function App() {
             <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981',marginRight:4,whiteSpace:'nowrap'}}>✓ Session renouvelée ! 24h actives</span>
           )}
           {!authLoading&&(user&&profile
-            ?<span style={{display:'inline-flex',alignItems:'center'}}>
-              <span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
-              <SessionTimer profile={profile} onClick={()=>siteNav('/renouveler')}/>
-            </span>
+            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
           <button className="nav-cta fb" onClick={()=>{
@@ -4365,6 +4364,7 @@ export default function App() {
           </button>
         </div>
       </nav>
+      {user&&profile?.session_expires_at&&<SessionBar profile={profile} onRenew={()=>siteNav('/renouveler')}/>}
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
