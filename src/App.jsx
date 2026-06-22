@@ -2106,7 +2106,11 @@ function AdminView(){
     const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
     setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
     setSel(s=>s?.id===id?{...s,status}:s);
-    setPartners(ps=>ps.filter(p=>p.id!==id));
+    if(status==='approuve'){
+      if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve'}]);
+    } else {
+      setPartners(ps=>ps.filter(p=>p.id!==id));
+    }
     setSelPartner(null);
     setConfirmReject(false);
     setConfirmPDisable(false);
@@ -2628,7 +2632,7 @@ function PartnerView({onLogout}){
   const txnQrRef=useRef(null);
 
   async function loadPartner(){
-    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
+    const{data}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
     if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});}
   }
   useEffect(()=>{if(authed)loadPartner();},[]);
