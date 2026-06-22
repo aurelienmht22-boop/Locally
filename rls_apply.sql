@@ -54,46 +54,46 @@ DROP POLICY IF EXISTS "analyses_insert_anon" ON analyses;
 DROP POLICY IF EXISTS "transactions_insert_anon" ON transactions;
 DROP POLICY IF EXISTS "transactions_select_anon" ON transactions;
 
--- ÉTAPE 3 : créer les policies
+-- ÉTAPE 3 : créer les policies (sans restriction de rôle = anon + authenticated)
 
 -- candidates
-CREATE POLICY "candidates_select_anon" ON candidates FOR SELECT TO anon USING (true);
-CREATE POLICY "candidates_insert_pending_only" ON candidates FOR INSERT TO anon WITH CHECK (status = 'pending');
-CREATE POLICY "candidates_update_anon" ON candidates FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "candidates_select_all" ON candidates FOR SELECT USING (true);
+CREATE POLICY "candidates_insert_pending_only" ON candidates FOR INSERT WITH CHECK (status = 'pending');
+CREATE POLICY "candidates_update_all" ON candidates FOR UPDATE USING (true) WITH CHECK (true);
 
 -- hotels
-CREATE POLICY "hotels_select_anon" ON hotels FOR SELECT TO anon USING (true);
-CREATE POLICY "hotels_insert_pending_only" ON hotels FOR INSERT TO anon WITH CHECK (status = 'pending');
-CREATE POLICY "hotels_update_anon" ON hotels FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "hotels_select_all" ON hotels FOR SELECT USING (true);
+CREATE POLICY "hotels_insert_pending_only" ON hotels FOR INSERT WITH CHECK (status = 'pending');
+CREATE POLICY "hotels_update_all" ON hotels FOR UPDATE USING (true) WITH CHECK (true);
 
 -- visits
-CREATE POLICY "visits_select_anon" ON visits FOR SELECT TO anon USING (true);
-CREATE POLICY "visits_insert_anon" ON visits FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "visits_update_anon" ON visits FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "visits_select_all" ON visits FOR SELECT USING (true);
+CREATE POLICY "visits_insert_all" ON visits FOR INSERT WITH CHECK (true);
+CREATE POLICY "visits_update_all" ON visits FOR UPDATE USING (true) WITH CHECK (true);
 
 -- orders
-CREATE POLICY "orders_select_anon" ON orders FOR SELECT TO anon USING (true);
-CREATE POLICY "orders_insert_anon" ON orders FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "orders_select_all" ON orders FOR SELECT USING (true);
+CREATE POLICY "orders_insert_all" ON orders FOR INSERT WITH CHECK (true);
 
 -- page_views
-CREATE POLICY "page_views_select_anon" ON page_views FOR SELECT TO anon USING (true);
-CREATE POLICY "page_views_insert_anon" ON page_views FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "page_views_select_all" ON page_views FOR SELECT USING (true);
+CREATE POLICY "page_views_insert_all" ON page_views FOR INSERT WITH CHECK (true);
 
 -- menu_items
-CREATE POLICY "menu_items_select_anon" ON menu_items FOR SELECT TO anon USING (true);
-CREATE POLICY "menu_items_insert_anon" ON menu_items FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "menu_items_update_anon" ON menu_items FOR UPDATE TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "menu_items_delete_anon" ON menu_items FOR DELETE TO anon USING (true);
+CREATE POLICY "menu_items_select_all" ON menu_items FOR SELECT USING (true);
+CREATE POLICY "menu_items_insert_all" ON menu_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "menu_items_update_all" ON menu_items FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "menu_items_delete_all" ON menu_items FOR DELETE USING (true);
 
 -- messages
-CREATE POLICY "messages_select_anon" ON messages FOR SELECT TO anon USING (true);
-CREATE POLICY "messages_insert_anon" ON messages FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "messages_update_anon" ON messages FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "messages_select_all" ON messages FOR SELECT USING (true);
+CREATE POLICY "messages_insert_all" ON messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "messages_update_all" ON messages FOR UPDATE USING (true) WITH CHECK (true);
 
 -- analyses
-CREATE POLICY "analyses_select_anon" ON analyses FOR SELECT TO anon USING (true);
-CREATE POLICY "analyses_insert_anon" ON analyses FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "analyses_select_all" ON analyses FOR SELECT USING (true);
+CREATE POLICY "analyses_insert_all" ON analyses FOR INSERT WITH CHECK (true);
 
--- transactions (pas de SELECT anon — seul l'INSERT est autorisé)
-CREATE POLICY "transactions_insert_anon" ON transactions FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "transactions_select_anon" ON transactions FOR SELECT TO anon USING (true);
+-- transactions
+CREATE POLICY "transactions_insert_all" ON transactions FOR INSERT WITH CHECK (true);
+CREATE POLICY "transactions_select_all" ON transactions FOR SELECT USING (true);
