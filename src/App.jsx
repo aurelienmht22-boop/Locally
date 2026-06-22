@@ -3790,7 +3790,14 @@ function MonCompteView({user,profile,signOut,onHome}){
       .select('*, candidates(nom)')
       .eq('user_id',user.id)
       .order('created_at',{ascending:false})
-      .then(({data,error})=>{console.log('[AccountView txns] data:',data,'error:',error,'user.id:',user?.id);setTxns(data||[]);setLoading(false);});
+      .then(async({data,error})=>{
+        if(error||!data||data.length===0){setTxns([]);setLoading(false);return;}
+        const ids=[...new Set(data.map(t=>t.partner_id).filter(Boolean))];
+        const{data:cands}=await supabase.from('candidates').select('id,nom').in('id',ids);
+        const byId={};(cands||[]).forEach(c=>{byId[c.id]=c.nom;});
+        setTxns(data.map(t=>({...t,candidates:{nom:byId[t.partner_id]||null}})));
+        setLoading(false);
+      });
   },[user?.id]);
 
   async function handleDeleteAccount(){
