@@ -3680,27 +3680,19 @@ function SessionBar({profile,onRenew,renewed}){
 }
 
 function RenouvellerPage({onBack,profile}){
-  const rem=profile?.session_expires_at?new Date(profile.session_expires_at)-Date.now():0;
-  const active=rem>0;
-  const h=active?Math.floor(rem/3600000):0;
-  const m=active?Math.floor((rem%3600000)/60000):0;
-  const timeLabel=h>0?`${h}h ${m}m`:`${m}m`;
+  const active=profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date();
+  const msg=active
+    ?'Votre session est active. Pour renouveler vos 24h, scannez le QR code affiché dans votre chambre.'
+    :'Votre session a expiré. Scannez le QR code affiché dans votre chambre pour obtenir 24h de réductions chez nos partenaires.';
   return(
     <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'32px 24px',textAlign:'center'}}>
       <style>{CSS}</style>
-      <div style={{maxWidth:420}}>
+      <div style={{maxWidth:400}}>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:12}}>
           {active?'Session active':'Session expirée'}
         </div>
-        <div className="sec-title fd" style={{marginBottom:20}}>Renouveler votre <em>session</em></div>
-        {active&&(
-          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#6B1D1D',background:'rgba(107,29,29,.07)',border:'1px solid rgba(107,29,29,.15)',borderRadius:12,padding:'10px 20px',marginBottom:20,display:'inline-block'}}>
-            ⏱ Il vous reste <strong>{timeLabel}</strong>
-          </div>
-        )}
-        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',lineHeight:1.75,marginBottom:32}}>
-          Scannez le QR code affiché dans votre chambre d'hôtel pour obtenir 24h de réductions chez nos partenaires.
-        </p>
+        <div className="sec-title fd" style={{marginBottom:20}}>Votre <em>session</em></div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',lineHeight:1.75,marginBottom:32}}>{msg}</p>
         <button className="nav-auth-btn fb" onClick={onBack} style={{padding:'12px 28px',fontSize:14}}>← Retour</button>
       </div>
     </div>
