@@ -1258,8 +1258,7 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
   const partner=PARTNERS[0];
   const open=isOpen();
   const currentCat=MENU.find(c=>c.id===activeTab);
-  const todayStr=new Date().toISOString().slice(0,10);
-  const sejourTermine=!!(profile?.date_depart&&todayStr>profile.date_depart);
+  const sessionExpired=!!(profile?.session_expires_at&&new Date()>new Date(profile.session_expires_at));
   const [visitMode,setVisitMode]=useState(null);
   const [visitData,setVisitData]=useState(null);
   const [visitLoading,setVisitLoading]=useState(false);
@@ -1411,8 +1410,8 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
                     ):(
                       <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
                     )}
-                    {sejourTermine?(
-                      <div className="op-label fb" style={{color:'#B91C1C',lineHeight:1.5}}>Votre séjour est terminé. Vous ne pouvez plus générer de QR code.</div>
+                    {sessionExpired?(
+                      <div className="op-label fb" style={{color:'#B91C1C',lineHeight:1.5}}>Votre session a expiré. Scannez le QR code de votre chambre pour renouveler vos 24h.</div>
                     ):(
                       <button className="btn-call fb" onClick={handleGenerateClick} disabled={visitLoading}>
                         {visitLoading?'Génération…':'Générer mon QR code'}
@@ -3186,8 +3185,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [visitLoading,setVisitLoading]=useState(false);
   const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
-  const todayStr=new Date().toISOString().slice(0,10);
-  const sejourTermine=!!(profile?.date_depart&&todayStr>profile.date_depart);
+  const sessionExpired=!!(profile?.session_expires_at&&new Date()>new Date(profile.session_expires_at));
 
   useEffect(()=>{
     const today=new Date().toISOString().slice(0,10);
@@ -3347,8 +3345,8 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
                     ):(
                       <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
                     )}
-                    {sejourTermine?(
-                      <div className="op-label fb" style={{color:'#B91C1C',lineHeight:1.5}}>Votre séjour est terminé. Vous ne pouvez plus générer de QR code.</div>
+                    {sessionExpired?(
+                      <div className="op-label fb" style={{color:'#B91C1C',lineHeight:1.5}}>Votre session a expiré. Scannez le QR code de votre chambre pour renouveler vos 24h.</div>
                     ):(
                       <button className="btn-call fb" onClick={handleGenerateClick} disabled={visitLoading}>
                         {visitLoading?'Génération…':'Générer mon QR code'}
@@ -3650,6 +3648,51 @@ function useAuth(){
   return{user,profile,authLoading,signOut,setUser,setProfile};
 }
 
+function SessionTimer({profile,onExpiredClick}){
+  const[label,setLabel]=useState('');
+  const[expired,setExpired]=useState(false);
+  useEffect(()=>{
+    if(!profile?.session_expires_at)return;
+    function tick(){
+      const rem=new Date(profile.session_expires_at)-Date.now();
+      if(rem<=0){setExpired(true);setLabel('Expiré');return;}
+      setExpired(false);
+      const h=Math.floor(rem/3600000);
+      const m=Math.floor((rem%3600000)/60000);
+      setLabel(h>0?`${h}h ${m}m`:`${m}m`);
+    }
+    tick();
+    const id=setInterval(tick,30000);
+    return()=>clearInterval(id);
+  },[profile?.session_expires_at]);
+  if(!profile?.session_expires_at||!label)return null;
+  return(
+    <span
+      onClick={expired?onExpiredClick:undefined}
+      title={expired?'Cliquez pour renouveler votre session':'Session active'}
+      style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:expired?'#B91C1C':'#7A6555',marginLeft:4,cursor:expired?'pointer':'default',userSelect:'none',letterSpacing:'.01em'}}
+    >
+      {expired?'⏱ Expiré':`⏱ ${label}`}
+    </span>
+  );
+}
+
+function RenouvellerPage({onBack}){
+  return(
+    <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'32px 24px',textAlign:'center'}}>
+      <style>{CSS}</style>
+      <div style={{maxWidth:420}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:12}}>Session expirée</div>
+        <div className="sec-title fd" style={{marginBottom:20}}>Renouvelez vos <em>24h</em></div>
+        <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',lineHeight:1.75,marginBottom:32}}>
+          Scannez le QR code affiché dans votre chambre pour bénéficier de 24 heures supplémentaires et continuer à profiter des réductions chez nos partenaires.
+        </p>
+        <button className="nav-auth-btn fb" onClick={onBack} style={{padding:'12px 28px',fontSize:14}}>← Retour</button>
+      </div>
+    </div>
+  );
+}
+
 function AuthModal({onClose,onSuccess,defaultTab='login'}){
   const[tab,setTab]=useState(defaultTab);
   const[loading,setLoading]=useState(false);
@@ -3658,8 +3701,6 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
   const[loginEmail,setLoginEmail]=useState('');
   const[loginPwd,setLoginPwd]=useState('');
   const[regPrenom,setRegPrenom]=useState('');
-  const[regArrivee,setRegArrivee]=useState('');
-  const[regDepart,setRegDepart]=useState('');
   const[regEmail,setRegEmail]=useState('');
   const[regPwd,setRegPwd]=useState('');
   const[regPwd2,setRegPwd2]=useState('');
@@ -3704,10 +3745,6 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
   async function handleRegister(e){
     e.preventDefault();setErr('');
     if(!regPrenom.trim()||regPrenom.trim().length<2){setErr('Le prénom doit contenir au moins 2 caractères.');return;}
-    if(!regArrivee){setErr("La date d'arrivée est obligatoire.");return;}
-    if(!regDepart){setErr('La date de départ est obligatoire.');return;}
-    if(regDepart<=regArrivee){setErr('La date de départ doit être après la date d\'arrivée.');return;}
-    if((new Date(regDepart)-new Date(regArrivee))/(864e5)>21){setErr('La durée du séjour ne peut pas dépasser 21 jours.');return;}
     if(regPwd.length<8){setErr('Le mot de passe doit contenir au moins 8 caractères.');return;}
     if(regPwd!==regPwd2){setErr('Les mots de passe ne correspondent pas.');return;}
     if(!rgpd){setErr('Vous devez accepter la politique de confidentialité pour créer un compte.');return;}
@@ -3720,7 +3757,8 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
       setTab('login');
       return;
     }
-    await supabase.from('profiles').insert({id:data.user.id,prenom:regPrenom.trim(),date_arrivee:regArrivee,date_depart:regDepart,rgpd_consent_at:new Date().toISOString()});
+    const session_expires_at=new Date(Date.now()+24*60*60*1000).toISOString();
+    await supabase.from('profiles').insert({id:data.user.id,prenom:regPrenom.trim(),session_expires_at,rgpd_consent_at:new Date().toISOString()});
     const{data:prof}=await supabase.from('profiles').select('*').eq('id',data.user.id).maybeSingle();
     setLoading(false);
     onSuccess(data.user,prof);
@@ -3764,10 +3802,6 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
           <form onSubmit={handleRegister} noValidate>
             <label className="auth-label fb">Prénom</label>
             <input className="auth-input fb" type="text" value={regPrenom} onChange={e=>setRegPrenom(e.target.value)} placeholder="Votre prénom" required maxLength={50} autoFocus/>
-            <label className="auth-label fb">Date d'arrivée</label>
-            <input className="auth-input fb" type="date" value={regArrivee} min={new Date().toISOString().slice(0,10)} onChange={e=>{setRegArrivee(e.target.value);setRegDepart('');}} required/>
-            <label className="auth-label fb">Date de départ</label>
-            <input className="auth-input fb" type="date" value={regDepart} min={regArrivee?(new Date(new Date(regArrivee+'T12:00:00').getTime()+864e5).toISOString().slice(0,10)):''} max={regArrivee?(new Date(new Date(regArrivee+'T12:00:00').getTime()+21*864e5).toISOString().slice(0,10)):''} onChange={e=>setRegDepart(e.target.value)} disabled={!regArrivee} required/>
             <label className="auth-label fb">Email</label>
             <input className="auth-input fb" type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email"/>
             <label className="auth-label fb">Mot de passe</label>
@@ -3781,7 +3815,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
                 <button type="button" className="auth-rgpd-link" onClick={()=>siteNav('/confidentialite')}>politique de confidentialité</button>.
               </label>
             </div>
-            <button className="auth-btn fb" type="submit" disabled={loading||!regPrenom||!regArrivee||!regDepart||!regEmail||!regPwd||!regPwd2||!rgpd}>
+            <button className="auth-btn fb" type="submit" disabled={loading||!regPrenom||!regEmail||!regPwd||!regPwd2||!rgpd}>
               {loading?'Création…':'Créer mon compte →'}
             </button>
           </form>
@@ -3804,22 +3838,6 @@ function MonCompteView({user,profile,setProfile,signOut,onHome}){
   const[deleting,setDeleting]=useState(false);
   const[showConfirm,setShowConfirm]=useState(false);
   const[deleteErr,setDeleteErr]=useState('');
-  const[showSejourEdit,setShowSejourEdit]=useState(false);
-  const[newDepart,setNewDepart]=useState('');
-  const[sejourSaving,setSejourSaving]=useState(false);
-  const[sejourSaved,setSejourSaved]=useState(false);
-
-  function fmtDate(d){return d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):'—';}
-  const maxDepart=profile?.date_arrivee?new Date(new Date(profile.date_arrivee+'T12:00:00').getTime()+21*864e5).toISOString().slice(0,10):'';
-
-  async function saveDepart(){
-    if(!newDepart||newDepart<=profile.date_depart)return;
-    setSejourSaving(true);
-    await supabase.from('profiles').update({date_depart:newDepart}).eq('id',user.id);
-    setProfile({...profile,date_depart:newDepart});
-    setSejourSaving(false);setSejourSaved(true);setShowSejourEdit(false);
-    setTimeout(()=>setSejourSaved(false),3000);
-  }
 
   useEffect(()=>{
     if(!user)return;
@@ -3870,37 +3888,6 @@ function MonCompteView({user,profile,setProfile,signOut,onHome}){
       <div style={{maxWidth:720,margin:'0 auto',padding:'48px 24px 80px'}}>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:8}}>Mon compte</div>
         <div className="sec-title fd" style={{marginBottom:36}}>Bonjour, <em>{profile?.prenom}</em></div>
-
-        {/* Séjour */}
-        {profile?.date_arrivee&&(
-          <div style={{background:'#FDFAF6',border:'1px solid rgba(107,29,29,.09)',borderRadius:14,padding:'18px 20px',marginBottom:28}}>
-            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:12}}>Mon séjour</div>
-            <div style={{display:'flex',gap:24,flexWrap:'wrap',marginBottom:12}}>
-              <div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'#7A6555',marginBottom:2}}>Arrivée</div>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,fontWeight:600,color:'#1C1208'}}>{fmtDate(profile.date_arrivee)}</div>
-              </div>
-              <div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'#7A6555',marginBottom:2}}>Départ</div>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:17,fontWeight:600,color:'#1C1208'}}>{fmtDate(profile.date_depart)}</div>
-              </div>
-            </div>
-            {sejourSaved&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',marginBottom:8}}>✓ Date de départ mise à jour</div>}
-            {!showSejourEdit?(
-              <button onClick={()=>{setNewDepart(profile.date_depart||'');setShowSejourEdit(true);}} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,color:'#6B1D1D',background:'none',border:'1px solid rgba(107,29,29,.25)',borderRadius:8,padding:'6px 14px',cursor:'pointer'}}>
-                Modifier mes dates
-              </button>
-            ):(
-              <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginTop:4}}>
-                <input type="date" value={newDepart} min={profile.date_depart||''} max={maxDepart} onChange={e=>setNewDepart(e.target.value)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,border:'1px solid rgba(107,29,29,.25)',borderRadius:8,padding:'6px 10px',color:'#1C1208'}}/>
-                <button onClick={saveDepart} disabled={sejourSaving||!newDepart||newDepart<=profile.date_depart} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,color:'#fff',background:'#6B1D1D',border:'none',borderRadius:8,padding:'7px 16px',cursor:'pointer',opacity:(!newDepart||newDepart<=profile.date_depart)?0.45:1}}>
-                  {sejourSaving?'Enregistrement…':'Confirmer'}
-                </button>
-                <button onClick={()=>setShowSejourEdit(false)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#7A6555',background:'none',border:'none',cursor:'pointer'}}>Annuler</button>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Stat cards */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14,marginBottom:40}}>
@@ -4257,6 +4244,8 @@ function JoindreView({onHome}){
 export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
+  const[sessionRenewed,setSessionRenewed]=useState(false);
+  const[pendingHotelSlug]=useState(()=>new URLSearchParams(window.location.search).get('hotel')||null);
   function openAuth(tab='login',onSuccess=null){setAuthModal({open:true,tab,onSuccess});}
   function handleAuthSuccess(u,prof){
     // Mise à jour immédiate du nav sans attendre onAuthStateChange
@@ -4273,6 +4262,7 @@ export default function App() {
     if(path==="/rejoindre")return "rejoindre";
     if(path==="/mentions-legales")return "mentions";
     if(path==="/confidentialite")return "confidentialite";
+    if(path==="/renouveler")return "renouveler";
     if(path==="/compte")return "compte";
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
@@ -4283,10 +4273,18 @@ export default function App() {
   const [activePartner,setActivePartner]=useState(null);
   const [supabasePartners,setSupabasePartners]=useState([]);
   useEffect(()=>{
-    const hotelParam=new URLSearchParams(window.location.search).get('hotel');
-    if(hotelParam) localStorage.setItem('source_hotel',hotelParam);
+    if(pendingHotelSlug) localStorage.setItem('source_hotel',pendingHotelSlug);
     supabase.from('candidates').select('*').eq('status','approuve').then(({data})=>setSupabasePartners(data||[]));
   },[]);
+  useEffect(()=>{
+    if(!user||!pendingHotelSlug)return;
+    const newExpiry=new Date(Date.now()+24*60*60*1000).toISOString();
+    supabase.from('profiles').update({session_expires_at:newExpiry}).eq('id',user.id).then(()=>{
+      setAuthProfile(p=>({...p,session_expires_at:newExpiry}));
+      setSessionRenewed(true);
+      setTimeout(()=>setSessionRenewed(false),5000);
+    });
+  },[user?.id]);
   useEffect(()=>{window.scrollTo(0,0);},[page]);
   useEffect(()=>{
     function onPopState(){
@@ -4296,6 +4294,7 @@ export default function App() {
       if(path==="/rejoindre"){setPage("rejoindre");return;}
       if(path==="/mentions-legales"){setPage("mentions");return;}
       if(path==="/confidentialite"){setPage("confidentialite");return;}
+      if(path==="/renouveler"){setPage("renouveler");return;}
       if(path==="/compte"){setPage("compte");return;}
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
@@ -4334,8 +4333,14 @@ export default function App() {
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
+          {sessionRenewed&&(
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981',marginRight:4,whiteSpace:'nowrap'}}>✓ Session renouvelée ! 24h actives</span>
+          )}
           {!authLoading&&(user&&profile
-            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
+            ?<span style={{display:'inline-flex',alignItems:'center'}}>
+              <span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
+              <SessionTimer profile={profile} onExpiredClick={()=>siteNav('/renouveler')}/>
+            </span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
           <button className="nav-cta fb" onClick={()=>{
@@ -4351,6 +4356,7 @@ export default function App() {
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
       {page==="snack"&&<SnackPage onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
+      {page==="renouveler"&&<RenouvellerPage onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
