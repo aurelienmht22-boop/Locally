@@ -2079,6 +2079,7 @@ function AdminView(){
   }
 
   useEffect(()=>{
+    console.log('[AdminEffect] authed=',authed,'tab=',tab);
     if(!authed)return;
     if(tab==='candidatures'||tab==='rejetes'){fetchCands();fetchHotels();}
     else if(tab==='partenaires')fetchPartners();
