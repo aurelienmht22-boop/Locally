@@ -1797,9 +1797,9 @@ function LoginView({onLogin}){
     try{
       if(code.trim()==='locally2024'){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
       const{data:cand}=await supabase.from('candidates').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(cand?.slug){sessionStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
+      if(cand?.slug){localStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
       const{data:hotel}=await supabase.from('hotels').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(hotel?.slug){sessionStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
+      if(hotel?.slug){localStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
       setErr('Code incorrect.');
     }catch{setErr('Code incorrect.');}
     finally{setLoading(false);}
@@ -2591,7 +2591,7 @@ function parseReduction(r){
 
 function PartnerView({onLogout}){
   const slug=window.location.pathname.replace(/^\/partner\//,'').split('/')[0];
-  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('partner_slug')===slug);
+  const [authed,setAuthed]=useState(()=>localStorage.getItem('partner_slug')===slug);
   const [partner,setPartner]=useState(null);
   const [code,setCode]=useState('');
   const [loginErr,setLoginErr]=useState('');
@@ -2677,6 +2677,7 @@ function PartnerView({onLogout}){
       qr_code_id:txnVisit.qr_code_id,
       partner_id:partner.id,
       client_name:txnVisit.client_name,
+      user_id:txnVisit.user_id||null,
       hotel_slug:txnVisit.hotel_slug||null,
       montant_transaction:m,
       taux_reduction_applique:t,
@@ -2698,9 +2699,9 @@ function PartnerView({onLogout}){
 
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
-    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('access_code',code).eq('status','approuve').maybeSingle();
+    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
     if(data){
-      sessionStorage.setItem('partner_slug',slug);
+      localStorage.setItem('partner_slug',slug);
       setPartner(data);
       setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});
       setHoraires(data.horaires||{});
@@ -2788,7 +2789,7 @@ function PartnerView({onLogout}){
     setMenuForm(f=>({...f,photo_url:b64}));
   }
 
-  function logout(){sessionStorage.removeItem('partner_slug');onLogout();}
+  function logout(){localStorage.removeItem('partner_slug');onLogout();}
 
   const pFmt=d=>d?new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 
@@ -3400,7 +3401,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
 
 function HotelView({onLogout}){
   const slug=window.location.pathname.replace(/^\/hotel\//,'').split('/')[0];
-  const [authed]=useState(()=>sessionStorage.getItem('hotel_slug')===slug);
+  const [authed]=useState(()=>localStorage.getItem('hotel_slug')===slug);
   const [hotel,setHotel]=useState(null);
   const [loading,setLoading]=useState(true);
   const [stats,setStats]=useState(null);
@@ -3469,7 +3470,7 @@ function HotelView({onLogout}){
     setTimeout(()=>setHtlMsgSent(false),3000);
   }
 
-  function logout(){sessionStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
+  function logout(){localStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
 
   if(!authed){window.history.pushState({},'','/login');onLogout();return null;}
 
