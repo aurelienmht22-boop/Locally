@@ -3790,7 +3790,7 @@ function MonCompteView({user,profile,signOut,onHome}){
       .select('*, candidates(nom)')
       .eq('user_id',user.id)
       .order('created_at',{ascending:false})
-      .then(({data})=>{setTxns(data||[]);setLoading(false);});
+      .then(({data,error})=>{console.log('[AccountView txns] data:',data,'error:',error,'user.id:',user?.id);setTxns(data||[]);setLoading(false);});
   },[user?.id]);
 
   async function handleDeleteAccount(){
