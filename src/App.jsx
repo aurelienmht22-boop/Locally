@@ -1815,7 +1815,7 @@ function LoginView({onLogin}){
       const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:cForm.reduction.trim()+'%',email:cForm.email.trim(),status:'pending'}]);
       if(error)throw error;
       setCSent(true);
-    }catch{setCErr('Une erreur est survenue. Veuillez réessayer.');}
+    }catch(err){console.error('[Locally] candidates INSERT error:',err);setCErr('Une erreur est survenue. Veuillez réessayer.');}
     finally{setCLoading(false);}
   }
 
