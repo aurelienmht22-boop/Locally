@@ -7,6 +7,9 @@
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS commission_hotel NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS session_expires_at timestamptz;
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS visible boolean NOT NULL DEFAULT true;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS google_review_url text;
+CREATE TABLE IF NOT EXISTS review_clicks (id uuid default gen_random_uuid() primary key, partner_id text, created_at timestamptz default now());
+ALTER TABLE review_clicks ENABLE ROW LEVEL SECURITY;
 
 -- ÉTAPE 1 : activer RLS
 ALTER TABLE candidates   ENABLE ROW LEVEL SECURITY;
@@ -99,3 +102,7 @@ CREATE POLICY "analyses_insert_all" ON analyses FOR INSERT WITH CHECK (true);
 -- transactions
 CREATE POLICY "transactions_insert_all" ON transactions FOR INSERT WITH CHECK (true);
 CREATE POLICY "transactions_select_all" ON transactions FOR SELECT USING (true);
+
+-- review_clicks
+CREATE POLICY "review_clicks_insert_all" ON review_clicks FOR INSERT WITH CHECK (true);
+CREATE POLICY "review_clicks_select_all" ON review_clicks FOR SELECT USING (true);

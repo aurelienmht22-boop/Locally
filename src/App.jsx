@@ -2726,6 +2726,7 @@ function PartnerView({onLogout}){
   const [statPrev,setStatPrev]=useState({visits:0,scanned:0,pageViews:0,ca:0});
   const [chartData,setChartData]=useState([]);
   const [recentTxns,setRecentTxns]=useState([]);
+  const [reviewClicks,setReviewClicks]=useState(0);
   const [horaires,setHoraires]=useState({});
   const [codeForm,setCodeForm]=useState({code1:'',code2:''});
   const [savingCode,setSavingCode]=useState(false);
@@ -2743,7 +2744,7 @@ function PartnerView({onLogout}){
   const [txnTaux,setTxnTaux]=useState('');
   const [txnSaving,setTxnSaving]=useState(false);
   const txnQrRef=useRef(null);
-  const [settingsInfoForm,setSettingsInfoForm]=useState({nom:'',telephone:'',email:'',description:''});
+  const [settingsInfoForm,setSettingsInfoForm]=useState({nom:'',telephone:'',email:'',description:'',google_review_url:''});
   const [savingInfo,setSavingInfo]=useState(false);
   const [infoSaved,setInfoSaved]=useState(false);
   const [settingsCodeForm,setSettingsCodeForm]=useState({code1:'',code2:''});
@@ -2754,13 +2755,13 @@ function PartnerView({onLogout}){
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
-    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});setSettingsInfoForm({nom:data.nom||'',telephone:data.telephone||'',email:data.email||'',description:data.description||'',});}
+    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});setSettingsInfoForm({nom:data.nom||'',telephone:data.telephone||'',email:data.email||'',description:data.description||'',google_review_url:data.google_review_url||''});}
   }
   useEffect(()=>{if(authed)loadPartner();},[]);
 
   async function saveSettingsInfo(){
     setSavingInfo(true);
-    await supabase.from('candidates').update({nom:settingsInfoForm.nom.trim(),telephone:settingsInfoForm.telephone.trim(),email:settingsInfoForm.email.trim(),description:settingsInfoForm.description.trim()}).eq('id',partner.id);
+    await supabase.from('candidates').update({nom:settingsInfoForm.nom.trim(),telephone:settingsInfoForm.telephone.trim(),email:settingsInfoForm.email.trim(),description:settingsInfoForm.description.trim(),google_review_url:settingsInfoForm.google_review_url.trim()}).eq('id',partner.id);
     setPartner(p=>({...p,...settingsInfoForm}));
     setSavingInfo(false);setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
   }
@@ -2785,10 +2786,12 @@ function PartnerView({onLogout}){
 
   async function fetchStatsExtra(){
     const from30=new Date(Date.now()-30*24*60*60*1000).toISOString();
-    const [{data:txn30},{data:last5}]=await Promise.all([
+    const [{data:txn30},{data:last5},{count:rcCount}]=await Promise.all([
       supabase.from('transactions').select('created_at,montant_client').eq('partner_id',partner.id).gte('created_at',from30),
       supabase.from('transactions').select('created_at,montant_client,taux_reduction_applique').eq('partner_id',partner.id).order('created_at',{ascending:false}).limit(5),
+      supabase.from('review_clicks').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
     ]);
+    setReviewClicks(rcCount||0);
     const byDay={};
     for(let i=29;i>=0;i--){
       const d=new Date();d.setDate(d.getDate()-i);
@@ -3282,6 +3285,13 @@ function PartnerView({onLogout}){
                 </div>
               )}
             </div>
+
+            {reviewClicks>0&&(
+              <div style={{marginTop:8,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',display:'flex',alignItems:'center',gap:8}}>
+                <span style={{fontSize:16}}>⭐</span>
+                <span><strong style={{fontWeight:500,color:'#1C1208'}}>{reviewClicks}</strong> client{reviewClicks>1?'s':''} {reviewClicks>1?'ont':'a'} cliqué pour laisser un avis Google</span>
+              </div>
+            )}
           </>
         )}
 
@@ -3420,6 +3430,10 @@ function PartnerView({onLogout}){
                 <div>
                   <label className="prt-label fb">Email</label>
                   <input className="prt-input" type="email" value={settingsInfoForm.email} onChange={e=>setSettingsInfoForm(f=>({...f,email:e.target.value}))} placeholder="contact@exemple.fr"/>
+                </div>
+                <div>
+                  <label className="prt-label fb">Lien Google Avis</label>
+                  <input className="prt-input" type="url" value={settingsInfoForm.google_review_url} onChange={e=>setSettingsInfoForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
                 </div>
                 <div>
                   <label className="prt-label fb">Description courte</label>
@@ -3593,6 +3607,21 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
             </div>
           )}
         </div>
+
+        {partner.google_review_url&&(
+          <div style={{marginBottom:32}}>
+            <button
+              className="btn-call fb"
+              style={{display:'inline-flex',alignItems:'center',gap:8}}
+              onClick={()=>{
+                supabase.from('review_clicks').insert({partner_id:partner.id});
+                window.open(partner.google_review_url,'_blank','noopener');
+              }}
+            >
+              ⭐ Laisser un avis Google
+            </button>
+          </div>
+        )}
 
         {/* Horaires */}
         <div className="gpp-section">
