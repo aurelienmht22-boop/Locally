@@ -4359,7 +4359,7 @@ export default function App() {
           </button>
         </div>
       </nav>
-      {user&&profile?.session_expires_at&&<SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/>}
+      {user&&profile?.session_expires_at&&<div style={{position:'fixed',top:78,left:16,right:16,zIndex:199}}><SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/></div>}
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
