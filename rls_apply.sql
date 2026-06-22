@@ -3,8 +3,12 @@
 -- Coller EN ENTIER dans Supabase > SQL Editor > Run
 -- ============================================================
 
--- ÉTAPE 0 : colonne manquante après reset
+-- ÉTAPE 0 : colonnes et FK manquantes après reset
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS commission_hotel NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE transactions ADD CONSTRAINT fk_transactions_partner
+  FOREIGN KEY (partner_id) REFERENCES candidates(id) ON DELETE SET NULL
+  NOT VALID;  -- NOT VALID : évite de rescanner les lignes existantes
 
 -- ÉTAPE 1 : activer RLS
 ALTER TABLE candidates   ENABLE ROW LEVEL SECURITY;
