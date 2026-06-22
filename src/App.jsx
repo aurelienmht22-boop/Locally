@@ -1265,7 +1265,7 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
   const [countdownPct,setCountdownPct]=useState(100);
 
   useEffect(()=>{
-    supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});
+    supabase.from('page_views').insert({partner_id:partner.id});
   },[]);
 
   useEffect(()=>{
@@ -3177,7 +3177,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   useEffect(()=>{
     const today=new Date().toISOString().slice(0,10);
     const vk=`view_${partner.id}_${today}`;
-    if(!localStorage.getItem(vk)){supabase.from('page_views').insert({partner_id:partner.id,created_at:new Date().toISOString()});localStorage.setItem(vk,'1');}
+    if(!localStorage.getItem(vk)){supabase.from('page_views').insert({partner_id:partner.id});localStorage.setItem(vk,'1');}
     supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}).then(({data})=>{
       setMenuItems(data||[]);setLoadingMenu(false);
     });
