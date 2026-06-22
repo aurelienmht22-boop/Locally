@@ -2603,6 +2603,44 @@ function parseReduction(r){
   return m?parseFloat(m[1]):0;
 }
 
+function BarChart({data}){
+  const max=Math.max(...data.map(d=>d.ca),0.01);
+  const hasData=data.some(d=>d.ca>0);
+  const W=600,H=150,PT=10,PR=8,PB=30,PL=42;
+  const innerW=W-PL-PR,innerH=H-PT-PB;
+  const bW=innerW/data.length;
+  if(!hasData)return(
+    <div style={{height:150,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A'}}>
+      Pas encore de transactions sur cette période
+    </div>
+  );
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
+      {[0,0.5,1].map(f=>{
+        const y=PT+innerH*(1-f);
+        return(
+          <g key={f}>
+            <line x1={PL} x2={W-PR} y1={y} y2={y} stroke="rgba(107,29,29,.08)" strokeWidth={1}/>
+            <text x={PL-5} y={y+4} textAnchor="end" fontSize={9} fill="#9B8B7A" fontFamily="DM Sans,sans-serif">{f===0?'0':(max*f).toFixed(0)+'€'}</text>
+          </g>
+        );
+      })}
+      {data.map((d,i)=>{
+        const bH=Math.max((d.ca/max)*innerH,d.ca>0?1:0);
+        const x=PL+i*bW+bW*0.18;
+        const y=PT+innerH-bH;
+        const lbl=d.date.slice(5).replace('-','/');
+        return(
+          <g key={d.date}>
+            <rect x={x} y={y} width={bW*0.64} height={bH} fill={d.ca>0?'#6B1D1D':'transparent'} rx={2}/>
+            {i%5===0&&<text x={PL+i*bW+bW/2} y={H-4} textAnchor="middle" fontSize={8} fill="#9B8B7A" fontFamily="DM Sans,sans-serif">{lbl}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PartnerView({onLogout}){
   const slug=window.location.pathname.replace(/^\/partner\//,'').split('/')[0];
   const [authed,setAuthed]=useState(()=>localStorage.getItem('partner_slug')===slug);
@@ -2625,6 +2663,8 @@ function PartnerView({onLogout}){
   const [loadingStats,setLoadingStats]=useState(false);
   const [statPeriod,setStatPeriod]=useState('month');
   const [statPrev,setStatPrev]=useState({visits:0,scanned:0,pageViews:0,ca:0});
+  const [chartData,setChartData]=useState([]);
+  const [recentTxns,setRecentTxns]=useState([]);
   const [horaires,setHoraires]=useState({});
   const [codeForm,setCodeForm]=useState({code1:'',code2:''});
   const [savingCode,setSavingCode]=useState(false);
@@ -2682,10 +2722,26 @@ function PartnerView({onLogout}){
     setSavingVisible(false);
   }
 
+  async function fetchStatsExtra(){
+    const from30=new Date(Date.now()-30*24*60*60*1000).toISOString();
+    const [{data:txn30},{data:last5}]=await Promise.all([
+      supabase.from('transactions').select('created_at,montant_client').eq('partner_id',partner.id).gte('created_at',from30),
+      supabase.from('transactions').select('created_at,montant_client,taux_reduction_applique').eq('partner_id',partner.id).order('created_at',{ascending:false}).limit(5),
+    ]);
+    const byDay={};
+    for(let i=29;i>=0;i--){
+      const d=new Date();d.setDate(d.getDate()-i);
+      byDay[d.toISOString().slice(0,10)]=0;
+    }
+    (txn30||[]).forEach(t=>{const k=t.created_at.slice(0,10);if(byDay[k]!==undefined)byDay[k]+=Number(t.montant_client||0);});
+    setChartData(Object.entries(byDay).map(([date,ca])=>({date,ca})));
+    setRecentTxns(last5||[]);
+  }
+
   useEffect(()=>{
     if(!partner)return;
     if(tab==='menu')fetchMenu();
-    else if(tab==='stats')fetchStats(statPeriod);
+    else if(tab==='stats'){fetchStats(statPeriod);fetchStatsExtra();}
   },[tab,partner]);
   useEffect(()=>{
     if(tab==='stats'&&partner)fetchStats(statPeriod);
@@ -3133,6 +3189,38 @@ function PartnerView({onLogout}){
                 })}
               </div>
             )}
+
+            <div style={{marginTop:32}}>
+              <div className="prt-section-label fb">Chiffre d'affaires — 30 derniers jours</div>
+              <div style={{background:'white',border:'1px solid rgba(107,29,29,.09)',borderRadius:14,padding:'20px 16px 12px'}}>
+                <BarChart data={chartData}/>
+              </div>
+            </div>
+
+            <div style={{marginTop:28}}>
+              <div className="prt-section-label fb">Dernières transactions</div>
+              {recentTxns.length===0?(
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A',padding:'16px 0'}}>Aucune transaction pour le moment</div>
+              ):(
+                <div style={{background:'white',border:'1px solid rgba(107,29,29,.09)',borderRadius:14,overflow:'hidden'}}>
+                  {recentTxns.map((t,i)=>{
+                    const d=new Date(t.created_at);
+                    const dateStr=d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+                    return(
+                      <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 20px',borderBottom:i<recentTxns.length-1?'1px solid rgba(107,29,29,.07)':'none'}}>
+                        <div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#1C1208'}}>{Number(t.montant_client).toFixed(2)} €</div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'#9B8B7A',marginTop:2}}>{dateStr}</div>
+                        </div>
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,color:'#6B1D1D',background:'rgba(107,29,29,.07)',borderRadius:20,padding:'4px 10px'}}>
+                          -{t.taux_reduction_applique}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
 
