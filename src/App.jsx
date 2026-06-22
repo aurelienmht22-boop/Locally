@@ -3648,17 +3648,17 @@ function useAuth(){
   return{user,profile,authLoading,signOut,setUser,setProfile};
 }
 
-function SessionTimer({profile,onExpiredClick}){
+function SessionTimer({profile,onClick}){
   const[label,setLabel]=useState('');
-  const[expired,setExpired]=useState(false);
+  const[state,setState]=useState('ok'); // 'ok' | 'warn' | 'expired'
   useEffect(()=>{
     if(!profile?.session_expires_at)return;
     function tick(){
       const rem=new Date(profile.session_expires_at)-Date.now();
-      if(rem<=0){setExpired(true);setLabel('Expiré');return;}
-      setExpired(false);
+      if(rem<=0){setState('expired');setLabel('Expiré');return;}
       const h=Math.floor(rem/3600000);
       const m=Math.floor((rem%3600000)/60000);
+      setState(rem<2*3600000?'warn':'ok');
       setLabel(h>0?`${h}h ${m}m`:`${m}m`);
     }
     tick();
@@ -3666,26 +3666,40 @@ function SessionTimer({profile,onExpiredClick}){
     return()=>clearInterval(id);
   },[profile?.session_expires_at]);
   if(!profile?.session_expires_at||!label)return null;
+  const color=state==='expired'?'#B91C1C':state==='warn'?'#B45309':'#6B1D1D';
+  const borderColor=state==='expired'?'rgba(185,28,28,.35)':state==='warn'?'rgba(180,83,9,.3)':'rgba(107,29,29,.2)';
   return(
     <span
-      onClick={expired?onExpiredClick:undefined}
-      title={expired?'Cliquez pour renouveler votre session':'Session active'}
-      style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:expired?'#B91C1C':'#7A6555',marginLeft:4,cursor:expired?'pointer':'default',userSelect:'none',letterSpacing:'.01em'}}
+      onClick={onClick}
+      title={state==='expired'?'Session expirée — cliquez pour renouveler':`Session active — cliquez pour renouveler`}
+      style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color,marginLeft:6,cursor:'pointer',userSelect:'none',padding:'5px 10px',border:`1px solid ${borderColor}`,borderRadius:20,background:'transparent',display:'inline-flex',alignItems:'center',gap:4,transition:'all .2s',letterSpacing:'.01em'}}
     >
-      {expired?'⏱ Expiré':`⏱ ${label}`}
+      ⏱ {label}
     </span>
   );
 }
 
-function RenouvellerPage({onBack}){
+function RenouvellerPage({onBack,profile}){
+  const rem=profile?.session_expires_at?new Date(profile.session_expires_at)-Date.now():0;
+  const active=rem>0;
+  const h=active?Math.floor(rem/3600000):0;
+  const m=active?Math.floor((rem%3600000)/60000):0;
+  const timeLabel=h>0?`${h}h ${m}m`:`${m}m`;
   return(
     <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'32px 24px',textAlign:'center'}}>
       <style>{CSS}</style>
       <div style={{maxWidth:420}}>
-        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:12}}>Session expirée</div>
-        <div className="sec-title fd" style={{marginBottom:20}}>Renouvelez vos <em>24h</em></div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D',marginBottom:12}}>
+          {active?'Session active':'Session expirée'}
+        </div>
+        <div className="sec-title fd" style={{marginBottom:20}}>Renouveler votre <em>session</em></div>
+        {active&&(
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#6B1D1D',background:'rgba(107,29,29,.07)',border:'1px solid rgba(107,29,29,.15)',borderRadius:12,padding:'10px 20px',marginBottom:20,display:'inline-block'}}>
+            ⏱ Il vous reste <strong>{timeLabel}</strong>
+          </div>
+        )}
         <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',lineHeight:1.75,marginBottom:32}}>
-          Scannez le QR code affiché dans votre chambre pour bénéficier de 24 heures supplémentaires et continuer à profiter des réductions chez nos partenaires.
+          Scannez le QR code affiché dans votre chambre d'hôtel pour obtenir 24h de réductions chez nos partenaires.
         </p>
         <button className="nav-auth-btn fb" onClick={onBack} style={{padding:'12px 28px',fontSize:14}}>← Retour</button>
       </div>
@@ -4339,7 +4353,7 @@ export default function App() {
           {!authLoading&&(user&&profile
             ?<span style={{display:'inline-flex',alignItems:'center'}}>
               <span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
-              <SessionTimer profile={profile} onExpiredClick={()=>siteNav('/renouveler')}/>
+              <SessionTimer profile={profile} onClick={()=>siteNav('/renouveler')}/>
             </span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
@@ -4356,7 +4370,7 @@ export default function App() {
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
       {page==="snack"&&<SnackPage onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
-      {page==="renouveler"&&<RenouvellerPage onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
+      {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
