@@ -3661,7 +3661,7 @@ function SessionBar({profile,onRenew,renewed}){
   const expired=rem<=0;
   const warn=!expired&&rem<2*3600000;
   const pct=expired?0:Math.min(100,rem/864e5*100);
-  const fillColor=expired?'#B91C1C':warn?'#B45309':'#6B1D1D';
+  const fillColor=expired?'#B91C1C':warn?'#B45309':'#15803D';
   const h=expired?0:Math.floor(rem/3600000);
   const m=expired?0:Math.floor((rem%3600000)/60000);
   const timeStr=h>0?`${h}h ${m}m`:`${m}m`;
@@ -4300,6 +4300,11 @@ export default function App() {
     });
   },[user?.id]);
   useEffect(()=>{window.scrollTo(0,0);},[page]);
+  useEffect(()=>{
+    if(page!=='renouveler'&&window.location.pathname==='/renouveler'){
+      window.history.replaceState({},'','/');
+    }
+  },[page]);
   useEffect(()=>{
     function onPopState(){
       const path=window.location.pathname;
