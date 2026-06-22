@@ -1972,6 +1972,17 @@ function StatusBadge({status}){
 }
 function admFmt(d){if(!d)return '—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});}
 
+function generateSlug(nom){
+  return(nom||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9\s]/g,'')
+    .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
+}
+function generateCode(){
+  const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*36)]).join('');
+}
+
 function AdminView(){
   const [authed,setAuthed]=useState(()=>sessionStorage.getItem('adm')==='1');
   const [pwd,setPwd]=useState('');
@@ -2441,7 +2452,17 @@ function AdminView(){
               <div className="adm-modal-actions">
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateStatus(sel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateStatus(sel.id,'en_attente')}>En attente</button>
-                <button className="adm-sbtn adm-s-ok fb" onClick={()=>updateStatus(sel.id,'approuve')}>Approuver</button>
+                <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
+                  if(!sel.slug){
+                    const base=generateSlug(sel.nom);
+                    const{data:existing}=await supabase.from('candidates').select('slug').ilike('slug',base+'%').neq('id',sel.id);
+                    const slugs=new Set((existing||[]).map(c=>c.slug));
+                    let slug=base,i=2;
+                    while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
+                    setSelAccess({slug,access_code:generateCode()});
+                  }
+                  updateStatus(sel.id,'approuve');
+                }}>Approuver</button>
                 <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmReject(true)}>Rejeter</button>
               </div>
             ):(
