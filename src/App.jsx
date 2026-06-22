@@ -2623,6 +2623,8 @@ function PartnerView({onLogout}){
   const [pageViews,setPageViews]=useState(0);
   const [statCA,setStatCA]=useState(0);
   const [loadingStats,setLoadingStats]=useState(false);
+  const [statPeriod,setStatPeriod]=useState('month');
+  const [statPrev,setStatPrev]=useState({visits:0,scanned:0,pageViews:0,ca:0});
   const [horaires,setHoraires]=useState({});
   const [codeForm,setCodeForm]=useState({code1:'',code2:''});
   const [savingCode,setSavingCode]=useState(false);
@@ -2683,8 +2685,11 @@ function PartnerView({onLogout}){
   useEffect(()=>{
     if(!partner)return;
     if(tab==='menu')fetchMenu();
-    else if(tab==='stats')fetchStats();
+    else if(tab==='stats')fetchStats(statPeriod);
   },[tab,partner]);
+  useEffect(()=>{
+    if(tab==='stats'&&partner)fetchStats(statPeriod);
+  },[statPeriod]);
 
   useEffect(()=>{
     if(tab!=='valider'||txnStep!=='scan'||txnScanMode!=='camera')return;
@@ -2800,16 +2805,53 @@ function PartnerView({onLogout}){
     setMenuItems(data||[]);setLoadingMenu(false);
   }
 
-  async function fetchStats(){
+  function getPeriodRange(period){
+    const n=new Date();
+    let from,prevFrom,prevTo;
+    if(period==='today'){
+      from=new Date(n.getFullYear(),n.getMonth(),n.getDate()).toISOString();
+      prevFrom=new Date(n.getFullYear(),n.getMonth(),n.getDate()-1).toISOString();
+      prevTo=from;
+    }else if(period==='week'){
+      const d=n.getDay()||7;
+      from=new Date(n.getFullYear(),n.getMonth(),n.getDate()-d+1).toISOString();
+      prevFrom=new Date(n.getFullYear(),n.getMonth(),n.getDate()-d+1-7).toISOString();
+      prevTo=from;
+    }else if(period==='month'){
+      from=new Date(n.getFullYear(),n.getMonth(),1).toISOString();
+      prevFrom=new Date(n.getFullYear(),n.getMonth()-1,1).toISOString();
+      prevTo=from;
+    }else{
+      from=new Date(n.getFullYear(),0,1).toISOString();
+      prevFrom=new Date(n.getFullYear()-1,0,1).toISOString();
+      prevTo=from;
+    }
+    return{from,prevFrom,prevTo};
+  }
+
+  async function fetchStats(period='month'){
     setLoadingStats(true);
-    const[{data:vData},{count:pvCount},{data:txnData}]=await Promise.all([
-      supabase.from('visits').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}),
-      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
-      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id),
+    const{from,prevFrom,prevTo}=getPeriodRange(period);
+    const[
+      {data:vData},{count:pvCount},{data:txnData},
+      {data:vPrev},{count:pvPrev},{data:txnPrev}
+    ]=await Promise.all([
+      supabase.from('visits').select('*').eq('partner_id',partner.id).gte('created_at',from),
+      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',from),
+      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',from),
+      supabase.from('visits').select('scanned').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
+      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
+      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
     ]);
     setStatVisits(vData||[]);
     setPageViews(pvCount||0);
     setStatCA((txnData||[]).reduce((s,t)=>s+Number(t.montant_client||0),0));
+    setStatPrev({
+      visits:(vPrev||[]).length,
+      scanned:(vPrev||[]).filter(v=>v.scanned).length,
+      pageViews:pvPrev||0,
+      ca:(txnPrev||[]).reduce((s,t)=>s+Number(t.montant_client||0),0),
+    });
     setLoadingStats(false);
   }
 
@@ -3065,27 +3107,31 @@ function PartnerView({onLogout}){
 
         {tab==='stats'&&(
           <>
+            <div className="prt-tabs-bar" style={{marginBottom:20}}>
+              {[['today','Aujourd\'hui'],['week','Cette semaine'],['month','Ce mois'],['year','Cette année']].map(([v,l])=>(
+                <button key={v} className={'prt-tab fb'+(statPeriod===v?' act':'')} onClick={()=>setStatPeriod(v)}>{l}</button>
+              ))}
+            </div>
             {loadingStats?<div className="prt-loading fb">Chargement…</div>:(
-              <>
-                <div className="prt-stats-grid">
-                  <div className="prt-stat-card">
-                    <div className="prt-stat-num fd">{pageViews}</div>
-                    <div className="prt-stat-label fb">Vues de la page</div>
-                  </div>
-                  <div className="prt-stat-card">
-                    <div className="prt-stat-num fd">{totalV}</div>
-                    <div className="prt-stat-label fb">QR générés</div>
-                  </div>
-                  <div className="prt-stat-card">
-                    <div className="prt-stat-num fd">{scannedV}</div>
-                    <div className="prt-stat-label fb">QR scannés</div>
-                  </div>
-                  <div className="prt-stat-card">
-                    <div className="prt-stat-num fd" style={{fontSize:statCA>0?22:34}}>{statCA>0?statCA.toFixed(2)+' €':'—'}</div>
-                    <div className="prt-stat-label fb">CA généré par Locally</div>
-                  </div>
-                </div>
-              </>
+              <div className="prt-stats-grid">
+                {[
+                  {cur:pageViews,prev:statPrev.pageViews,label:'Vues de la page',fmt:v=>String(v)},
+                  {cur:totalV,prev:statPrev.visits,label:'QR générés',fmt:v=>String(v)},
+                  {cur:scannedV,prev:statPrev.scanned,label:'QR scannés',fmt:v=>String(v)},
+                  {cur:statCA,prev:statPrev.ca,label:'CA généré par Locally',fmt:v=>v>0?v.toFixed(2)+' €':'—',small:statCA>0},
+                ].map(({cur,prev,label,fmt,small},i)=>{
+                  const trend=cur>prev?'up':cur<prev?'down':'flat';
+                  const tColor=trend==='up'?'#15803D':trend==='down'?'#B91C1C':'#9B8B7A';
+                  const tLabel=trend==='up'?'↑ vs période préc.':trend==='down'?'↓ vs période préc.':'— stable';
+                  return(
+                    <div key={i} className="prt-stat-card">
+                      <div className="prt-stat-num fd" style={{fontSize:small?22:34}}>{fmt(cur)}</div>
+                      <div className="prt-stat-label fb">{label}</div>
+                      <div style={{marginTop:5,fontSize:11,fontWeight:500,color:tColor,fontFamily:"'DM Sans',sans-serif"}}>{tLabel}</div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </>
         )}
