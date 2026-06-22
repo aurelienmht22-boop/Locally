@@ -6,6 +6,7 @@
 -- ÉTAPE 0 : colonnes manquantes
 ALTER TABLE transactions ADD COLUMN IF NOT EXISTS commission_hotel NUMERIC NOT NULL DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS session_expires_at timestamptz;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS visible boolean NOT NULL DEFAULT true;
 
 -- ÉTAPE 1 : activer RLS
 ALTER TABLE candidates   ENABLE ROW LEVEL SECURITY;

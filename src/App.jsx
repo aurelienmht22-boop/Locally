@@ -552,6 +552,9 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-btn-primary:disabled{opacity:.5;cursor:not-allowed;}
 .prt-btn-secondary{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;background:transparent;color:#7A6555;padding:13px 24px;border-radius:10px;border:1px solid rgba(107,29,29,.15);cursor:pointer;transition:all .2s;}
 .prt-btn-secondary:hover{border-color:rgba(107,29,29,.3);color:#1C1208;}
+.prt-btn-danger{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:transparent;color:#B91C1C;padding:13px 24px;border-radius:10px;border:1px solid rgba(185,28,28,.3);cursor:pointer;transition:all .2s;letter-spacing:.015em;}
+.prt-btn-danger:hover:not(:disabled){background:rgba(185,28,28,.06);border-color:#B91C1C;}
+.prt-btn-danger:disabled{opacity:.5;cursor:not-allowed;}
 .prt-add-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:rgba(107,29,29,.05);color:#6B1D1D;padding:13px 20px;border-radius:10px;border:1px solid rgba(107,29,29,.13);cursor:pointer;transition:all .2s;margin-bottom:20px;display:block;width:100%;text-align:center;}
 .prt-add-btn:hover{background:rgba(107,29,29,.09);}
 .prt-menu-form{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:16px;padding:24px;margin-bottom:20px;display:flex;flex-direction:column;gap:16px;}
@@ -2637,12 +2640,45 @@ function PartnerView({onLogout}){
   const [txnTaux,setTxnTaux]=useState('');
   const [txnSaving,setTxnSaving]=useState(false);
   const txnQrRef=useRef(null);
+  const [settingsInfoForm,setSettingsInfoForm]=useState({nom:'',telephone:'',email:'',description:''});
+  const [savingInfo,setSavingInfo]=useState(false);
+  const [infoSaved,setInfoSaved]=useState(false);
+  const [settingsCodeForm,setSettingsCodeForm]=useState({code1:'',code2:''});
+  const [savingSettingsCode,setSavingSettingsCode]=useState(false);
+  const [settingsCodeErr,setSettingsCodeErr]=useState('');
+  const [settingsCodeSaved,setSettingsCodeSaved]=useState(false);
+  const [savingVisible,setSavingVisible]=useState(false);
 
   async function loadPartner(){
     const{data}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
-    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});}
+    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});setSettingsInfoForm({nom:data.nom||'',telephone:data.telephone||'',email:data.email||'',description:data.description||'',});}
   }
   useEffect(()=>{if(authed)loadPartner();},[]);
+
+  async function saveSettingsInfo(){
+    setSavingInfo(true);
+    await supabase.from('candidates').update({nom:settingsInfoForm.nom.trim(),telephone:settingsInfoForm.telephone.trim(),email:settingsInfoForm.email.trim(),description:settingsInfoForm.description.trim()}).eq('id',partner.id);
+    setPartner(p=>({...p,...settingsInfoForm}));
+    setSavingInfo(false);setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
+  }
+
+  async function saveSettingsCode(){
+    setSettingsCodeErr('');
+    if(settingsCodeForm.code1.length<6){setSettingsCodeErr('Le code doit contenir au moins 6 caractères.');return;}
+    if(settingsCodeForm.code1!==settingsCodeForm.code2){setSettingsCodeErr('Les codes ne correspondent pas.');return;}
+    setSavingSettingsCode(true);
+    await supabase.from('candidates').update({access_code:settingsCodeForm.code1}).eq('id',partner.id);
+    setSavingSettingsCode(false);setSettingsCodeSaved(true);setTimeout(()=>setSettingsCodeSaved(false),3000);
+    setSettingsCodeForm({code1:'',code2:''});
+  }
+
+  async function toggleVisible(){
+    setSavingVisible(true);
+    const newVal=partner.visible===false?true:false;
+    await supabase.from('candidates').update({visible:newVal}).eq('id',partner.id);
+    setPartner(p=>({...p,visible:newVal}));
+    setSavingVisible(false);
+  }
 
   useEffect(()=>{
     if(!partner)return;
@@ -2843,7 +2879,7 @@ function PartnerView({onLogout}){
         </div>
       </div>
       <div className="prt-tabs-bar">
-        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats'],['valider','Valider']].map(([v,l])=>(
+        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats'],['valider','Valider'],['parametres','Paramètres']].map(([v,l])=>(
           <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
         ))}
       </div>
@@ -3168,6 +3204,78 @@ function PartnerView({onLogout}){
                 </div>
               );
             })()}
+
+          </div>
+        )}
+
+        {tab==='parametres'&&(
+          <div style={{maxWidth:520,display:'flex',flexDirection:'column',gap:32}}>
+
+            <div>
+              <div className="prt-section-label fb">Modifier mes informations</div>
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                <div>
+                  <label className="prt-label fb">Nom de l'établissement</label>
+                  <input className="prt-input" value={settingsInfoForm.nom} onChange={e=>setSettingsInfoForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
+                </div>
+                <div>
+                  <label className="prt-label fb">Téléphone</label>
+                  <input className="prt-input" value={settingsInfoForm.telephone} onChange={e=>setSettingsInfoForm(f=>({...f,telephone:e.target.value}))} placeholder="06 xx xx xx xx"/>
+                </div>
+                <div>
+                  <label className="prt-label fb">Email</label>
+                  <input className="prt-input" type="email" value={settingsInfoForm.email} onChange={e=>setSettingsInfoForm(f=>({...f,email:e.target.value}))} placeholder="contact@exemple.fr"/>
+                </div>
+                <div>
+                  <label className="prt-label fb">Description courte</label>
+                  <textarea className="prt-input" rows={3} value={settingsInfoForm.description} onChange={e=>setSettingsInfoForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" style={{resize:'vertical'}}/>
+                </div>
+                <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!settingsInfoForm.nom.trim()}>
+                  {infoSaved?'✓ Sauvegardé':savingInfo?'Sauvegarde…':'Sauvegarder'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
+              <div className="prt-section-label fb">Changer mon code d'accès</div>
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                {settingsCodeErr&&<div className="auth-err fb">{settingsCodeErr}</div>}
+                <div>
+                  <label className="prt-label fb">Nouveau code d'accès</label>
+                  <input className="prt-input" type="password" value={settingsCodeForm.code1} onChange={e=>setSettingsCodeForm(f=>({...f,code1:e.target.value}))} placeholder="6 caractères minimum"/>
+                </div>
+                <div>
+                  <label className="prt-label fb">Confirmer le code</label>
+                  <input className="prt-input" type="password" value={settingsCodeForm.code2} onChange={e=>setSettingsCodeForm(f=>({...f,code2:e.target.value}))} placeholder="••••••"/>
+                </div>
+                <button className="prt-btn-primary fb" onClick={saveSettingsCode} disabled={savingSettingsCode||!settingsCodeForm.code1||!settingsCodeForm.code2}>
+                  {settingsCodeSaved?'✓ Code d\'accès mis à jour':savingSettingsCode?'Enregistrement…':'Changer le code'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
+              <div className="prt-section-label fb">Visibilité sur Locally</div>
+              {partner.visible===false?(
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#B91C1C',background:'rgba(185,28,28,.06)',border:'1px solid rgba(185,28,28,.15)',borderRadius:10,padding:'12px 16px'}}>
+                    Vous êtes actuellement masqué sur Locally. Vos clients ne peuvent pas vous trouver.
+                  </div>
+                  <button className="prt-btn-primary fb" onClick={toggleVisible} disabled={savingVisible}>
+                    {savingVisible?'Mise à jour…':'Réactiver mon établissement'}
+                  </button>
+                </div>
+              ):(
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',lineHeight:1.7,margin:0}}>
+                    Vos clients ne pourront plus vous trouver sur Locally tant que vous êtes désactivé.
+                  </p>
+                  <button className="prt-btn-danger fb" onClick={toggleVisible} disabled={savingVisible}>
+                    {savingVisible?'Mise à jour…':'Me désactiver temporairement'}
+                  </button>
+                </div>
+              )}
+            </div>
 
           </div>
         )}
@@ -4376,7 +4484,7 @@ export default function App() {
   const [supabasePartners,setSupabasePartners]=useState([]);
   useEffect(()=>{
     if(pendingHotelSlug) localStorage.setItem('source_hotel',pendingHotelSlug);
-    supabase.from('candidates').select('*').eq('status','approuve').then(({data})=>setSupabasePartners(data||[]));
+    supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
   },[]);
   useEffect(()=>{
     if(!user||!pendingHotelSlug)return;
