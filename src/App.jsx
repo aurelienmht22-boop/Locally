@@ -3648,7 +3648,7 @@ function useAuth(){
   return{user,profile,authLoading,signOut,setUser,setProfile};
 }
 
-function SessionBar({profile,onRenew}){
+function SessionBar({profile,onRenew,renewed}){
   const[rem,setRem]=useState(()=>profile?.session_expires_at?new Date(profile.session_expires_at)-Date.now():null);
   useEffect(()=>{
     if(!profile?.session_expires_at)return;
@@ -3661,21 +3661,19 @@ function SessionBar({profile,onRenew}){
   const expired=rem<=0;
   const warn=!expired&&rem<2*3600000;
   const pct=expired?0:Math.min(100,rem/864e5*100);
-  const color=expired?'#B91C1C':warn?'#B45309':'#6B1D1D';
+  const fillColor=expired?'#B91C1C':warn?'#B45309':'#6B1D1D';
   const h=expired?0:Math.floor(rem/3600000);
   const m=expired?0:Math.floor((rem%3600000)/60000);
   const timeStr=h>0?`${h}h ${m}m`:`${m}m`;
-  const labelText=expired
-    ?'Session expirée · Cliquer pour renouveler'
-    :warn?`${timeStr} restantes · Renouveler`
-    :`${timeStr} restantes`;
+  const labelText=expired?'Session expirée · Renouveler':warn?`${timeStr} · Renouveler`:`${timeStr} restantes`;
+  const labelColor=expired?'#B91C1C':warn?'#B45309':'#9B8B7A';
   return(
-    <div onClick={onRenew} style={{cursor:'pointer',width:'100%',userSelect:'none'}}>
-      <div style={{width:'100%',height:3,background:'rgba(0,0,0,.06)'}}>
-        <div style={{height:3,width:`${pct}%`,background:color,transition:'width 1s ease'}}/>
+    <div onClick={onRenew} title="Cliquez pour renouveler votre session" style={{cursor:'pointer',userSelect:'none',width:'100%',display:'block'}}>
+      <div style={{width:'100%',height:3,background:'#F0EBE5',overflow:'hidden'}}>
+        <div style={{height:'100%',width:`${pct}%`,background:fillColor,transition:'width 1s linear'}}/>
       </div>
-      <div style={{padding:'3px 16px 0',textAlign:'right',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color,opacity:.8,letterSpacing:'.01em'}}>
-        {labelText}
+      <div style={{paddingRight:16,paddingTop:3,textAlign:'right',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:renewed?'#10B981':labelColor,letterSpacing:'.01em',lineHeight:1}}>
+        {renewed?'✓ Session renouvelée — 24h actives':labelText}
       </div>
     </div>
   );
@@ -4349,9 +4347,6 @@ export default function App() {
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
-          {sessionRenewed&&(
-            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981',marginRight:4,whiteSpace:'nowrap'}}>✓ Session renouvelée ! 24h actives</span>
-          )}
           {!authLoading&&(user&&profile
             ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
@@ -4364,7 +4359,7 @@ export default function App() {
           </button>
         </div>
       </nav>
-      {user&&profile?.session_expires_at&&<SessionBar profile={profile} onRenew={()=>siteNav('/renouveler')}/>}
+      {user&&profile?.session_expires_at&&<SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/>}
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
