@@ -2013,6 +2013,10 @@ function AdminView(){
   const [adminPwdForm,setAdminPwdForm]=useState({code1:'',code2:''});
   const [adminPwdErr,setAdminPwdErr]=useState('');
   const [adminPwdSaved,setAdminPwdSaved]=useState(false);
+  const [badgePending,setBadgePending]=useState(0);
+  const [countPartners,setCountPartners]=useState(0);
+  const [countHotels,setCountHotels]=useState(0);
+  const [badgeMessages,setBadgeMessages]=useState(0);
 
   function login(e){
     e.preventDefault();
@@ -2020,6 +2024,20 @@ function AdminView(){
     else setLoginErr('Mot de passe incorrect.');
   }
   function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
+  async function fetchBadges(){
+    const[{count:pc},{count:hc},{count:pa},{count:ha},{count:mu}]=await Promise.all([
+      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','pending'),
+      supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','pending'),
+      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
+      supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','approuve'),
+      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu'),
+    ]);
+    setBadgePending((pc||0)+(hc||0));
+    setCountPartners(pa||0);
+    setCountHotels(ha||0);
+    setBadgeMessages(mu||0);
+  }
+  useEffect(()=>{if(authed)fetchBadges();},[authed]);
   function saveAdminPwd(){
     if(!adminPwdForm.code1.trim()){setAdminPwdErr('Le code ne peut pas être vide.');return;}
     if(adminPwdForm.code1!==adminPwdForm.code2){setAdminPwdErr('Les codes ne correspondent pas.');return;}
@@ -2105,6 +2123,7 @@ function AdminView(){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
     setPartnerMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadMessages(u=>{const n={...u};n[partnerId]=Math.max(0,(n[partnerId]||1)-1);if(!n[partnerId])delete n[partnerId];return n;});
+    setBadgeMessages(b=>Math.max(0,b-1));
   }
   async function openHotel(h){
     setSelHotel(h);setConfirmHotelReject(false);
@@ -2117,6 +2136,7 @@ function AdminView(){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
     setHotelMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadHotelMessages(u=>{const n={...u};n[hotelSlug]=Math.max(0,(n[hotelSlug]||1)-1);if(!n[hotelSlug])delete n[hotelSlug];return n;});
+    setBadgeMessages(b=>Math.max(0,b-1));
   }
 
   useEffect(()=>{
@@ -2158,6 +2178,7 @@ function AdminView(){
     setConfirmReject(false);
     setConfirmPDisable(false);
     if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS commerce error:',err));
+    fetchBadges();
   }
 
 
@@ -2181,7 +2202,14 @@ function AdminView(){
       <div className="adm-header">
         <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
         <div className="adm-tabs">
-          {[['candidatures','Candidatures'],['partenaires','Partenaires'],['hotels','Hôtels'],['rejetes','Rejetés'],['visites','Visites'],['parametres','Paramètres']].map(([v,l])=>(
+          {[
+            ['candidatures',<>Candidatures{badgePending>0&&<span style={{background:'#B91C1C',color:'white',borderRadius:9,fontSize:9,padding:'1px 6px',marginLeft:5,fontWeight:600,lineHeight:1}}>{badgePending}</span>}</>],
+            ['partenaires',<>Partenaires{countPartners>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countPartners})</span>}{badgeMessages>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
+            ['hotels',<>Hôtels{countHotels>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countHotels})</span>}</>],
+            ['rejetes','Rejetés'],
+            ['visites','Visites'],
+            ['parametres','Paramètres'],
+          ].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
           ))}
         </div>
