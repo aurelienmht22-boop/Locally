@@ -4355,7 +4355,7 @@ export default function App() {
             if(page==="home"){document.getElementById("categories")?.scrollIntoView({behavior:"smooth"});}
             else setPage("home");
           }}>
-            {page==="home"?"Explorer →":"Accueil"}
+            {page==="home"?"Explorer":"Accueil"}
           </button>
         </div>
       </nav>
