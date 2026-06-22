@@ -3679,6 +3679,58 @@ function SessionBar({profile,onRenew,renewed}){
   );
 }
 
+function ResetPasswordPage({onDone}){
+  const[ready,setReady]=useState(false);
+  const[newPwd,setNewPwd]=useState('');
+  const[confirmPwd,setConfirmPwd]=useState('');
+  const[loading,setLoading]=useState(false);
+  const[err,setErr]=useState('');
+  const[done,setDone]=useState(false);
+  useEffect(()=>{
+    const hash=new URLSearchParams(window.location.hash.slice(1));
+    if(hash.get('type')==='recovery')setReady(true);
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+      if(event==='PASSWORD_RECOVERY')setReady(true);
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+  async function handleSubmit(e){
+    e.preventDefault();setErr('');
+    if(newPwd.length<8){setErr('Le mot de passe doit contenir au moins 8 caractères.');return;}
+    if(newPwd!==confirmPwd){setErr('Les mots de passe ne correspondent pas.');return;}
+    setLoading(true);
+    const{error}=await supabase.auth.updateUser({password:newPwd});
+    setLoading(false);
+    if(error){setErr('Une erreur est survenue. Réessayez.');return;}
+    setDone(true);
+    setTimeout(()=>onDone(),2000);
+  }
+  return(
+    <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'32px 24px',textAlign:'center'}}>
+      <style>{CSS}</style>
+      <div style={{maxWidth:400,width:'100%'}}>
+        <div className="sec-title fd" style={{marginBottom:24}}>Nouveau <em>mot de passe</em></div>
+        {done?(
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#15803D',lineHeight:1.75}}>✓ Mot de passe modifié avec succès.<br/>Redirection en cours…</div>
+        ):!ready?(
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#7A6555'}}>Vérification en cours…</div>
+        ):(
+          <form onSubmit={handleSubmit} noValidate style={{textAlign:'left'}}>
+            {err&&<div className="auth-err fb">{err}</div>}
+            <label className="auth-label fb">Nouveau mot de passe</label>
+            <input className="auth-input fb" type="password" value={newPwd} onChange={e=>setNewPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password" autoFocus/>
+            <label className="auth-label fb">Confirmer le mot de passe</label>
+            <input className="auth-input fb" type="password" value={confirmPwd} onChange={e=>setConfirmPwd(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
+            <button className="auth-btn fb" type="submit" disabled={loading||!newPwd||!confirmPwd}>
+              {loading?'Enregistrement…':'Modifier le mot de passe →'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RenouvellerPage({onBack,profile}){
   const active=profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date();
   const msg=active
@@ -3756,7 +3808,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     if(!resetEmail.trim()){setErr('Veuillez saisir votre adresse email.');return;}
     if(!/\S+@\S+\.\S+/.test(resetEmail.trim())){setErr('Adresse email invalide.');return;}
     setLoading(true);
-    const{error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:'https://locally-gules.vercel.app'});
+    const{error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:'https://locally-gules.vercel.app/reset-password'});
     setLoading(false);
     if(error){setErr(xlErr(error.message));return;}
     setResetSent(true);
@@ -4312,6 +4364,7 @@ export default function App() {
     if(path==="/mentions-legales")return "mentions";
     if(path==="/confidentialite")return "confidentialite";
     if(path==="/renouveler")return "renouveler";
+    if(path==="/reset-password")return "reset-password";
     if(path==="/compte")return "compte";
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
@@ -4349,6 +4402,7 @@ export default function App() {
       if(path==="/mentions-legales"){setPage("mentions");return;}
       if(path==="/confidentialite"){setPage("confidentialite");return;}
       if(path==="/renouveler"){setPage("renouveler");return;}
+      if(path==="/reset-password"){setPage("reset-password");return;}
       if(path==="/compte"){setPage("compte");return;}
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
@@ -4405,6 +4459,7 @@ export default function App() {
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
       {page==="snack"&&<SnackPage onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
+      {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
