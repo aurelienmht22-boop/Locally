@@ -1267,6 +1267,7 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
   const [visitLoading,setVisitLoading]=useState(false);
   const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
+  const [scannedConfirm,setScannedConfirm]=useState(null);
 
   useEffect(()=>{
     supabase.from('page_views').insert({partner_id:partner.id});
@@ -1288,6 +1289,19 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
     const id=setInterval(tick,1000);
     return()=>clearInterval(id);
   },[visitData]);
+
+  useEffect(()=>{
+    if(!visitData?.qr_code_id)return;
+    const iv=setInterval(async()=>{
+      const{data:v}=await supabase.from('visits').select('id,scanned').eq('qr_code_id',visitData.qr_code_id).maybeSingle();
+      if(v?.scanned){
+        clearInterval(iv);
+        const{data:txn}=await supabase.from('transactions').select('montant_reduction').eq('visit_id',v.id).maybeSingle();
+        setScannedConfirm({montantEconomise:txn?.montant_reduction||null});
+      }
+    },5000);
+    return()=>clearInterval(iv);
+  },[visitData?.qr_code_id]);
 
   async function generateVisit(u=user,prof=profile){
     if(!u||!prof)return;
@@ -1402,7 +1416,7 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
           {/* ── Mode : visite QR ── */}
           {visitMode==='visit'&&(
             <>
-              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setScannedConfirm(null);setCountdown('01:00:00');setCountdownPct(100);setTimeout(()=>document.getElementById('mode-section')?.scrollIntoView({behavior:'smooth',block:'start'}),50);}}>← Changer de mode</button>
               {!visitData?(
                 <>
                   <div className="sec-tag fb">Visite</div>
@@ -1423,31 +1437,50 @@ function SnackPage({ onBack, user, profile, onAuthRequired }) {
                   </div>
                 </>
               ):(
-                <div className="visit-qr-wrap">
-                  <div className="visit-qr-card">
-                    <div className="visit-qr-card-header">
-                      <div className="visit-qr-partner fd">{partner.name}</div>
-                      <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                scannedConfirm?(
+                  <div className="visit-qr-wrap">
+                    <div className="visit-qr-card" style={{textAlign:'center',padding:'40px 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+                      <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(21,128,61,.1)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:4}}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <div className="visit-qr-partner fd" style={{color:'#15803D',fontSize:20}}>Réduction appliquée !</div>
+                      {scannedConfirm.montantEconomise!=null&&(
+                        <div className="visit-qr-sub fb" style={{fontSize:14,lineHeight:1.6}}>
+                          Vous avez économisé <strong>{Number(scannedConfirm.montantEconomise).toFixed(2)} €</strong> chez {partner.name}
+                        </div>
+                      )}
                     </div>
-                    <div className="visit-qr-box">
-                      <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
-                    </div>
-                    <div className="visit-qr-client">
-                      <div className="visit-qr-name fd">{visitData.clientName}</div>
-                      <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
-                    </div>
-                    <div className="visit-qr-countdown-wrap">
-                      <div className="visit-qr-countdown-label fb">Expire dans</div>
-                      <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
-                      <div className="visit-qr-progress">
-                        <div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/>
+                    <button className="btn-primary fb" onClick={()=>{setVisitData(null);setScannedConfirm(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                      Générer un nouveau QR code
+                    </button>
+                  </div>
+                ):(
+                  <div className="visit-qr-wrap">
+                    <div className="visit-qr-card">
+                      <div className="visit-qr-card-header">
+                        <div className="visit-qr-partner fd">{partner.name}</div>
+                        <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                      </div>
+                      <div className="visit-qr-box">
+                        <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                      </div>
+                      <div className="visit-qr-client">
+                        <div className="visit-qr-name fd">{visitData.clientName}</div>
+                        <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
+                      </div>
+                      <div className="visit-qr-countdown-wrap">
+                        <div className="visit-qr-countdown-label fb">Expire dans</div>
+                        <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
+                        <div className="visit-qr-progress">
+                          <div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/>
+                        </div>
                       </div>
                     </div>
+                    <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                      Régénérer mon code
+                    </button>
                   </div>
-                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
-                    Régénérer mon code
-                  </button>
-                </div>
+                )
               )}
             </>
           )}
@@ -3427,6 +3460,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [visitLoading,setVisitLoading]=useState(false);
   const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
+  const [scannedConfirm,setScannedConfirm]=useState(null);
   const sessionExpired=!!(profile?.session_expires_at&&new Date()>new Date(profile.session_expires_at));
 
   useEffect(()=>{
@@ -3450,6 +3484,19 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
     };
     tick();const id=setInterval(tick,1000);return()=>clearInterval(id);
   },[visitData]);
+
+  useEffect(()=>{
+    if(!visitData?.qr_code_id)return;
+    const iv=setInterval(async()=>{
+      const{data:v}=await supabase.from('visits').select('id,scanned').eq('qr_code_id',visitData.qr_code_id).maybeSingle();
+      if(v?.scanned){
+        clearInterval(iv);
+        const{data:txn}=await supabase.from('transactions').select('montant_reduction').eq('visit_id',v.id).maybeSingle();
+        setScannedConfirm({montantEconomise:txn?.montant_reduction||null});
+      }
+    },5000);
+    return()=>clearInterval(iv);
+  },[visitData?.qr_code_id]);
 
   async function generateVisit(u=user,prof=profile){
     if(!u||!prof)return;
@@ -3577,7 +3624,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
           )}
           {visitMode==='visit'&&(
             <>
-              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>← Retour</button>
+              <button className="visit-back fb" onClick={()=>{setVisitMode(null);setVisitData(null);setScannedConfirm(null);setCountdown('01:00:00');setCountdownPct(100);}}>← Retour</button>
               {!visitData?(
                 <>
                   <div className="gpp-section-title fd">Votre <em>QR code</em></div>
@@ -3597,29 +3644,48 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
                   </div>
                 </>
               ):(
-                <div className="visit-qr-wrap">
-                  <div className="visit-qr-card">
-                    <div className="visit-qr-card-header">
-                      <div className="visit-qr-partner fd">{partner.nom}</div>
-                      <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                scannedConfirm?(
+                  <div className="visit-qr-wrap">
+                    <div className="visit-qr-card" style={{textAlign:'center',padding:'40px 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+                      <div style={{width:56,height:56,borderRadius:'50%',background:'rgba(21,128,61,.1)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:4}}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                      <div className="visit-qr-partner fd" style={{color:'#15803D',fontSize:20}}>Réduction appliquée !</div>
+                      {scannedConfirm.montantEconomise!=null&&(
+                        <div className="visit-qr-sub fb" style={{fontSize:14,lineHeight:1.6}}>
+                          Vous avez économisé <strong>{Number(scannedConfirm.montantEconomise).toFixed(2)} €</strong> chez {partner.nom}
+                        </div>
+                      )}
                     </div>
-                    <div className="visit-qr-box">
-                      <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
-                    </div>
-                    <div className="visit-qr-client">
-                      <div className="visit-qr-name fd">{visitData.clientName}</div>
-                      <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
-                    </div>
-                    <div className="visit-qr-countdown-wrap">
-                      <div className="visit-qr-countdown-label fb">Expire dans</div>
-                      <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
-                      <div className="visit-qr-progress"><div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/></div>
-                    </div>
+                    <button className="btn-primary fb" onClick={()=>{setVisitData(null);setScannedConfirm(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                      Générer un nouveau QR code
+                    </button>
                   </div>
-                  <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
-                    Régénérer mon code
-                  </button>
-                </div>
+                ):(
+                  <div className="visit-qr-wrap">
+                    <div className="visit-qr-card">
+                      <div className="visit-qr-card-header">
+                        <div className="visit-qr-partner fd">{partner.nom}</div>
+                        <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
+                      </div>
+                      <div className="visit-qr-box">
+                        <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                      </div>
+                      <div className="visit-qr-client">
+                        <div className="visit-qr-name fd">{visitData.clientName}</div>
+                        <div className="visit-qr-sub fb">Présentez ce QR code à l'accueil</div>
+                      </div>
+                      <div className="visit-qr-countdown-wrap">
+                        <div className="visit-qr-countdown-label fb">Expire dans</div>
+                        <div className={"visit-qr-countdown fd"+(countdown==='Expiré'?' expired':'')}>{countdown}</div>
+                        <div className="visit-qr-progress"><div className="visit-qr-progress-bar" style={{width:countdownPct+'%'}}/></div>
+                      </div>
+                    </div>
+                    <button className="btn-primary fb" onClick={()=>{setVisitData(null);setCountdown('01:00:00');setCountdownPct(100);}}>
+                      Régénérer mon code
+                    </button>
+                  </div>
+                )
               )}
             </>
           )}
