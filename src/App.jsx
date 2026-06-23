@@ -567,8 +567,8 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .prt-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;}
 .prt-deconnect{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:rgba(122,101,85,.45);background:none;border:none;cursor:pointer;transition:color .2s;letter-spacing:.04em;padding:0;white-space:nowrap;}
 .prt-deconnect:hover{color:#6B1D1D;}
-.prt-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;padding:20px 12px;text-align:center;}
-.prt-stat-num{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;line-height:1;margin-bottom:6px;}
+.prt-stat-card{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:14px;padding:24px 16px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;}
+.prt-stat-num{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;color:#1C1208;line-height:1;}
 .prt-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:#7A6555;}
 .prt-visit-list{display:flex;flex-direction:column;}
 .prt-visit-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(107,29,29,.06);}
@@ -2787,18 +2787,12 @@ function PartnerView({onLogout}){
                   {cur:totalV,prev:statPrev.visits,label:'QR générés',fmt:v=>String(v)},
                   {cur:scannedV,prev:statPrev.scanned,label:'QR scannés',fmt:v=>String(v)},
                   {cur:statCA,prev:statPrev.ca,label:'CA généré par Locally',fmt:v=>v>0?v.toFixed(2)+' €':'—',small:statCA>0},
-                ].map(({cur,prev,label,fmt,small},i)=>{
-                  const trend=cur>prev?'up':cur<prev?'down':'flat';
-                  const tColor=trend==='up'?'#15803D':trend==='down'?'#B91C1C':'#9B8B7A';
-                  const tLabel=trend==='up'?'↑ vs période préc.':trend==='down'?'↓ vs période préc.':'— stable';
-                  return(
-                    <div key={i} className="prt-stat-card">
-                      <div className="prt-stat-num fd" style={{fontSize:small?22:34}}>{fmt(cur)}</div>
-                      <div className="prt-stat-label fb">{label}</div>
-                      <div style={{marginTop:5,fontSize:11,fontWeight:500,color:tColor,fontFamily:"'DM Sans',sans-serif"}}>{tLabel}</div>
-                    </div>
-                  );
-                })}
+                ].map(({cur,prev,label,fmt,small},i)=>(
+                  <div key={i} className="prt-stat-card">
+                    <div className="prt-stat-num fd" style={{fontSize:small?22:34}}>{fmt(cur)}</div>
+                    <div className="prt-stat-label fb">{label}</div>
+                  </div>
+                ))}
               </div>
             )}
 
