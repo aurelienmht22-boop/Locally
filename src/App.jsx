@@ -2214,6 +2214,7 @@ function PartnerView({onLogout}){
   const [txnTaux,setTxnTaux]=useState('');
   const [txnSaving,setTxnSaving]=useState(false);
   const txnQrRef=useRef(null);
+  const prtQrCardRef=useRef(null);
   const [settingsInfoForm,setSettingsInfoForm]=useState({nom:'',telephone:'',email:'',description:'',google_review_url:''});
   const [savingInfo,setSavingInfo]=useState(false);
   const [infoSaved,setInfoSaved]=useState(false);
@@ -2359,6 +2360,14 @@ function PartnerView({onLogout}){
   function addDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];if(cr.length>=2)return h;return{...h,[day]:{...d,creneaux:[...cr,["",""]]}};});}
   function removeDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
 
+  async function downloadPrtQrCard(){
+    if(!prtQrCardRef.current)return;
+    const canvas=await html2canvas(prtQrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
+    const link=document.createElement('a');
+    link.download=`locally-acces-${slug}.png`;
+    link.href=canvas.toDataURL('image/png');
+    link.click();
+  }
   async function saveProfile(){
     setSavingProfile(true);
     await supabase.from('candidates').update({...profileForm,horaires}).eq('id',partner.id);
@@ -2600,6 +2609,32 @@ function PartnerView({onLogout}){
                     {savingCode?'Sauvegarde…':codeSaved?'✓ Code mis à jour':'Enregistrer'}
                   </button>
                 </div>
+              </div>
+            </div>
+            {/* ── QR COMPTOIR ── */}
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
+              <div className="prt-section-label fb">QR code comptoir</div>
+              <div style={{marginBottom:14,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',lineHeight:1.6}}>
+                Imprimez cette carte et posez-la en caisse. En la scannant, vous arrivez directement sur votre page de connexion.
+              </div>
+              <div ref={prtQrCardRef} style={{background:'#ffffff',border:'1.5px solid #e8ddd6',borderRadius:20,padding:'36px 32px 28px',display:'inline-flex',flexDirection:'column',alignItems:'center',gap:0,boxShadow:'0 2px 20px rgba(107,29,29,.07)'}}>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:26,fontWeight:600,color:'#1C1208',marginBottom:24,letterSpacing:'-.01em'}}>
+                  local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
+                </div>
+                <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
+                  <QRCodeSVG value={`https://locally-gules.vercel.app/partner/${slug}`} size={170} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                </div>
+                <div style={{marginTop:20,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:220}}>
+                  Scannez pour accéder à votre espace partenaire
+                </div>
+                <div style={{marginTop:14,fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:'#1C1208',textAlign:'center'}}>
+                  {partner?.nom}
+                </div>
+              </div>
+              <div style={{marginTop:12}}>
+                <button onClick={downloadPrtQrCard} style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
+                  Télécharger en PNG
+                </button>
               </div>
             </div>
           </>
