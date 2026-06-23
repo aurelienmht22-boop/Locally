@@ -482,6 +482,23 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .adm-stat-card{background:rgba(247,243,238,.04);border:1px solid rgba(247,243,238,.07);border-radius:10px;padding:14px 12px;text-align:center;}
 .adm-stat-num{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#F7F3EE;line-height:1;margin-bottom:4px;}
 .adm-stat-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:rgba(247,243,238,.32);}
+.adm-global-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+.adm-global-card{background:rgba(247,243,238,.04);border:1px solid rgba(247,243,238,.07);border-radius:10px;padding:16px 14px;text-align:center;}
+.adm-global-card.accent{background:rgba(107,29,29,.18);border-color:rgba(107,29,29,.4);}
+.adm-global-num{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:#F7F3EE;line-height:1;margin-bottom:5px;}
+.adm-global-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:rgba(247,243,238,.32);}
+.adm-global-card.accent .adm-global-label{color:rgba(247,243,238,.55);}
+.adm-chart-wrap{background:rgba(247,243,238,.03);border:1px solid rgba(247,243,238,.06);border-radius:10px;padding:16px;margin-bottom:8px;}
+.adm-top-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(247,243,238,.06);}
+.adm-top-row:last-child{border-bottom:none;}
+.adm-top-rank{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:rgba(247,243,238,.2);width:22px;flex-shrink:0;text-align:right;}
+.adm-top-nom{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:rgba(247,243,238,.8);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.adm-top-ca{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:#F7F3EE;flex-shrink:0;}
+.adm-top-txn{font-family:'DM Sans',sans-serif;font-size:10px;color:rgba(247,243,238,.3);flex-shrink:0;text-align:right;width:52px;}
+.adm-hotel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.adm-hotel-card{background:rgba(107,29,29,.12);border:1px solid rgba(107,29,29,.3);border-radius:10px;padding:18px 16px;text-align:center;}
+.adm-hotel-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#F7F3EE;line-height:1;margin-bottom:5px;}
+.adm-hotel-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:rgba(247,243,238,.45);}
 .adm-section-label{font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#6B1D1D;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
 .adm-section-label::before{content:'';width:12px;height:1px;background:#6B1D1D;display:block;}
 .adm-visit-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(247,243,238,.05);}
@@ -1381,6 +1398,10 @@ function AdminView(){
   const [countPartners,setCountPartners]=useState(0);
   const [countHotels,setCountHotels]=useState(0);
   const [badgeMessages,setBadgeMessages]=useState(0);
+  const [adminStats,setAdminStats]=useState(null);
+  const [adminChartData,setAdminChartData]=useState([]);
+  const [adminTopPartners,setAdminTopPartners]=useState([]);
+  const [loadingAdminStats,setLoadingAdminStats]=useState(false);
 
   function login(e){
     e.preventDefault();
@@ -1408,9 +1429,53 @@ function AdminView(){
     ADMIN_PWD=adminPwdForm.code1.trim();
     setAdminPwdErr('');setAdminPwdSaved(true);setAdminPwdForm({code1:'',code2:''});
   }
+  async function fetchAdminStats(){
+    setLoadingAdminStats(true);
+    const thirtyDaysAgo=new Date();thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+    const from30=thirtyDaysAgo.toISOString();
+    const[
+      {data:txnsAll},
+      {count:clientCount},
+      {count:qrTotal},
+      {count:qrScanned},
+      {count:partnerActiveCount},
+      {data:txns30},
+      {data:allCands},
+    ]=await Promise.all([
+      supabase.from('transactions').select('montant_client,montant_reduction,partner_id,created_at'),
+      supabase.from('profiles').select('*',{count:'exact',head:true}),
+      supabase.from('visits').select('*',{count:'exact',head:true}),
+      supabase.from('visits').select('*',{count:'exact',head:true}).eq('scanned',true),
+      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
+      supabase.from('transactions').select('montant_client,created_at').gte('created_at',from30),
+      supabase.from('candidates').select('id,nom').eq('status','approuve'),
+    ]);
+    const txns=txnsAll||[];
+    const caTotal=txns.reduce((s,t)=>s+(t.montant_client||0),0);
+    const economiesTotal=txns.reduce((s,t)=>s+(t.montant_reduction||0),0);
+    const conversionRate=(qrTotal||0)>0?Math.round(((qrScanned||0)/(qrTotal||1))*100):0;
+    const avgTxn=(clientCount||0)>0?(txns.length/(clientCount||1)).toFixed(1):0;
+    setAdminStats({caTotal,economiesTotal,clientCount:clientCount||0,qrTotal:qrTotal||0,qrScanned:qrScanned||0,partnerActiveCount:partnerActiveCount||0,conversionRate,avgTxn,txnTotal:txns.length});
+    const days=[];
+    for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+    const caByDay={};
+    (txns30||[]).forEach(t=>{const day=t.created_at.slice(0,10);caByDay[day]=(caByDay[day]||0)+(t.montant_client||0);});
+    setAdminChartData(days.map(date=>({date,ca:caByDay[date]||0})));
+    const candMap={};(allCands||[]).forEach(c=>{candMap[c.id]=c.nom;});
+    const byPartner={};
+    txns.forEach(t=>{
+      if(!t.partner_id)return;
+      if(!byPartner[t.partner_id])byPartner[t.partner_id]={nom:candMap[t.partner_id]||t.partner_id,ca:0,txns:0};
+      byPartner[t.partner_id].ca+=(t.montant_client||0);
+      byPartner[t.partner_id].txns++;
+    });
+    const top=Object.entries(byPartner).map(([id,v])=>({id,...v})).sort((a,b)=>b.ca-a.ca).slice(0,8);
+    setAdminTopPartners(top);
+    setLoadingAdminStats(false);
+  }
   async function refresh(){
     setRefreshing(true);
-    await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits()]);
+    await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits(),fetchAdminStats()]);
     setRefreshing(false);
   }
 
@@ -1509,6 +1574,7 @@ function AdminView(){
     if(tab==='candidatures'||tab==='rejetes'){fetchCands();fetchHotels();}
     else if(tab==='partenaires')fetchPartners();
     else if(tab==='hotels')fetchHotels();
+    else if(tab==='stats')fetchAdminStats();
     else fetchVisits();
   },[authed,tab]);
 
@@ -1571,7 +1637,7 @@ function AdminView(){
             ['partenaires',<>Partenaires{countPartners>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countPartners})</span>}{badgeMessages>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
             ['hotels',<>Hôtels{countHotels>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countHotels})</span>}</>],
             ['rejetes','Rejetés'],
-            ['visites','Visites'],
+            ['stats','Statistiques'],
             ['parametres','Paramètres'],
           ].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
@@ -1712,27 +1778,79 @@ function AdminView(){
           </>
         )}
 
-        {tab==='visites'&&(
+        {tab==='stats'&&(
           <>
-            {loadingVisits?<div className="adm-empty fb">Chargement…</div>:(
-              <div className="adm-list">
-                {visits.length===0&&<div className="adm-empty fb">Aucune visite enregistrée.</div>}
-                {visits.map(v=>(
-                  <div key={v.id} className="adm-row" style={{cursor:'default'}}>
-                    <div className="adm-row-body">
-                      <div className="adm-row-name">{v.client_name}</div>
-                      <div className="adm-row-meta fb">Partenaire : {v.partner_id}</div>
-                      <div className="adm-row-sub fb">{admFmt(v.created_at)}</div>
-                    </div>
-                    <div>
-                      {v.scanned
-                        ?<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#10B981'}}>✓ Scanné {admFmt(v.scanned_at)}</span>
-                        :<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>Non scanné</span>
-                      }
-                    </div>
+            {loadingAdminStats&&!adminStats?<div className="adm-empty fb">Chargement des statistiques…</div>:(
+              <>
+                {/* ── CHIFFRES GLOBAUX ── */}
+                <div className="adm-section-label">Chiffres globaux</div>
+                <div className="adm-global-grid" style={{marginBottom:8}}>
+                  <div className="adm-global-card accent">
+                    <div className="adm-global-num fd">{adminStats?(adminStats.caTotal).toFixed(0)+'€':'—'}</div>
+                    <div className="adm-global-label">CA total généré</div>
                   </div>
-                ))}
-              </div>
+                  <div className="adm-global-card">
+                    <div className="adm-global-num fd">{adminStats?adminStats.clientCount:'—'}</div>
+                    <div className="adm-global-label">Clients inscrits</div>
+                  </div>
+                  <div className="adm-global-card">
+                    <div className="adm-global-num fd">{adminStats?adminStats.partnerActiveCount:'—'}</div>
+                    <div className="adm-global-label">Partenaires actifs</div>
+                  </div>
+                </div>
+                <div className="adm-global-grid">
+                  <div className="adm-global-card">
+                    <div className="adm-global-num fd">{adminStats?adminStats.qrTotal:'—'}</div>
+                    <div className="adm-global-label">QR générés</div>
+                  </div>
+                  <div className="adm-global-card">
+                    <div className="adm-global-num fd">{adminStats?adminStats.qrScanned:'—'}</div>
+                    <div className="adm-global-label">QR scannés</div>
+                  </div>
+                  <div className="adm-global-card accent">
+                    <div className="adm-global-num fd">{adminStats?adminStats.conversionRate+'%':'—'}</div>
+                    <div className="adm-global-label">Taux de conversion</div>
+                  </div>
+                </div>
+
+                {/* ── CA 30 JOURS ── */}
+                <div className="adm-section-label" style={{marginTop:20}}>Évolution CA — 30 derniers jours</div>
+                <div className="adm-chart-wrap">
+                  {adminChartData.length>0
+                    ?<BarChart data={adminChartData}/>
+                    :<div style={{height:140,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'rgba(247,243,238,.2)'}}>Aucune donnée</div>
+                  }
+                </div>
+
+                {/* ── TOP PARTENAIRES ── */}
+                <div className="adm-section-label" style={{marginTop:20}}>Top partenaires par CA</div>
+                <div style={{background:'rgba(247,243,238,.03)',border:'1px solid rgba(247,243,238,.06)',borderRadius:10,padding:'4px 16px',marginBottom:8}}>
+                  {adminTopPartners.length===0
+                    ?<div className="adm-empty fb" style={{padding:'16px 0'}}>Aucune transaction enregistrée.</div>
+                    :adminTopPartners.map((p,i)=>(
+                      <div className="adm-top-row" key={p.id}>
+                        <span className="adm-top-rank">{i+1}</span>
+                        <span className="adm-top-nom fb">{p.nom}</span>
+                        <span className="adm-top-ca fd">{p.ca.toFixed(0)}€</span>
+                        <span className="adm-top-txn fb">{p.txns} txn{p.txns>1?'s':''}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+
+                {/* ── CHIFFRES HÔTELS ── */}
+                <div className="adm-section-label" style={{marginTop:20}}>Chiffres clés pour les hôtels</div>
+                <div className="adm-hotel-grid">
+                  <div className="adm-hotel-card">
+                    <div className="adm-hotel-num fd">{adminStats?(adminStats.economiesTotal).toFixed(0)+'€':'—'}</div>
+                    <div className="adm-hotel-label">Économies réalisées par les clients</div>
+                  </div>
+                  <div className="adm-hotel-card">
+                    <div className="adm-hotel-num fd">{adminStats?adminStats.avgTxn:'—'}</div>
+                    <div className="adm-hotel-label">Transactions moyennes par client</div>
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
