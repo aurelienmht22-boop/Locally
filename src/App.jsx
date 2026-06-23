@@ -2184,6 +2184,7 @@ function PartnerView({onLogout}){
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
+  const [reductionErr,setReductionErr]=useState('');
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(false);
   const [menuForm,setMenuForm]=useState(null);
@@ -2343,7 +2344,7 @@ function PartnerView({onLogout}){
       const montant_reduction=+(m*t/100).toFixed(2);
       const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
       const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
-      const montant_client=+(m-montant_reduction).toFixed(2);
+      const montant_client=commActive ? +(m-m*(t-5)/100).toFixed(2) : +(m-montant_reduction).toFixed(2);
       const{error}=await supabase.from('transactions').insert([{
         visit_id:txnVisit.id,
         qr_code_id:txnVisit.qr_code_id,
@@ -2402,6 +2403,12 @@ function PartnerView({onLogout}){
   }
   async function saveProfile(){
     setSavingProfile(true);setProfileErr('');
+    if(partnerForm.reduction.trim()){
+      const rv=parseReduction(partnerForm.reduction);
+      if(rv===0||rv<10){setReductionErr('La réduction minimum est de 10%.');setSavingProfile(false);return;}
+      if(rv>50){setReductionErr('La réduction maximum est de 50%.');setSavingProfile(false);return;}
+    }
+    setReductionErr('');
     try{
       const payload={nom:partnerForm.nom,description:partnerForm.description,reduction:partnerForm.reduction,telephone:partnerForm.telephone,google_maps:partnerForm.google_maps,horaires};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
@@ -2585,13 +2592,22 @@ function PartnerView({onLogout}){
                 ['nom',"Nom de l'établissement",'text','Le Café du Marché'],
                 ['telephone','Téléphone','text','06 00 00 00 00'],
                 ['google_maps','Adresse','text','12 Rue de la Paix, Bordeaux'],
-                ['reduction','Réduction proposée','text','10% sur tous les achats'],
               ].map(([name,label,type,ph])=>(
                 <div key={name} className="prt-field">
                   <div className="prt-label fb">{label}</div>
                   <input className="prt-input fb" type={type} value={partnerForm[name]||''} onChange={e=>setPartnerForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
                 </div>
               ))}
+              <div className="prt-field">
+                <div className="prt-label fb">Réduction proposée <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(min. 10%, max. 50%)</span></div>
+                <input className="prt-input fb" type="text" value={partnerForm.reduction||''} onChange={e=>{setPartnerForm(f=>({...f,reduction:e.target.value}));setReductionErr('');}} placeholder="10% sur tous les achats"/>
+                {reductionErr&&<div className="prt-err fb" style={{marginTop:6,fontSize:12}}>{reductionErr}</div>}
+                {partner.commission_active===true&&parseReduction(partnerForm.reduction)>=10&&(
+                  <div style={{marginTop:8,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'#6B1D1D',background:'rgba(107,29,29,.06)',border:'1px solid rgba(107,29,29,.12)',borderRadius:8,padding:'10px 12px',lineHeight:1.6}}>
+                    Commission Locally activée · <strong>{parseReduction(partnerForm.reduction)-5}%</strong> pour vos clients · <strong>5%</strong> pour Locally
+                  </div>
+                )}
+              </div>
               <div className="prt-field">
                 <div className="prt-label fb">Description</div>
                 <textarea className="prt-textarea fb" value={partnerForm.description||''} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
