@@ -113,11 +113,16 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .div-label{display:flex;align-items:center;gap:24px;padding:0 52px;}
 .div-line{flex:1;height:1px;background:rgba(107,29,29,.08);}
 .div-txt{font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(107,29,29,.27);letter-spacing:.06em;white-space:nowrap;}
-.how-compact{display:flex;justify-content:center;gap:0;max-width:720px;margin:0 auto;}
-.how-step{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 20px;position:relative;}
-.how-step:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:36px;font-size:18px;color:rgba(107,29,29,.25);font-family:'DM Sans',sans-serif;}
-.how-step-emoji{font-size:32px;margin-bottom:14px;line-height:1;}
-.how-step-text{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#7A6555;line-height:1.65;max-width:160px;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(107,29,29,.07);border-radius:20px;overflow:hidden;}
+.how-card{padding:52px 44px;background:#FDFAF6;position:relative;overflow:hidden;transition:background .3s ease;}
+.how-card:hover{background:#FAF4EC;}
+.how-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.15));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
+.how-card:hover::after{transform:scaleX(1);}
+.how-icon{width:46px;height:46px;border-radius:13px;background:rgba(107,29,29,.06);border:1px solid rgba(107,29,29,.1);display:flex;align-items:center;justify-content:center;margin-bottom:26px;transition:all .3s ease;color:#6B1D1D;flex-shrink:0;}
+.how-card:hover .how-icon{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;transform:scale(1.05);}
+.how-num{font-family:'Cormorant Garamond',serif;font-size:76px;font-weight:600;color:rgba(107,29,29,.048);line-height:1;margin-bottom:14px;}
+.how-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#1C1208;margin-bottom:10px;}
+.how-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.82;}
 .how-more-btn{background:none;border:none;font-size:13px;color:rgba(107,29,29,.55);cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px;transition:color .2s;}
 .how-more-btn:hover{color:#6B1D1D;}
 .ccm-page{max-width:680px;margin:0 auto;padding:100px 24px 80px;}
@@ -333,9 +338,13 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .hero-foot{flex-direction:column;align-items:flex-start;gap:32px;}
 .hero-actions{align-items:flex-start;}
 .hero-stats{gap:28px;padding-top:44px;margin-top:44px;}
-.how-compact{flex-direction:column;gap:4px;}
-.how-step:not(:last-child)::after{content:'↓';right:50%;top:auto;bottom:-12px;transform:translateX(50%);}
+.how-grid{grid-template-columns:1fr;}
 .how-section .sec-title{margin-bottom:28px;}
+.how-card{padding:20px 18px;}
+.how-icon{width:38px;height:38px;margin-bottom:10px;}
+.how-num{font-size:40px;margin-bottom:4px;}
+.how-title{font-size:20px;margin-bottom:5px;}
+.how-desc{font-size:12px;line-height:1.6;}
 .section{padding:52px 24px;}
 .catpage-hero{padding:100px 24px 48px;}
 .snack-hero{padding:100px 24px 40px;}
@@ -773,15 +782,17 @@ function HomePage({ onNavigate }) {
           <div className="sec-title fd">Comment ça <em>marche</em> ?</div>
         </FadeUp>
         <FadeUp delay={.1}>
-          <div className="how-compact">
+          <div className="how-grid">
             {[
-              ["📱","Scannez le QR code dans votre chambre"],
-              ["🏪","Choisissez un partenaire et générez votre QR"],
-              ["✂️","Présentez-le et profitez de votre réduction"],
-            ].map(([emoji,text])=>(
-              <div className="how-step" key={emoji}>
-                <div className="how-step-emoji">{emoji}</div>
-                <div className="how-step-text fb">{text}</div>
+              ["01",IconBrowse,"Scannez le QR code","Votre hôtel dispose d'un QR code Locally dans votre chambre. Scannez-le pour accéder à nos partenaires."],
+              ["02",IconCart,"Choisissez un partenaire","Parcourez les adresses sélectionnées et générez votre QR code personnel en un clic."],
+              ["03",IconCheck,"Profitez de votre réduction","Présentez votre QR code à l'accueil du partenaire et bénéficiez immédiatement de votre réduction."],
+            ].map(([n,Icon,t,d])=>(
+              <div className="how-card" key={n}>
+                <div className="how-icon"><Icon/></div>
+                <div className="how-num fd">{n}</div>
+                <div className="how-title fd">{t}</div>
+                <div className="how-desc fb">{d}</div>
               </div>
             ))}
           </div>
