@@ -1467,13 +1467,14 @@ function AdminView(){
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const[{data,error},{data:msgs,error:msgsError}]=await Promise.all([
+    const[{data},{data:msgs}]=await Promise.all([
       supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false}),
-      supabase.from('messages').select('partner_id').eq('status','non_lu'),
+      supabase.from('messages').select('partner_id').eq('status','non_lu').not('partner_id','is',null),
     ]);
     setPartners(data||[]);setLoadingPartners(false);
     const counts={};(msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
+    setBadgePartnerMsgs((msgs||[]).length);
   }
   async function fetchVisits(){
     setLoadingVisits(true);
@@ -1489,6 +1490,7 @@ function AdminView(){
     setHotels(data||[]);setLoadingHotels(false);
     const counts={};(msgs||[]).forEach(m=>{counts[m.hotel_slug]=(counts[m.hotel_slug]||0)+1;});
     setUnreadHotelMessages(counts);
+    setBadgeHotelMsgs((msgs||[]).length);
   }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);
