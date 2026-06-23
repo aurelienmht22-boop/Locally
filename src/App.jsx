@@ -3359,78 +3359,165 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
 
 function HotelView({onLogout}){
   const slug=window.location.pathname.replace(/^\/hotel\//,'').split('/')[0];
-  const [authed]=useState(()=>localStorage.getItem('hotel_slug')===slug);
+  const [authed,setAuthed]=useState(()=>localStorage.getItem('hotel_slug')===slug);
+  const [loginCode,setLoginCode]=useState('');
+  const [loginErr,setLoginErr]=useState('');
+  const [loginLoading,setLoginLoading]=useState(false);
   const [hotel,setHotel]=useState(null);
   const [loading,setLoading]=useState(true);
+  const [htlLoadErr,setHtlLoadErr]=useState('');
   const [stats,setStats]=useState(null);
   const [loadingStats,setLoadingStats]=useState(true);
+  const [htlStatPeriod,setHtlStatPeriod]=useState('month');
+  const [htlChartData,setHtlChartData]=useState([]);
   const [htlCodeForm,setHtlCodeForm]=useState({code1:'',code2:''});
   const [savingHtlCode,setSavingHtlCode]=useState(false);
   const [htlCodeErr,setHtlCodeErr]=useState('');
   const [htlCodeSaved,setHtlCodeSaved]=useState(false);
+  const [htlProfileForm,setHtlProfileForm]=useState({nom:'',type:'',email:'',telephone:''});
+  const [savingHtlProfile,setSavingHtlProfile]=useState(false);
+  const [htlProfileSaved,setHtlProfileSaved]=useState(false);
+  const [htlProfileErr,setHtlProfileErr]=useState('');
   const [tab,setTab]=useState('stats');
   const [htlMsgText,setHtlMsgText]=useState('');
   const [sendingHtlMsg,setSendingHtlMsg]=useState(false);
   const [htlMsgSent,setHtlMsgSent]=useState(false);
+  const [htlMsgErr,setHtlMsgErr]=useState('');
   const qrCardRef=useRef(null);
 
-  useEffect(()=>{
-    if(!authed)return;
-    supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle().then(({data})=>{setHotel(data);setLoading(false);});
-    loadStats();
-  },[authed]);
+  async function loadHotel(){
+    try{
+      const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
+      if(error)throw error;
+      setHotel(data);
+      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',email:data.email||'',telephone:data.telephone||''});
+    }catch(e){setHtlLoadErr('Impossible de charger vos données. Vérifiez votre connexion.');}
+    setLoading(false);
+  }
 
-  async function loadStats(){
+  function htlGetPeriodFrom(period){
+    const n=new Date();
+    if(period==='today')return new Date(n.getFullYear(),n.getMonth(),n.getDate()).toISOString();
+    if(period==='week'){const d=n.getDay()||7;return new Date(n.getFullYear(),n.getMonth(),n.getDate()-d+1).toISOString();}
+    if(period==='month')return new Date(n.getFullYear(),n.getMonth(),1).toISOString();
+    return new Date(n.getFullYear(),0,1).toISOString();
+  }
+
+  async function loadStats(period='month'){
     setLoadingStats(true);
-    const now=new Date();
-    const[{data:visits},{data:txns}]=await Promise.all([
-      supabase.from('visits').select('*,candidates(nom)').eq('hotel_slug',slug).order('created_at',{ascending:false}),
-      supabase.from('transactions').select('commission_hotel,created_at').eq('hotel_slug',slug),
-    ]);
-    if(!visits){setLoadingStats(false);return;}
-    const thisMonth=visits.filter(v=>{const d=new Date(v.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();});
-    const countByPartner={};
-    visits.forEach(v=>{
-      if(!v.partner_id)return;
-      if(!countByPartner[v.partner_id])countByPartner[v.partner_id]={count:0,nom:v.candidates?.nom||v.partner_id};
-      countByPartner[v.partner_id].count++;
-    });
-    let topPartner=null;let topCount=0;
-    Object.values(countByPartner).forEach(p=>{if(p.count>topCount){topCount=p.count;topPartner=p.nom;}});
-    const commissionMois=(txns||[]).filter(t=>{const d=new Date(t.created_at);return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();}).reduce((s,t)=>s+Number(t.commission_hotel||0),0);
-    setStats({monthCount:thisMonth.length,topPartner,commissionMois});
+    try{
+      const from=htlGetPeriodFrom(period);
+      const from30=new Date(Date.now()-30*24*60*60*1000).toISOString();
+      const[{data:visits,error:e1},{data:txns},{data:txns30}]=await Promise.all([
+        supabase.from('visits').select('*,candidates(nom)').eq('hotel_slug',slug).gte('created_at',from).order('created_at',{ascending:false}),
+        supabase.from('transactions').select('commission_hotel,created_at').eq('hotel_slug',slug).gte('created_at',from),
+        supabase.from('transactions').select('commission_hotel,created_at').eq('hotel_slug',slug).gte('created_at',from30),
+      ]);
+      if(e1)throw e1;
+      const countByPartner={};
+      (visits||[]).forEach(v=>{
+        if(!v.partner_id)return;
+        if(!countByPartner[v.partner_id])countByPartner[v.partner_id]={count:0,nom:v.candidates?.nom||v.partner_id};
+        countByPartner[v.partner_id].count++;
+      });
+      let topPartner=null;let topCount=0;
+      Object.values(countByPartner).forEach(p=>{if(p.count>topCount){topCount=p.count;topPartner=p.nom;}});
+      const commissionPeriod=(txns||[]).reduce((s,t)=>s+Number(t.commission_hotel||0),0);
+      setStats({periodCount:(visits||[]).length,topPartner,commissionPeriod});
+      const byDay={};
+      for(let i=29;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);byDay[d.toISOString().slice(0,10)]=0;}
+      (txns30||[]).forEach(t=>{const k=t.created_at.slice(0,10);if(byDay[k]!==undefined)byDay[k]+=Number(t.commission_hotel||0);});
+      setHtlChartData(Object.entries(byDay).map(([date,ca])=>({date,ca})));
+    }catch(e){console.error('loadStats hotel:',e);}
     setLoadingStats(false);
   }
 
+  useEffect(()=>{if(authed){loadHotel();loadStats(htlStatPeriod);}},[authed]);
+  useEffect(()=>{if(authed)loadStats(htlStatPeriod);},[htlStatPeriod]);
+
   async function downloadQrCard(){
     if(!qrCardRef.current)return;
-    const canvas=await html2canvas(qrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
-    const link=document.createElement('a');
-    link.download=`locally-qr-${slug}.png`;
-    link.href=canvas.toDataURL('image/png');
-    link.click();
+    try{
+      const canvas=await html2canvas(qrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
+      const link=document.createElement('a');
+      link.download=`locally-qr-${slug}.png`;
+      link.href=canvas.toDataURL('image/png');
+      link.click();
+    }catch(e){console.error('downloadQrCard:',e);}
   }
 
   async function saveHtlAccessCode(){
     if(!htlCodeForm.code1.trim()){setHtlCodeErr('Le code ne peut pas être vide.');return;}
+    if(htlCodeForm.code1.length<6){setHtlCodeErr('Le code doit contenir au moins 6 caractères.');return;}
     if(htlCodeForm.code1!==htlCodeForm.code2){setHtlCodeErr('Les codes ne correspondent pas.');return;}
     setHtlCodeErr('');setSavingHtlCode(true);
-    await supabase.from('hotels').update({access_code:htlCodeForm.code1.trim()}).eq('slug',slug);
-    setSavingHtlCode(false);setHtlCodeSaved(true);setHtlCodeForm({code1:'',code2:''});
-    setTimeout(()=>setHtlCodeSaved(false),2500);
+    try{
+      const{error}=await supabase.from('hotels').update({access_code:htlCodeForm.code1.trim()}).eq('slug',slug);
+      if(error)throw error;
+      setHtlCodeSaved(true);setHtlCodeForm({code1:'',code2:''});
+      setTimeout(()=>setHtlCodeSaved(false),2500);
+    }catch(e){setHtlCodeErr('Erreur lors de la sauvegarde. Réessayez.');}
+    setSavingHtlCode(false);
+  }
+
+  async function saveHtlProfile(){
+    setSavingHtlProfile(true);setHtlProfileErr('');
+    try{
+      const{error}=await supabase.from('hotels').update({nom:htlProfileForm.nom.trim(),type:htlProfileForm.type.trim(),email:htlProfileForm.email.trim(),telephone:htlProfileForm.telephone.trim()}).eq('slug',slug);
+      if(error)throw error;
+      setHotel(h=>({...h,...htlProfileForm}));
+      setHtlProfileSaved(true);setTimeout(()=>setHtlProfileSaved(false),3000);
+    }catch(e){setHtlProfileErr('Erreur lors de la sauvegarde. Réessayez.');}
+    setSavingHtlProfile(false);
   }
 
   async function sendHtlMessage(){
     if(!htlMsgText.trim()||!hotel)return;
-    setSendingHtlMsg(true);
-    await supabase.from('messages').insert({hotel_slug:slug,hotel_name:hotel.nom,message:htlMsgText.trim()});
-    setHtlMsgText('');setSendingHtlMsg(false);setHtlMsgSent(true);
-    setTimeout(()=>setHtlMsgSent(false),3000);
+    setSendingHtlMsg(true);setHtlMsgErr('');
+    try{
+      const{error}=await supabase.from('messages').insert({hotel_slug:slug,hotel_name:hotel.nom,message:htlMsgText.trim()});
+      if(error)throw error;
+      setHtlMsgText('');setHtlMsgSent(true);setTimeout(()=>setHtlMsgSent(false),3000);
+    }catch(e){setHtlMsgErr('Erreur lors de l\'envoi. Réessayez.');}
+    setSendingHtlMsg(false);
+  }
+
+  async function handleLogin(e){
+    e.preventDefault();setLoginLoading(true);setLoginErr('');
+    try{
+      const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('access_code',loginCode.trim()).eq('status','approuve').maybeSingle();
+      if(error)throw error;
+      if(data){
+        localStorage.setItem('hotel_slug',slug);
+        setHotel(data);
+        setHtlProfileForm({nom:data.nom||'',type:data.type||'',email:data.email||'',telephone:data.telephone||''});
+        setAuthed(true);
+      }else{
+        setLoginErr('Code incorrect ou accès non autorisé.');
+      }
+    }catch(e){setLoginErr('Erreur de connexion. Réessayez.');}
+    setLoginLoading(false);
   }
 
   function logout(){localStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
 
-  if(!authed){window.history.pushState({},'','/login');onLogout();return null;}
+  if(!authed) return(
+    <div className="prt-login-wrap">
+      <style>{CSS}</style>
+      <div className="prt-login">
+        <div className="prt-logo fd">local<em>ly</em></div>
+        <div className="prt-login-title fd">Espace hôtel</div>
+        <div className="prt-login-sub fb">Entrez votre code d'accès pour accéder à votre espace.</div>
+        <form onSubmit={handleLogin}>
+          <input className="prt-input fb" type="password" placeholder="Code d'accès" value={loginCode} onChange={e=>{setLoginCode(e.target.value);setLoginErr('');}} autoFocus style={{marginBottom:10}}/>
+          {loginErr&&<div className="prt-err fb">{loginErr}</div>}
+          <button type="submit" className="prt-btn-primary fb" style={{width:'100%'}} disabled={loginLoading}>
+            {loginLoading?'Vérification…':'Accéder →'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 
   return(
     <div className="htl-wrap">
@@ -3440,7 +3527,12 @@ function HotelView({onLogout}){
         <button className="htl-logout fb" onClick={logout}>Déconnexion</button>
       </div>
       {loading?(
-        <div className="htl-content"><div className="fb" style={{color:'#7A6555',padding:'40px 0'}}>Chargement…</div></div>
+        <div className="htl-content">
+          {htlLoadErr
+            ?<div className="prt-err fb" style={{padding:'40px 0'}}>{htlLoadErr}</div>
+            :<div className="fb" style={{color:'#7A6555',padding:'40px 0'}}>Chargement…</div>
+          }
+        </div>
       ):!hotel?(
         <div className="htl-content"><div className="fb" style={{color:'#7A6555',padding:'40px 0'}}>Établissement introuvable.</div></div>
       ):(
@@ -3457,27 +3549,42 @@ function HotelView({onLogout}){
           <div className="htl-content">
 
             {tab==='stats'&&(
-              loadingStats?(
-                <div className="fb" style={{color:'#7A6555',padding:'24px 0',fontSize:13}}>Chargement des stats…</div>
-              ):(
-                <div className="htl-stats-grid">
-                  <div className="htl-stat-card">
-                    <div className="htl-stat-label fb">Visites ce mois</div>
-                    <div className="htl-stat-num fd">{stats?.monthCount??0}</div>
-                    <div className="htl-stat-desc fb">clients depuis votre hôtel</div>
+              <>
+                <div className="prt-tabs-bar" style={{marginBottom:20}}>
+                  {[['today','Aujourd\'hui'],['week','Cette semaine'],['month','Ce mois'],['year','Cette année']].map(([v,l])=>(
+                    <button key={v} className={'prt-tab fb'+(htlStatPeriod===v?' act':'')} onClick={()=>setHtlStatPeriod(v)}>{l}</button>
+                  ))}
+                </div>
+                {loadingStats?(
+                  <div className="fb" style={{color:'#7A6555',padding:'24px 0',fontSize:13}}>Chargement des stats…</div>
+                ):stats?.periodCount===0&&stats?.commissionPeriod===0?(
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A',padding:'16px 0'}}>Pas encore de données pour cette période.</div>
+                ):(
+                  <div className="htl-stats-grid">
+                    <div className="htl-stat-card">
+                      <div className="htl-stat-label fb">Visites</div>
+                      <div className="htl-stat-num fd">{stats?.periodCount??0}</div>
+                      <div className="htl-stat-desc fb">clients depuis votre hôtel</div>
+                    </div>
+                    <div className="htl-stat-card">
+                      <div className="htl-stat-label fb">Partenaire le + visité</div>
+                      <div className="htl-stat-num fd" style={{fontSize:stats?.topPartner?20:32}}>{stats?.topPartner||'—'}</div>
+                      <div className="htl-stat-desc fb">{stats?.topPartner?'via vos recommandations':'aucune visite encore'}</div>
+                    </div>
+                    <div className="htl-stat-card">
+                      <div className="htl-stat-label fb">Revenus générés</div>
+                      <div className="htl-stat-num fd">{stats?.commissionPeriod!=null?stats.commissionPeriod.toFixed(2)+' €':'—'}</div>
+                      <div className="htl-stat-desc fb">commission 1% sur transactions</div>
+                    </div>
                   </div>
-                  <div className="htl-stat-card">
-                    <div className="htl-stat-label fb">Partenaire le + visité</div>
-                    <div className="htl-stat-num fd" style={{fontSize:stats?.topPartner?20:32}}>{stats?.topPartner||'—'}</div>
-                    <div className="htl-stat-desc fb">{stats?.topPartner?'via vos recommandations':'aucune visite encore'}</div>
-                  </div>
-                  <div className="htl-stat-card">
-                    <div className="htl-stat-label fb">Revenus générés ce mois</div>
-                    <div className="htl-stat-num fd">{stats?.commissionMois!=null?stats.commissionMois.toFixed(2)+' €':'—'}</div>
-                    <div className="htl-stat-desc fb">commission 1% sur transactions</div>
+                )}
+                <div style={{marginTop:32}}>
+                  <div className="prt-section-label fb">Revenus — 30 derniers jours</div>
+                  <div style={{background:'white',border:'1px solid rgba(107,29,29,.09)',borderRadius:14,padding:'20px 16px 12px'}}>
+                    <BarChart data={htlChartData}/>
                   </div>
                 </div>
-              )
+              </>
             )}
 
             {tab==='qrcode'&&(
@@ -3487,7 +3594,7 @@ function HotelView({onLogout}){
                     local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
                   </div>
                   <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
-                    <QRCodeSVG value={`https://locally-gules.vercel.app/?hotel=${slug}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                    <QRCodeSVG value={`${window.location.origin}/?hotel=${slug}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
                   </div>
                   <div style={{marginTop:24,fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:600,color:'#1C1208',textAlign:'center',lineHeight:1.2}}>
                     Découvrez le meilleur<br/>de Bordeaux
@@ -3496,7 +3603,7 @@ function HotelView({onLogout}){
                     Scannez pour accéder aux adresses locales sélectionnées et profitez de réductions exclusives
                   </div>
                   <div style={{marginTop:24,paddingTop:16,borderTop:'1px solid #f0e9e3',width:'100%',textAlign:'center',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:400,color:'rgba(107,29,29,.5)',letterSpacing:'.04em'}}>
-                    Offert par votre hôtel · locally-gules.vercel.app
+                    Offert par votre hôtel · {window.location.host}
                   </div>
                 </div>
                 <button onClick={downloadQrCard} style={{marginTop:14,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
@@ -3517,6 +3624,7 @@ function HotelView({onLogout}){
                   style={{resize:'vertical'}}
                 />
                 {htlMsgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981'}}>✓ Message envoyé à l'équipe Locally.</div>}
+                {htlMsgErr&&<div className="prt-err fb">{htlMsgErr}</div>}
                 <div>
                   <button className="prt-btn-primary fb" onClick={sendHtlMessage} disabled={sendingHtlMsg||!htlMsgText.trim()}>
                     {sendingHtlMsg?'Envoi…':'Envoyer à Locally'}
@@ -3526,14 +3634,33 @@ function HotelView({onLogout}){
             )}
 
             {tab==='parametres'&&(
-              <div style={{background:'#FDFAF6',border:'1px solid rgba(107,29,29,.09)',borderRadius:16,padding:'28px 24px',display:'flex',flexDirection:'column',gap:14,maxWidth:480}}>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Changer mon code d'accès</div>
-                <input style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#1C1208',background:'white',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'12px 14px',outline:'none',width:'100%',boxSizing:'border-box'}} type="password" value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès"/>
-                <input style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#1C1208',background:'white',border:'1px solid rgba(107,29,29,.15)',borderRadius:8,padding:'12px 14px',outline:'none',width:'100%',boxSizing:'border-box'}} type="password" value={htlCodeForm.code2} onChange={e=>{setHtlCodeForm(f=>({...f,code2:e.target.value}));setHtlCodeErr('');}} placeholder="Confirmer le code"/>
-                {htlCodeErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B2335'}}>{htlCodeErr}</div>}
-                <button onClick={saveHtlAccessCode} disabled={savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2} style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'13px 28px',borderRadius:10,border:'none',cursor:'pointer',opacity:(savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2)?0.5:1,alignSelf:'flex-start'}}>
-                  {savingHtlCode?'Sauvegarde…':htlCodeSaved?'✓ Code mis à jour':'Enregistrer'}
-                </button>
+              <div style={{maxWidth:520,display:'flex',flexDirection:'column',gap:32}}>
+                <div>
+                  <div className="prt-section-label fb">Informations de l'établissement</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:14,marginTop:4}}>
+                    {[['nom','Nom de l\'hôtel','text','Grand Hôtel'],['type','Type','text','Hôtel 4 étoiles'],['telephone','Téléphone','text','05 56 00 00 00'],['email','Email','email','contact@hotel.fr']].map(([name,label,type,ph])=>(
+                      <div key={name}>
+                        <label className="prt-label fb">{label}</label>
+                        <input className="prt-input" type={type} value={htlProfileForm[name]||''} onChange={e=>setHtlProfileForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
+                      </div>
+                    ))}
+                    {htlProfileErr&&<div className="prt-err fb">{htlProfileErr}</div>}
+                    <button className="prt-btn-primary fb" onClick={saveHtlProfile} disabled={savingHtlProfile||!htlProfileForm.nom.trim()}>
+                      {htlProfileSaved?'✓ Sauvegardé':savingHtlProfile?'Sauvegarde…':'Sauvegarder'}
+                    </button>
+                  </div>
+                </div>
+                <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
+                  <div className="prt-section-label fb">Changer mon code d'accès</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:14,marginTop:4}}>
+                    <input className="prt-input" type="password" value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès (min. 6 car.)"/>
+                    <input className="prt-input" type="password" value={htlCodeForm.code2} onChange={e=>{setHtlCodeForm(f=>({...f,code2:e.target.value}));setHtlCodeErr('');}} placeholder="Confirmer le code"/>
+                    {htlCodeErr&&<div className="prt-err fb">{htlCodeErr}</div>}
+                    <button className="prt-btn-primary fb" onClick={saveHtlAccessCode} disabled={savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2}>
+                      {htlCodeSaved?'✓ Code mis à jour':savingHtlCode?'Enregistrement…':'Changer le code'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
