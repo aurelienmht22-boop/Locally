@@ -878,10 +878,8 @@ const cardItem = {
 
 function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
   const cat=CATEGORIES.find(c=>c.id===categoryId);
-  const partners=PARTNERS.filter(p=>p.category===categoryId&&p.active);
-  const open=isOpen();
   const sbPartners=(supabasePartners||[]).filter(p=>CATEGORIE_MAP[p.categorie]===categoryId);
-  const total=partners.length+sbPartners.length;
+  const total=sbPartners.length;
   return (
     <>
       <motion.div className="catpage-hero" variants={heroZoom} initial="initial" animate="animate">
@@ -892,26 +890,6 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
       </motion.div>
       <div style={{background:"#F7F3EE",padding:"64px 48px"}}>
         <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
-          {partners.map(p=>(
-            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate(p.id,null)}>
-              <div className="pcard-img">
-                <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                <div className={"pcard-status "+(open?"open":"closed")}>
-                  <div className={"sdot "+(open?"open":"closed")}/>
-                  <span className="fb">{open?"Disponible":"Fermé"}</span>
-                </div>
-              </div>
-              <div className="pcard-body">
-                <div className="pcard-cat fb">{cat.label}</div>
-                <div className="pcard-name fd">{p.name}</div>
-                <div className="pcard-desc fb">{p.desc} {p.address}</div>
-                <div className="pcard-foot">
-                  <span className="pcard-cta fb">Commander maintenant</span>
-                  <div className="pcard-icon">→</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
           {sbPartners.map(p=>(
             <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
               <div className="pcard-img" style={{background:'#1C1208'}}>
