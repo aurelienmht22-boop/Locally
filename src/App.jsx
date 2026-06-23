@@ -113,16 +113,30 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .div-label{display:flex;align-items:center;gap:24px;padding:0 52px;}
 .div-line{flex:1;height:1px;background:rgba(107,29,29,.08);}
 .div-txt{font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(107,29,29,.27);letter-spacing:.06em;white-space:nowrap;}
-.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(107,29,29,.07);border-radius:20px;overflow:hidden;}
-.how-card{padding:52px 44px;background:#FDFAF6;position:relative;overflow:hidden;transition:background .3s ease;}
-.how-card:hover{background:#FAF4EC;}
-.how-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6B1D1D,rgba(107,29,29,.15));transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1);}
-.how-card:hover::after{transform:scaleX(1);}
-.how-icon{width:46px;height:46px;border-radius:13px;background:rgba(107,29,29,.06);border:1px solid rgba(107,29,29,.1);display:flex;align-items:center;justify-content:center;margin-bottom:26px;transition:all .3s ease;color:#6B1D1D;flex-shrink:0;}
-.how-card:hover .how-icon{background:#6B1D1D;color:#F7F3EE;border-color:#6B1D1D;transform:scale(1.05);}
-.how-num{font-family:'Cormorant Garamond',serif;font-size:76px;font-weight:600;color:rgba(107,29,29,.048);line-height:1;margin-bottom:14px;}
-.how-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#1C1208;margin-bottom:10px;}
-.how-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.82;}
+.how-compact{display:flex;justify-content:center;gap:0;max-width:720px;margin:0 auto;}
+.how-step{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 20px;position:relative;}
+.how-step:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:36px;font-size:18px;color:rgba(107,29,29,.25);font-family:'DM Sans',sans-serif;}
+.how-step-emoji{font-size:32px;margin-bottom:14px;line-height:1;}
+.how-step-text{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#7A6555;line-height:1.65;max-width:160px;}
+.how-more-btn{background:none;border:none;font-size:13px;color:rgba(107,29,29,.55);cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px;transition:color .2s;}
+.how-more-btn:hover{color:#6B1D1D;}
+.ccm-page{max-width:680px;margin:0 auto;padding:100px 24px 80px;}
+.ccm-back{display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:#7A6555;background:none;border:none;cursor:pointer;padding:0;margin-bottom:40px;transition:color .2s;}
+.ccm-back:hover{color:#6B1D1D;}
+.ccm-section-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:#1C1208;margin:48px 0 16px;}
+.ccm-intro{font-family:'DM Sans',sans-serif;font-size:14px;color:#7A6555;line-height:1.75;margin:0;}
+.ccm-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:16px;}
+.ccm-step-item{display:flex;gap:16px;align-items:flex-start;}
+.ccm-step-num{width:28px;height:28px;border-radius:50%;background:#6B1D1D;color:#F7F3EE;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.ccm-step-text{font-family:'DM Sans',sans-serif;font-size:14px;color:#4A3828;line-height:1.65;}
+.ccm-avantages{display:flex;flex-direction:column;gap:12px;}
+.ccm-avantage{display:flex;align-items:center;gap:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:#4A3828;}
+.ccm-avantage-dot{width:8px;height:8px;border-radius:50%;background:#6B1D1D;flex-shrink:0;}
+.ccm-faq{display:flex;flex-direction:column;gap:2px;}
+.ccm-faq-item{border-bottom:1px solid rgba(107,29,29,.1);}
+.ccm-faq-q{width:100%;background:none;border:none;text-align:left;padding:16px 0;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:#1C1208;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.ccm-faq-q:hover{color:#6B1D1D;}
+.ccm-faq-a{font-family:'DM Sans',sans-serif;font-size:13px;color:#7A6555;line-height:1.7;padding-bottom:16px;}
 .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .catcard{background:#FDFAF6;border:1px solid rgba(107,29,29,.09);border-radius:20px;padding:38px 34px;position:relative;overflow:hidden;transition:all .35s cubic-bezier(.16,1,.3,1);}
 .catcard.active{cursor:pointer;}
@@ -319,13 +333,9 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .hero-foot{flex-direction:column;align-items:flex-start;gap:32px;}
 .hero-actions{align-items:flex-start;}
 .hero-stats{gap:28px;padding-top:44px;margin-top:44px;}
-.how-grid{grid-template-columns:1fr;}
+.how-compact{flex-direction:column;gap:4px;}
+.how-step:not(:last-child)::after{content:'↓';right:50%;top:auto;bottom:-12px;transform:translateX(50%);}
 .how-section .sec-title{margin-bottom:28px;}
-.how-card{padding:20px 18px;}
-.how-icon{width:38px;height:38px;margin-bottom:10px;}
-.how-num{font-size:40px;margin-bottom:4px;}
-.how-title{font-size:20px;margin-bottom:5px;}
-.how-desc{font-size:12px;line-height:1.6;}
 .section{padding:52px 24px;}
 .catpage-hero{padding:100px 24px 48px;}
 .snack-hero{padding:100px 24px 40px;}
@@ -763,19 +773,20 @@ function HomePage({ onNavigate }) {
           <div className="sec-title fd">Comment ça <em>marche</em> ?</div>
         </FadeUp>
         <FadeUp delay={.1}>
-          <div className="how-grid">
+          <div className="how-compact">
             {[
-              ["01",IconBrowse,"Choisissez","Parcourez les adresses partenaires et trouvez le commerce qui vous convient."],
-              ["02",IconCart,"Générez votre QR code","Générez un QR code depuis la page du partenaire et présentez-le sur place."],
-              ["03",IconCheck,"Profitez","Le partenaire scanne votre code et vous accorde votre réduction. C'est tout."]
-            ].map(([n,Icon,t,d])=>(
-              <div className="how-card" key={n}>
-                <div className="how-icon"><Icon/></div>
-                <div className="how-num fd">{n}</div>
-                <div className="how-title fd">{t}</div>
-                <div className="how-desc fb">{d}</div>
+              ["📱","Scannez le QR code dans votre chambre"],
+              ["🏪","Choisissez un partenaire et générez votre QR"],
+              ["✂️","Présentez-le et profitez de votre réduction"],
+            ].map(([emoji,text])=>(
+              <div className="how-step" key={emoji}>
+                <div className="how-step-emoji">{emoji}</div>
+                <div className="how-step-text fb">{text}</div>
               </div>
             ))}
+          </div>
+          <div style={{textAlign:'center',marginTop:28}}>
+            <button className="how-more-btn fb" onClick={()=>siteNav('/comment-ca-marche')}>En savoir plus →</button>
           </div>
         </FadeUp>
       </section>
@@ -3479,6 +3490,76 @@ function RenouvellerPage({onBack,profile}){
   );
 }
 
+function CommentCaMarchePage({onHome}){
+  const [openFaq,setOpenFaq]=useState(null);
+  const faqs=[
+    ["Combien de fois puis-je utiliser Locally ?","Autant de fois que vous voulez pendant votre séjour. Rescannez le QR code de votre chambre toutes les 24h pour renouveler votre accès."],
+    ["Est-ce que je dois payer quelque chose ?","Non, Locally est totalement gratuit pour vous. Les réductions sont offertes par les partenaires locaux."],
+    ["Que se passe-t-il si mon QR code expire ?","Générez-en simplement un nouveau depuis la page du partenaire."],
+    ["Les partenaires sont-ils vérifiés ?","Oui, chaque commerce est sélectionné et approuvé manuellement par notre équipe avant d'apparaître sur Locally."],
+  ];
+  return(
+    <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
+      <style>{CSS}</style>
+      <div className="ccm-page">
+        <button className="ccm-back fb" onClick={onHome}>← Retour</button>
+
+        <div className="sec-tag fb">Le principe</div>
+        <div className="sec-title fd" style={{marginBottom:24}}>Comment ça <em>marche</em> ?</div>
+
+        <p className="ccm-intro">
+          Locally connecte les voyageurs aux meilleurs commerces locaux de Bordeaux via un système de QR codes exclusifs négociés par votre hôtel.
+        </p>
+
+        <div className="ccm-section-title fd">En détail — 5 étapes</div>
+        <ol className="ccm-steps">
+          {[
+            "Vous arrivez dans votre hôtel et scannez le QR code Locally affiché dans votre chambre.",
+            "Vous créez votre compte gratuit en 30 secondes.",
+            "Vous avez 24h pour profiter des réductions — rescannez le QR de votre chambre pour renouveler.",
+            "Vous choisissez un partenaire et générez votre QR code personnalisé.",
+            "Vous présentez votre QR à l'accueil du commerce et profitez de votre réduction immédiatement.",
+          ].map((step,i)=>(
+            <li className="ccm-step-item" key={i}>
+              <span className="ccm-step-num">{i+1}</span>
+              <span className="ccm-step-text fb">{step}</span>
+            </li>
+          ))}
+        </ol>
+
+        <div className="ccm-section-title fd">Vos avantages</div>
+        <div className="ccm-avantages">
+          {[
+            "Réductions exclusives négociées par votre hôtel",
+            "100% gratuit pour vous",
+            "Partenaires sélectionnés et vérifiés",
+            "Historique de vos visites dans votre espace compte",
+          ].map(a=>(
+            <div className="ccm-avantage" key={a}>
+              <div className="ccm-avantage-dot"/>
+              <span className="fb">{a}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="ccm-section-title fd">Questions fréquentes</div>
+        <div className="ccm-faq">
+          {faqs.map(([q,a],i)=>(
+            <div className="ccm-faq-item" key={i}>
+              <button className="ccm-faq-q fb" onClick={()=>setOpenFaq(openFaq===i?null:i)}>
+                <span>{q}</span>
+                <span style={{fontSize:16,color:'rgba(107,29,29,.4)',flexShrink:0}}>{openFaq===i?'−':'+'}</span>
+              </button>
+              {openFaq===i&&<div className="ccm-faq-a fb">{a}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      <SiteFooter/>
+    </div>
+  );
+}
+
 function AuthModal({onClose,onSuccess,defaultTab='login'}){
   const[tab,setTab]=useState(defaultTab);
   const[loading,setLoading]=useState(false);
@@ -4093,6 +4174,7 @@ export default function App() {
     if(path==="/confidentialite")return "confidentialite";
     if(path==="/renouveler")return "renouveler";
     if(path==="/reset-password")return "reset-password";
+    if(path==="/comment-ca-marche")return "comment-ca-marche";
     if(path==="/compte")return "compte";
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
@@ -4131,6 +4213,7 @@ export default function App() {
       if(path==="/confidentialite"){setPage("confidentialite");return;}
       if(path==="/renouveler"){setPage("renouveler");return;}
       if(path==="/reset-password"){setPage("reset-password");return;}
+      if(path==="/comment-ca-marche"){setPage("comment-ca-marche");return;}
       if(path==="/compte"){setPage("compte");return;}
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
@@ -4149,6 +4232,7 @@ export default function App() {
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="mentions")return <MentionsLegalesView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="confidentialite")return <ConfidentialiteView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="comment-ca-marche")return <CommentCaMarchePage onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="compte"){
     if(authLoading)return <div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><style>{CSS}</style><span className="fb" style={{color:'#7A6555',fontSize:13}}>Chargement…</span></div>;
     if(!user||!profile){window.history.pushState({},'','/');setPage("home");return null;}
