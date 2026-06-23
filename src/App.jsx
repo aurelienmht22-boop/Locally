@@ -1375,7 +1375,8 @@ function AdminView(){
   const [badgePending,setBadgePending]=useState(0);
   const [countPartners,setCountPartners]=useState(0);
   const [countHotels,setCountHotels]=useState(0);
-  const [badgeMessages,setBadgeMessages]=useState(0);
+  const [badgePartnerMsgs,setBadgePartnerMsgs]=useState(0);
+  const [badgeHotelMsgs,setBadgeHotelMsgs]=useState(0);
   const [adminStats,setAdminStats]=useState(null);
   const [adminChartData,setAdminChartData]=useState([]);
   const [adminTopPartners,setAdminTopPartners]=useState([]);
@@ -1388,17 +1389,19 @@ function AdminView(){
   }
   function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
   async function fetchBadges(){
-    const[{count:pc},{count:hc},{count:pa},{count:ha},{count:mu}]=await Promise.all([
+    const[{count:pc},{count:hc},{count:pa},{count:ha},{count:pmu},{count:hmu}]=await Promise.all([
       supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','pending'),
       supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','pending'),
       supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
       supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','approuve'),
-      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu'),
+      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu').not('partner_id','is',null),
+      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu').not('hotel_slug','is',null),
     ]);
     setBadgePending((pc||0)+(hc||0));
     setCountPartners(pa||0);
     setCountHotels(ha||0);
-    setBadgeMessages(mu||0);
+    setBadgePartnerMsgs(pmu||0);
+    setBadgeHotelMsgs(hmu||0);
   }
   useEffect(()=>{if(authed)fetchBadges();},[authed]);
   function saveAdminPwd(){
@@ -1453,7 +1456,7 @@ function AdminView(){
   }
   async function refresh(){
     setRefreshing(true);
-    await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits(),fetchAdminStats()]);
+    await Promise.all([fetchCands(),fetchPartners(),fetchHotels(),fetchVisits(),fetchAdminStats(),fetchBadges()]);
     setRefreshing(false);
   }
 
@@ -1468,7 +1471,6 @@ function AdminView(){
       supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false}),
       supabase.from('messages').select('partner_id').eq('status','non_lu'),
     ]);
-    console.log('[fetchPartners] data:', data, 'error:', error, 'msgs:', msgs, 'msgsError:', msgsError);
     setPartners(data||[]);setLoadingPartners(false);
     const counts={};(msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
@@ -1515,6 +1517,7 @@ function AdminView(){
     setSelHotel(s=>s?.id===id?{...s,status}:s);
     setConfirmHotelReject(false);
     if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS hotel error:',err));
+    fetchBadges();
   }
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);setPartnerMessages([]);
@@ -1527,7 +1530,7 @@ function AdminView(){
     const unread=(msgs||[]).filter(m=>m.status==='non_lu');
     if(unread.length>0){
       await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
-      setBadgeMessages(b=>Math.max(0,b-unread.length));
+      setBadgePartnerMsgs(b=>Math.max(0,b-unread.length));
       setUnreadMessages(u=>{const n={...u};delete n[p.id];return n;});
     }
     setPartnerMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingPM(false);
@@ -1536,7 +1539,7 @@ function AdminView(){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
     setPartnerMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadMessages(u=>{const n={...u};n[partnerId]=Math.max(0,(n[partnerId]||1)-1);if(!n[partnerId])delete n[partnerId];return n;});
-    setBadgeMessages(b=>Math.max(0,b-1));
+    setBadgePartnerMsgs(b=>Math.max(0,b-1));
   }
   async function openHotel(h){
     setSelHotel(h);setConfirmHotelReject(false);
@@ -1546,7 +1549,7 @@ function AdminView(){
     const unread=(msgs||[]).filter(m=>m.status==='non_lu');
     if(unread.length>0){
       await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
-      setBadgeMessages(b=>Math.max(0,b-unread.length));
+      setBadgeHotelMsgs(b=>Math.max(0,b-unread.length));
       setUnreadHotelMessages(u=>{const n={...u};delete n[h.slug];return n;});
     }
     setHotelMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingHM(false);
@@ -1555,11 +1558,10 @@ function AdminView(){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
     setHotelMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadHotelMessages(u=>{const n={...u};n[hotelSlug]=Math.max(0,(n[hotelSlug]||1)-1);if(!n[hotelSlug])delete n[hotelSlug];return n;});
-    setBadgeMessages(b=>Math.max(0,b-1));
+    setBadgeHotelMsgs(b=>Math.max(0,b-1));
   }
 
   useEffect(()=>{
-    console.log('[AdminEffect] authed=',authed,'tab=',tab);
     if(!authed)return;
     if(tab==='candidatures'||tab==='rejetes'){fetchCands();fetchHotels();}
     else if(tab==='partenaires')fetchPartners();
@@ -1624,8 +1626,8 @@ function AdminView(){
         <div className="adm-tabs">
           {[
             ['candidatures',<>Candidatures{badgePending>0&&<span style={{background:'#B91C1C',color:'white',borderRadius:9,fontSize:9,padding:'1px 6px',marginLeft:5,fontWeight:600,lineHeight:1}}>{badgePending}</span>}</>],
-            ['partenaires',<>Partenaires{countPartners>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countPartners})</span>}{badgeMessages>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
-            ['hotels',<>Hôtels{countHotels>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countHotels})</span>}</>],
+            ['partenaires',<>Partenaires{countPartners>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countPartners})</span>}{badgePartnerMsgs>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
+            ['hotels',<>Hôtels{countHotels>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countHotels})</span>}{badgeHotelMsgs>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
             ['rejetes','Rejetés'],
             ['stats','Statistiques'],
             ['parametres','Paramètres'],
