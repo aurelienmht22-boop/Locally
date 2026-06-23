@@ -2180,13 +2180,15 @@ function PartnerView({onLogout}){
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
   const [tab,setTab]=useState('profil');
-  const [profileForm,setProfileForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:''});
+  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:''});
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
+  const [profileErr,setProfileErr]=useState('');
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(false);
   const [menuForm,setMenuForm]=useState(null);
   const [savingMenu,setSavingMenu]=useState(false);
+  const [menuErr,setMenuErr]=useState('');
   const [deletingId,setDeletingId]=useState(null);
   const [statVisits,setStatVisits]=useState([]);
   const [pageViews,setPageViews]=useState(0);
@@ -2198,13 +2200,10 @@ function PartnerView({onLogout}){
   const [recentTxns,setRecentTxns]=useState([]);
   const [reviewClicks,setReviewClicks]=useState(0);
   const [horaires,setHoraires]=useState({});
-  const [codeForm,setCodeForm]=useState({code1:'',code2:''});
-  const [savingCode,setSavingCode]=useState(false);
-  const [codeErr,setCodeErr]=useState('');
-  const [codeSaved,setCodeSaved]=useState(false);
   const [msgText,setMsgText]=useState('');
   const [sendingMsg,setSendingMsg]=useState(false);
   const [msgSent,setMsgSent]=useState(false);
+  const [msgErr,setMsgErr]=useState('');
   const [txnStep,setTxnStep]=useState('scan');
   const [txnScanMode,setTxnScanMode]=useState('camera');
   const [txnManualId,setTxnManualId]=useState('');
@@ -2213,11 +2212,13 @@ function PartnerView({onLogout}){
   const [txnMontant,setTxnMontant]=useState('');
   const [txnTaux,setTxnTaux]=useState('');
   const [txnSaving,setTxnSaving]=useState(false);
+  const [txnErr,setTxnErr]=useState('');
   const txnQrRef=useRef(null);
   const prtQrCardRef=useRef(null);
-  const [settingsInfoForm,setSettingsInfoForm]=useState({nom:'',telephone:'',email:'',description:'',google_review_url:''});
+  const cameraActiveRef=useRef(false);
   const [savingInfo,setSavingInfo]=useState(false);
   const [infoSaved,setInfoSaved]=useState(false);
+  const [infoErr,setInfoErr]=useState('');
   const [settingsCodeForm,setSettingsCodeForm]=useState({code1:'',code2:''});
   const [savingSettingsCode,setSavingSettingsCode]=useState(false);
   const [settingsCodeErr,setSettingsCodeErr]=useState('');
@@ -2225,16 +2226,27 @@ function PartnerView({onLogout}){
   const [savingVisible,setSavingVisible]=useState(false);
 
   async function loadPartner(){
-    const{data}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
-    if(data){setPartner(data);setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});setHoraires(data.horaires||{});setSettingsInfoForm({nom:data.nom||'',telephone:data.telephone||'',email:data.email||'',description:data.description||'',google_review_url:data.google_review_url||''});}
+    try{
+      const{data,error}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
+      if(error)throw error;
+      if(data){
+        setPartner(data);
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||''});
+        setHoraires(data.horaires||{});
+      }
+    }catch(e){console.error('loadPartner:',e);}
   }
   useEffect(()=>{if(authed)loadPartner();},[]);
 
   async function saveSettingsInfo(){
-    setSavingInfo(true);
-    await supabase.from('candidates').update({nom:settingsInfoForm.nom.trim(),telephone:settingsInfoForm.telephone.trim(),email:settingsInfoForm.email.trim(),description:settingsInfoForm.description.trim(),google_review_url:settingsInfoForm.google_review_url.trim()}).eq('id',partner.id);
-    setPartner(p=>({...p,...settingsInfoForm}));
-    setSavingInfo(false);setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
+    setSavingInfo(true);setInfoErr('');
+    try{
+      const{error}=await supabase.from('candidates').update({nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim()}).eq('id',partner.id);
+      if(error)throw error;
+      setPartner(p=>({...p,...partnerForm}));
+      setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
+    }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
+    setSavingInfo(false);
   }
 
   async function saveSettingsCode(){
@@ -2242,35 +2254,44 @@ function PartnerView({onLogout}){
     if(settingsCodeForm.code1.length<6){setSettingsCodeErr('Le code doit contenir au moins 6 caractères.');return;}
     if(settingsCodeForm.code1!==settingsCodeForm.code2){setSettingsCodeErr('Les codes ne correspondent pas.');return;}
     setSavingSettingsCode(true);
-    await supabase.from('candidates').update({access_code:settingsCodeForm.code1}).eq('id',partner.id);
-    setSavingSettingsCode(false);setSettingsCodeSaved(true);setTimeout(()=>setSettingsCodeSaved(false),3000);
-    setSettingsCodeForm({code1:'',code2:''});
+    try{
+      const{error}=await supabase.from('candidates').update({access_code:settingsCodeForm.code1}).eq('id',partner.id);
+      if(error)throw error;
+      setSettingsCodeSaved(true);setTimeout(()=>setSettingsCodeSaved(false),3000);
+      setSettingsCodeForm({code1:'',code2:''});
+    }catch(e){setSettingsCodeErr('Erreur lors de la mise à jour. Réessayez.');}
+    setSavingSettingsCode(false);
   }
 
   async function toggleVisible(){
     setSavingVisible(true);
     const newVal=partner.visible===false?true:false;
-    await supabase.from('candidates').update({visible:newVal}).eq('id',partner.id);
-    setPartner(p=>({...p,visible:newVal}));
+    try{
+      const{error}=await supabase.from('candidates').update({visible:newVal}).eq('id',partner.id);
+      if(error)throw error;
+      setPartner(p=>({...p,visible:newVal}));
+    }catch(e){console.error('toggleVisible:',e);}
     setSavingVisible(false);
   }
 
   async function fetchStatsExtra(){
-    const from30=new Date(Date.now()-30*24*60*60*1000).toISOString();
-    const [{data:txn30},{data:last5},{count:rcCount}]=await Promise.all([
-      supabase.from('transactions').select('created_at,montant_client').eq('partner_id',partner.id).gte('created_at',from30),
-      supabase.from('transactions').select('created_at,montant_client,taux_reduction_applique').eq('partner_id',partner.id).order('created_at',{ascending:false}).limit(5),
-      supabase.from('review_clicks').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
-    ]);
-    setReviewClicks(rcCount||0);
-    const byDay={};
-    for(let i=29;i>=0;i--){
-      const d=new Date();d.setDate(d.getDate()-i);
-      byDay[d.toISOString().slice(0,10)]=0;
-    }
-    (txn30||[]).forEach(t=>{const k=t.created_at.slice(0,10);if(byDay[k]!==undefined)byDay[k]+=Number(t.montant_client||0);});
-    setChartData(Object.entries(byDay).map(([date,ca])=>({date,ca})));
-    setRecentTxns(last5||[]);
+    try{
+      const from30=new Date(Date.now()-30*24*60*60*1000).toISOString();
+      const [{data:txn30},{data:last5},{count:rcCount}]=await Promise.all([
+        supabase.from('transactions').select('created_at,montant_client').eq('partner_id',partner.id).gte('created_at',from30),
+        supabase.from('transactions').select('created_at,montant_client,taux_reduction_applique').eq('partner_id',partner.id).order('created_at',{ascending:false}).limit(5),
+        supabase.from('review_clicks').select('*',{count:'exact',head:true}).eq('partner_id',partner.id),
+      ]);
+      setReviewClicks(rcCount||0);
+      const byDay={};
+      for(let i=29;i>=0;i--){
+        const d=new Date();d.setDate(d.getDate()-i);
+        byDay[d.toISOString().slice(0,10)]=0;
+      }
+      (txn30||[]).forEach(t=>{const k=t.created_at.slice(0,10);if(byDay[k]!==undefined)byDay[k]+=Number(t.montant_client||0);});
+      setChartData(Object.entries(byDay).map(([date,ca])=>({date,ca})));
+      setRecentTxns(last5||[]);
+    }catch(e){console.error('fetchStatsExtra:',e);}
   }
 
   useEffect(()=>{
@@ -2284,55 +2305,66 @@ function PartnerView({onLogout}){
 
   useEffect(()=>{
     if(tab!=='valider'||txnStep!=='scan'||txnScanMode!=='camera')return;
+    if(cameraActiveRef.current)return;
+    cameraActiveRef.current=true;
     const qr=new Html5Qrcode('txn-qr-reader');
     txnQrRef.current=qr;
     qr.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},
-      async(decoded)=>{try{await qr.stop();}catch(e){}await txnVerifyQR(decoded);},
+      async(decoded)=>{try{await qr.stop();}catch(e){}cameraActiveRef.current=false;await txnVerifyQR(decoded);},
       ()=>{}
-    ).catch(err=>console.error('TxnCamera:',err));
-    return()=>{try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){}};
+    ).catch(err=>{console.error('TxnCamera:',err);cameraActiveRef.current=false;});
+    return()=>{cameraActiveRef.current=false;try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){}};
   },[tab,txnStep,txnScanMode]);
 
   async function txnVerifyQR(raw){
+    if(!partner)return;
     let qrId=raw.trim();
     try{const u=new URL(raw);const p=u.searchParams.get('id');if(p)qrId=p;}catch(e){}
     setTxnScanErr('');
-    const{data:visit}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
-    if(!visit){setTxnScanErr('QR code introuvable.');return;}
-    if(new Date(visit.expires_at)<new Date()){setTxnScanErr('QR code expiré, le client peut en générer un nouveau gratuitement.');return;}
-    if(visit.partner_id!==partner.id){setTxnScanErr("Ce QR code n'est pas destiné à votre établissement.");return;}
-    setTxnVisit(visit);
-    setTxnTaux(String(parseReduction(partner.reduction)));
-    setTxnStep('amount');
+    try{
+      const{data:visit,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
+      if(error)throw error;
+      if(!visit){setTxnScanErr('QR code introuvable.');return;}
+      if(new Date(visit.expires_at)<new Date()){setTxnScanErr('QR code expiré, le client peut en générer un nouveau gratuitement.');return;}
+      if(visit.partner_id!==partner.id){setTxnScanErr("Ce QR code n'est pas destiné à votre établissement.");return;}
+      setTxnVisit(visit);
+      setTxnTaux(String(parseReduction(partner.reduction)));
+      setTxnStep('amount');
+    }catch(e){setTxnScanErr('Erreur lors de la vérification. Réessayez.');}
   }
 
   async function txnConfirm(){
+    if(!partner||!txnVisit)return;
     const m=parseFloat(txnMontant),t=parseFloat(txnTaux);
-    if(isNaN(m)||m<=0||isNaN(t)||t<=0)return;
-    setTxnSaving(true);
-    const commActive=partner.commission_active===true;
-    const montant_reduction=+(m*t/100).toFixed(2);
-    const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
-    const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
-    const montant_client=+(m-montant_reduction).toFixed(2);
-    await supabase.from('transactions').insert([{
-      visit_id:txnVisit.id,
-      qr_code_id:txnVisit.qr_code_id,
-      partner_id:partner.id,
-      client_name:txnVisit.client_name,
-      user_id:txnVisit.user_id||null,
-      hotel_slug:txnVisit.hotel_slug||null,
-      montant_transaction:m,
-      taux_reduction_applique:t,
-      montant_reduction,
-      commission_locally,
-      commission_hotel,
-      montant_client,
-    }]);
-    if(!txnVisit.scanned){
-      await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',txnVisit.id);
-    }
-    setTxnSaving(false);setTxnStep('done');
+    if(isNaN(m)||m<=0||isNaN(t)||t<=0){setTxnErr('Montant ou taux invalide.');return;}
+    setTxnSaving(true);setTxnErr('');
+    try{
+      const commActive=partner.commission_active===true;
+      const montant_reduction=+(m*t/100).toFixed(2);
+      const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
+      const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
+      const montant_client=+(m-montant_reduction).toFixed(2);
+      const{error}=await supabase.from('transactions').insert([{
+        visit_id:txnVisit.id,
+        qr_code_id:txnVisit.qr_code_id,
+        partner_id:partner.id,
+        client_name:txnVisit.client_name,
+        user_id:txnVisit.user_id||null,
+        hotel_slug:txnVisit.hotel_slug||null,
+        montant_transaction:m,
+        taux_reduction_applique:t,
+        montant_reduction,
+        commission_locally,
+        commission_hotel,
+        montant_client,
+      }]);
+      if(error)throw error;
+      if(!txnVisit.scanned){
+        await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',txnVisit.id);
+      }
+      setTxnStep('done');
+    }catch(e){setTxnErr('Erreur lors de l\'enregistrement. Réessayez.');}
+    setTxnSaving(false);
   }
 
   function txnReset(){
@@ -2346,7 +2378,7 @@ function PartnerView({onLogout}){
     if(data){
       localStorage.setItem('partner_slug',slug);
       setPartner(data);
-      setProfileForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||''});
+      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||''});
       setHoraires(data.horaires||{});
       setAuthed(true);
     }else{
@@ -2369,21 +2401,16 @@ function PartnerView({onLogout}){
     link.click();
   }
   async function saveProfile(){
-    setSavingProfile(true);
-    await supabase.from('candidates').update({...profileForm,horaires}).eq('id',partner.id);
-    setPartner(p=>({...p,...profileForm,horaires}));
-    setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
+    setSavingProfile(true);setProfileErr('');
+    try{
+      const payload={nom:partnerForm.nom,description:partnerForm.description,reduction:partnerForm.reduction,telephone:partnerForm.telephone,google_maps:partnerForm.google_maps,horaires};
+      const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
+      if(error)throw error;
+      setPartner(p=>({...p,...payload}));
+      setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
+    }catch(e){setProfileErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingProfile(false);
   }
-  async function saveAccessCode(){
-    if(!codeForm.code1.trim()){setCodeErr('Le code ne peut pas être vide.');return;}
-    if(codeForm.code1!==codeForm.code2){setCodeErr('Les codes ne correspondent pas.');return;}
-    setCodeErr('');setSavingCode(true);
-    await supabase.from('candidates').update({access_code:codeForm.code1.trim()}).eq('id',partner.id);
-    setSavingCode(false);setCodeSaved(true);setCodeForm({code1:'',code2:''});
-    setTimeout(()=>setCodeSaved(false),2500);
-  }
-
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
     const b64=await toBase64(file);
@@ -2393,10 +2420,13 @@ function PartnerView({onLogout}){
 
   async function sendMessage(){
     if(!msgText.trim())return;
-    setSendingMsg(true);
-    await supabase.from('messages').insert({partner_id:partner.id,partner_name:partner.nom,message:msgText.trim()});
-    setMsgText('');setSendingMsg(false);setMsgSent(true);
-    setTimeout(()=>setMsgSent(false),3000);
+    setSendingMsg(true);setMsgErr('');
+    try{
+      const{error}=await supabase.from('messages').insert({partner_id:partner.id,partner_name:partner.nom,message:msgText.trim()});
+      if(error)throw error;
+      setMsgText('');setMsgSent(true);setTimeout(()=>setMsgSent(false),3000);
+    }catch(e){setMsgErr('Erreur lors de l\'envoi. Réessayez.');}
+    setSendingMsg(false);
   }
   async function fetchMenu(){
     setLoadingMenu(true);
@@ -2430,45 +2460,54 @@ function PartnerView({onLogout}){
 
   async function fetchStats(period='month'){
     setLoadingStats(true);
-    const{from,prevFrom,prevTo}=getPeriodRange(period);
-    const[
-      {data:vData},{count:pvCount},{data:txnData},
-      {data:vPrev},{count:pvPrev},{data:txnPrev}
-    ]=await Promise.all([
-      supabase.from('visits').select('*').eq('partner_id',partner.id).gte('created_at',from),
-      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',from),
-      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',from),
-      supabase.from('visits').select('scanned').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
-      supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
-      supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
-    ]);
-    setStatVisits(vData||[]);
-    setPageViews(pvCount||0);
-    setStatCA((txnData||[]).reduce((s,t)=>s+Number(t.montant_client||0),0));
-    setStatPrev({
-      visits:(vPrev||[]).length,
-      scanned:(vPrev||[]).filter(v=>v.scanned).length,
-      pageViews:pvPrev||0,
-      ca:(txnPrev||[]).reduce((s,t)=>s+Number(t.montant_client||0),0),
-    });
+    try{
+      const{from,prevFrom,prevTo}=getPeriodRange(period);
+      const[
+        {data:vData},{count:pvCount},{data:txnData},
+        {data:vPrev},{count:pvPrev},{data:txnPrev}
+      ]=await Promise.all([
+        supabase.from('visits').select('*').eq('partner_id',partner.id).gte('created_at',from),
+        supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',from),
+        supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',from),
+        supabase.from('visits').select('scanned').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
+        supabase.from('page_views').select('*',{count:'exact',head:true}).eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
+        supabase.from('transactions').select('montant_client').eq('partner_id',partner.id).gte('created_at',prevFrom).lt('created_at',prevTo),
+      ]);
+      setStatVisits(vData||[]);
+      setPageViews(pvCount||0);
+      setStatCA((txnData||[]).reduce((s,t)=>s+Number(t.montant_client||0),0));
+      setStatPrev({
+        visits:(vPrev||[]).length,
+        scanned:(vPrev||[]).filter(v=>v.scanned).length,
+        pageViews:pvPrev||0,
+        ca:(txnPrev||[]).reduce((s,t)=>s+Number(t.montant_client||0),0),
+      });
+    }catch(e){console.error('fetchStats:',e);}
     setLoadingStats(false);
   }
 
   async function saveMenuItem(){
     if(!menuForm.nom||!menuForm.prix)return;
-    setSavingMenu(true);
-    const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null};
-    if(menuForm.id){
-      await supabase.from('menu_items').update(payload).eq('id',menuForm.id);
-    }else{
-      await supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
-    }
-    setMenuForm(null);await fetchMenu();setSavingMenu(false);
+    setSavingMenu(true);setMenuErr('');
+    try{
+      const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null};
+      const q=menuForm.id
+        ?supabase.from('menu_items').update(payload).eq('id',menuForm.id)
+        :supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
+      const{error}=await q;
+      if(error)throw error;
+      setMenuForm(null);await fetchMenu();
+    }catch(e){setMenuErr('Erreur lors de la sauvegarde. Réessayez.');}
+    setSavingMenu(false);
   }
 
   async function deleteMenuItem(id){
-    await supabase.from('menu_items').delete().eq('id',id);
-    setMenuItems(ms=>ms.filter(m=>m.id!==id));setDeletingId(null);
+    try{
+      const{error}=await supabase.from('menu_items').delete().eq('id',id);
+      if(error)throw error;
+      setMenuItems(ms=>ms.filter(m=>m.id!==id));
+    }catch(e){setMenuErr('Erreur lors de la suppression. Réessayez.');}
+    setDeletingId(null);
   }
 
   async function handleMenuPhoto(e){
@@ -2550,12 +2589,12 @@ function PartnerView({onLogout}){
               ].map(([name,label,type,ph])=>(
                 <div key={name} className="prt-field">
                   <div className="prt-label fb">{label}</div>
-                  <input className="prt-input fb" type={type} value={profileForm[name]||''} onChange={e=>setProfileForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
+                  <input className="prt-input fb" type={type} value={partnerForm[name]||''} onChange={e=>setPartnerForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
                 </div>
               ))}
               <div className="prt-field">
                 <div className="prt-label fb">Description</div>
-                <textarea className="prt-textarea fb" value={profileForm.description||''} onChange={e=>setProfileForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
+                <textarea className="prt-textarea fb" value={partnerForm.description||''} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
               </div>
               <div className="prt-field">
                 <div className="prt-label fb">Horaires d'ouverture</div>
@@ -2588,27 +2627,11 @@ function PartnerView({onLogout}){
                   })}
                 </div>
               </div>
+              {profileErr&&<div className="prt-err fb">{profileErr}</div>}
               <div>
                 <button className="prt-btn-primary fb" onClick={saveProfile} disabled={savingProfile}>
                   {savingProfile?'Sauvegarde…':profileSaved?'✓ Sauvegardé':'Sauvegarder'}
                 </button>
-              </div>
-              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:12,display:'flex',flexDirection:'column',gap:14}}>
-                <div className="prt-section-label fb">Changer mon code d'accès</div>
-                <div className="prt-field">
-                  <div className="prt-label fb">Nouveau code</div>
-                  <input className="prt-input fb" type="password" value={codeForm.code1} onChange={e=>{setCodeForm(f=>({...f,code1:e.target.value}));setCodeErr('');}} placeholder="Nouveau code d'accès"/>
-                </div>
-                <div className="prt-field">
-                  <div className="prt-label fb">Confirmer le code</div>
-                  <input className="prt-input fb" type="password" value={codeForm.code2} onChange={e=>{setCodeForm(f=>({...f,code2:e.target.value}));setCodeErr('');}} placeholder="Confirmer le code"/>
-                </div>
-                {codeErr&&<div className="prt-err fb">{codeErr}</div>}
-                <div>
-                  <button className="prt-btn-primary fb" onClick={saveAccessCode} disabled={savingCode||!codeForm.code1||!codeForm.code2}>
-                    {savingCode?'Sauvegarde…':codeSaved?'✓ Code mis à jour':'Enregistrer'}
-                  </button>
-                </div>
               </div>
             </div>
             {/* ── QR COMPTOIR ── */}
@@ -2622,7 +2645,7 @@ function PartnerView({onLogout}){
                   local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
                 </div>
                 <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
-                  <QRCodeSVG value={`https://locally-gules.vercel.app/partner/${slug}`} size={170} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                  <QRCodeSVG value={`${window.location.origin}/partner/${slug}`} size={170} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
                 </div>
                 <div style={{marginTop:20,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:220}}>
                   Scannez pour accéder à votre espace partenaire
@@ -2665,6 +2688,7 @@ function PartnerView({onLogout}){
                   </label>
                   {menuForm.photo_url&&<img src={menuForm.photo_url} style={{width:72,height:72,objectFit:'cover',borderRadius:8,display:'block',marginTop:10}} alt=""/>}
                 </div>
+                {menuErr&&<div className="prt-err fb">{menuErr}</div>}
                 <div style={{display:'flex',gap:10}}>
                   <button className="prt-btn-secondary fb" onClick={()=>setMenuForm(null)}>Annuler</button>
                   <button className="prt-btn-primary fb" onClick={saveMenuItem} disabled={savingMenu||!menuForm.nom||!menuForm.prix}>
@@ -2722,6 +2746,7 @@ function PartnerView({onLogout}){
               style={{resize:'vertical'}}
             />
             {msgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981'}}>✓ Message envoyé à l'équipe Locally.</div>}
+            {msgErr&&<div className="prt-err fb">{msgErr}</div>}
             <div>
               <button className="prt-btn-primary fb" onClick={sendMessage} disabled={sendingMsg||!msgText.trim()}>
                 {sendingMsg?'Envoi…':'Envoyer à Locally'}
@@ -2737,7 +2762,9 @@ function PartnerView({onLogout}){
                 <button key={v} className={'prt-tab fb'+(statPeriod===v?' act':'')} onClick={()=>setStatPeriod(v)}>{l}</button>
               ))}
             </div>
-            {loadingStats?<div className="prt-loading fb">Chargement…</div>:(
+            {loadingStats?<div className="prt-loading fb">Chargement…</div>:totalV===0&&pageViews===0&&statCA===0?(
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A',padding:'16px 0'}}>Pas encore de données pour cette période.</div>
+            ):(
               <div className="prt-stats-grid">
                 {[
                   {cur:pageViews,prev:statPrev.pageViews,label:'Vues de la page',fmt:v=>String(v)},
@@ -2884,6 +2911,7 @@ function PartnerView({onLogout}){
                     )}
                   </div>
 
+                  {txnErr&&<div className="prt-err fb">{txnErr}</div>}
                   <div style={{display:'flex',gap:10}}>
                     <button className="prt-btn-secondary fb" onClick={txnReset}>Annuler</button>
                     <button className="prt-btn-primary fb" onClick={txnConfirm} disabled={txnSaving||!valid}>
@@ -2926,25 +2954,26 @@ function PartnerView({onLogout}){
               <div style={{display:'flex',flexDirection:'column',gap:14}}>
                 <div>
                   <label className="prt-label fb">Nom de l'établissement</label>
-                  <input className="prt-input" value={settingsInfoForm.nom} onChange={e=>setSettingsInfoForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
+                  <input className="prt-input" value={partnerForm.nom} onChange={e=>setPartnerForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
                 </div>
                 <div>
                   <label className="prt-label fb">Téléphone</label>
-                  <input className="prt-input" value={settingsInfoForm.telephone} onChange={e=>setSettingsInfoForm(f=>({...f,telephone:e.target.value}))} placeholder="06 xx xx xx xx"/>
+                  <input className="prt-input" value={partnerForm.telephone} onChange={e=>setPartnerForm(f=>({...f,telephone:e.target.value}))} placeholder="06 xx xx xx xx"/>
                 </div>
                 <div>
                   <label className="prt-label fb">Email</label>
-                  <input className="prt-input" type="email" value={settingsInfoForm.email} onChange={e=>setSettingsInfoForm(f=>({...f,email:e.target.value}))} placeholder="contact@exemple.fr"/>
+                  <input className="prt-input" type="email" value={partnerForm.email} onChange={e=>setPartnerForm(f=>({...f,email:e.target.value}))} placeholder="contact@exemple.fr"/>
                 </div>
                 <div>
                   <label className="prt-label fb">Lien Google Avis</label>
-                  <input className="prt-input" type="url" value={settingsInfoForm.google_review_url} onChange={e=>setSettingsInfoForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
+                  <input className="prt-input" type="url" value={partnerForm.google_review_url} onChange={e=>setPartnerForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
                 </div>
                 <div>
                   <label className="prt-label fb">Description courte</label>
-                  <textarea className="prt-input" rows={3} value={settingsInfoForm.description} onChange={e=>setSettingsInfoForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" style={{resize:'vertical'}}/>
+                  <textarea className="prt-input" rows={3} value={partnerForm.description} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" style={{resize:'vertical'}}/>
                 </div>
-                <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!settingsInfoForm.nom.trim()}>
+                {infoErr&&<div className="prt-err fb">{infoErr}</div>}
+                <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!partnerForm.nom.trim()}>
                   {infoSaved?'✓ Sauvegardé':savingInfo?'Sauvegarde…':'Sauvegarder'}
                 </button>
               </div>
