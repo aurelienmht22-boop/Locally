@@ -1524,7 +1524,13 @@ function AdminView(){
       supabase.from('messages').select('*').eq('partner_id',p.id).order('created_at',{ascending:false}),
     ]);
     setPartnerVisits(visits||[]);setLoadingPV(false);
-    setPartnerMessages(msgs||[]);setLoadingPM(false);
+    const unread=(msgs||[]).filter(m=>m.status==='non_lu');
+    if(unread.length>0){
+      await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
+      setBadgeMessages(b=>Math.max(0,b-unread.length));
+      setUnreadMessages(u=>{const n={...u};delete n[p.id];return n;});
+    }
+    setPartnerMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingPM(false);
   }
   async function markAsRead(msgId,partnerId){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
@@ -1537,7 +1543,13 @@ function AdminView(){
     setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);
     setHotelMessages([]);setLoadingHM(true);
     const{data:msgs}=await supabase.from('messages').select('*').eq('hotel_slug',h.slug||'').order('created_at',{ascending:false});
-    setHotelMessages(msgs||[]);setLoadingHM(false);
+    const unread=(msgs||[]).filter(m=>m.status==='non_lu');
+    if(unread.length>0){
+      await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
+      setBadgeMessages(b=>Math.max(0,b-unread.length));
+      setUnreadHotelMessages(u=>{const n={...u};delete n[h.slug];return n;});
+    }
+    setHotelMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingHM(false);
   }
   async function markHotelMsgAsRead(msgId,hotelSlug){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
@@ -2105,7 +2117,17 @@ function AdminView(){
               <div className="adm-modal-actions">
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateHotelStatus(selHotel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateHotelStatus(selHotel.id,'en_attente')}>En attente</button>
-                <button className="adm-sbtn adm-s-ok fb" onClick={()=>updateHotelStatus(selHotel.id,'approuve')}>Approuver</button>
+                <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
+                  if(!selHotel.slug){
+                    const base=generateSlug(selHotel.nom);
+                    const{data:existing}=await supabase.from('hotels').select('slug').ilike('slug',base+'%').neq('id',selHotel.id);
+                    const slugs=new Set((existing||[]).map(h=>h.slug));
+                    let slug=base,i=2;
+                    while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
+                    setHotelAccess({slug,access_code:generateCode()});
+                  }
+                  updateHotelStatus(selHotel.id,'approuve');
+                }}>Approuver</button>
                 <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmHotelReject(true)}>Rejeter</button>
               </div>
             ):(
