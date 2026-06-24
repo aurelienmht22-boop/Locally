@@ -1588,6 +1588,12 @@ function AdminView(){
     setPartners(ps=>ps.map(p=>p.id===selPartner.id?{...p,commission_active:val}:p));
     setSavingComm(false);setCommSaved(true);setTimeout(()=>setCommSaved(false),2500);
   }
+  async function geocodePartner(id,adresse){
+    const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adresse)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`);
+    const json=await res.json();
+    const loc=json.results?.[0]?.geometry?.location;
+    if(loc)await supabase.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
+  }
   async function updateStatus(id,status){
     await supabase.from('candidates').update({status}).eq('id',id);
     const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
@@ -1595,6 +1601,7 @@ function AdminView(){
     setSel(s=>s?.id===id?{...s,status}:s);
     if(status==='approuve'){
       if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve'}]);
+      if(item?.adresse)geocodePartner(id,item.adresse).catch(()=>{});
     } else {
       setPartners(ps=>ps.filter(p=>p.id!==id));
     }
@@ -4485,6 +4492,104 @@ function JoindreView({onHome}){
   );
 }
 
+function CartePage({partners,user,profile,onNavigatePartner,onBack}){
+  const mapRef=useRef(null);
+  const mapInstanceRef=useRef(null);
+  const sessionActive=!!(profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date());
+
+  useEffect(()=>{
+    if(!user||!sessionActive)return;
+    function initMap(){
+      if(mapInstanceRef.current||!mapRef.current)return;
+      const L=window.L;
+      const map=L.map(mapRef.current,{zoomControl:true}).setView([44.8378,-0.5792],14);
+      mapInstanceRef.current=map;
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+        maxZoom:19,
+      }).addTo(map);
+      const pinIcon=L.divIcon({
+        html:`<svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 0C6.268 0 0 6.268 0 14c0 9.625 14 22 14 22s14-12.375 14-22C28 6.268 21.732 0 14 0z" fill="#6B1D1D"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>`,
+        iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38],className:'',
+      });
+      window.__locally_nav=(partnerId)=>{
+        const p=(partners||[]).find(x=>x.id===partnerId);
+        if(p)onNavigatePartner('generic',p);
+      };
+      (partners||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
+        const r=p.reduction||'';
+        L.marker([p.latitude,p.longitude],{icon:pinIcon}).addTo(map).bindPopup(
+          `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;margin-bottom:3px">${p.nom}</div>
+            <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${p.categorie||''}</div>
+            ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${r}</div>`:''}
+            <button onclick="window.__locally_nav('${p.id}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
+          </div>`,{maxWidth:240}
+        );
+      });
+      navigator.geolocation?.getCurrentPosition(pos=>{
+        const{latitude,longitude}=pos.coords;
+        map.setView([latitude,longitude],15);
+        L.marker([latitude,longitude],{icon:L.divIcon({
+          html:`<div style="width:14px;height:14px;background:#2563EB;border:2.5px solid white;border-radius:50%;box-shadow:0 0 0 5px rgba(37,99,235,.18)"></div>`,
+          iconSize:[14,14],iconAnchor:[7,7],className:'',
+        })}).addTo(map).bindPopup('<span style="font-family:\'DM Sans\',sans-serif;font-size:13px">Vous êtes ici</span>');
+      },()=>{});
+    }
+    if(window.L){initMap();return;}
+    if(!document.querySelector('#leaflet-css')){
+      const link=document.createElement('link');
+      link.id='leaflet-css';link.rel='stylesheet';
+      link.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+      document.head.appendChild(link);
+    }
+    let script=document.querySelector('#leaflet-js');
+    if(!script){
+      script=document.createElement('script');
+      script.id='leaflet-js';
+      script.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+      document.head.appendChild(script);
+    }
+    script.addEventListener('load',initMap,{once:true});
+    return()=>{
+      if(mapInstanceRef.current){mapInstanceRef.current.remove();mapInstanceRef.current=null;}
+      delete window.__locally_nav;
+    };
+  },[]);
+
+  if(!user||!profile) return(
+    <div style={{minHeight:'calc(100dvh - 64px)',background:'#FDFAF6',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
+      <div className="sec-title fd" style={{marginBottom:12}}>Accès <em>réservé</em></div>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',maxWidth:320,lineHeight:1.7,marginBottom:24}}>Connectez-vous pour accéder à la carte des partenaires Locally.</div>
+      <button className="btn-primary fb" onClick={onBack}>Retour à l'accueil</button>
+    </div>
+  );
+  if(!sessionActive) return(
+    <div style={{minHeight:'calc(100dvh - 64px)',background:'#FDFAF6',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
+      <div className="sec-title fd" style={{marginBottom:12}}>Session <em>expirée</em></div>
+      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',maxWidth:320,lineHeight:1.7,marginBottom:24}}>Scannez le QR code de votre chambre pour renouveler vos 24h et accéder à la carte.</div>
+      <button className="btn-primary fb" onClick={()=>siteNav('/renouveler')}>Renouveler →</button>
+    </div>
+  );
+  const placedCount=(partners||[]).filter(p=>p.latitude&&p.longitude).length;
+  return(
+    <div style={{position:'relative',height:'calc(100dvh - 64px)'}}>
+      <div ref={mapRef} style={{width:'100%',height:'100%'}}/>
+      {placedCount===0&&(
+        <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'rgba(253,250,246,.95)',border:'1px solid rgba(107,29,29,.12)',borderRadius:14,padding:'24px 28px',textAlign:'center',zIndex:999,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',maxWidth:280,pointerEvents:'none'}}>
+          Aucun partenaire géolocalisé pour l'instant.
+        </div>
+      )}
+      <div style={{position:'absolute',top:12,left:12,zIndex:999}}>
+        <button onClick={onBack} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,background:'rgba(253,250,246,.95)',color:'#1C1208',border:'none',borderRadius:8,padding:'8px 14px',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,.12)'}}>← Retour</button>
+      </div>
+      <div style={{position:'absolute',bottom:28,right:12,zIndex:999,background:'rgba(253,250,246,.92)',borderRadius:10,padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:400,color:'#7A6555',boxShadow:'0 2px 8px rgba(0,0,0,.1)'}}>
+        {placedCount} partenaire{placedCount!==1?'s':''} sur la carte
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
@@ -4513,6 +4618,7 @@ export default function App() {
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
     if(path.startsWith("/hotel/"))return "hotel";
+    if(path==="/carte")return "carte";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -4552,6 +4658,7 @@ export default function App() {
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
+      if(path==="/carte"){setPage("carte");return;}
       setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -4587,7 +4694,13 @@ export default function App() {
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           {!authLoading&&(user&&profile
-            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
+            ?<>
+              <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                Carte
+              </button>
+              <span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
+            </>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
           <button className="nav-cta fb" onClick={()=>{
@@ -4605,6 +4718,7 @@ export default function App() {
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
+      {page==='carte'&&<CartePage partners={supabasePartners} user={user} profile={profile} onNavigatePartner={navPartner} onBack={()=>siteNav('/')}/>}
       {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
