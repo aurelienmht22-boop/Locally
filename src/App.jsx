@@ -28,7 +28,15 @@ const CATEGORIES = [
 // Pour réactiver Sport et Bien-être, ajouter leurs ids ici : ['restauration','sport','bienetre']
 const CATEGORIES_ACTIVES = ['restauration'];
 
-const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre'};
+const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite'};
+const TAGS_PAR_CATEGORIE={
+  'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
+  'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
+  'Bien-être':['Massage','Yoga','Méditation','Coiffure','Barbier','Esthétique','Spa','Naturopathie','Ostéopathie'],
+  'Sport':['Salle de sport','Coach privé','Natation','Arts martiaux','Pilates','Crossfit'],
+  'Activité':['Nautique','Vélo','Randonnée','Visite guidée','Urbain','Plein air','Culturel','Aventure','Détente','En famille'],
+  'Autre':[],
+};
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 function getOpenStatus(horaires){
   if(!horaires||!Object.keys(horaires).some(k=>horaires[k]))return null;
@@ -1339,6 +1347,8 @@ function getMetierLabels(categorie){
       return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation'};
     case 'Bien-être':
       return{ongletLabel:'Mes services',sectionLabel:'Nos services',ajouterLabel:'+ Ajouter un service',emptyLabel:'Aucun service ajouté.',formTitle:(edit)=>edit?'Modifier le service':'Nouveau service'};
+    case 'Activité':
+      return{ongletLabel:'Mes activités',sectionLabel:'Nos activités',ajouterLabel:'+ Ajouter une activité',emptyLabel:'Aucune activité ajoutée.',formTitle:(edit)=>edit?"Modifier l'activité":'Nouvelle activité'};
     default:
       return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre'};
   }
