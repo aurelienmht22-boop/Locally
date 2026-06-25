@@ -1345,6 +1345,7 @@ function AdminView(){
   const [selAccess,setSelAccess]=useState({slug:'',access_code:''});
   const [savingAccess,setSavingAccess]=useState(false);
   const [accessSaved,setAccessSaved]=useState(false);
+  const [accessErr,setAccessErr]=useState('');
   const [partners,setPartners]=useState([]);
   const [loadingPartners,setLoadingPartners]=useState(false);
   const [selPartner,setSelPartner]=useState(null);
@@ -1365,6 +1366,7 @@ function AdminView(){
   const [hotelAccess,setHotelAccess]=useState({slug:'',access_code:''});
   const [savingHotelAccess,setSavingHotelAccess]=useState(false);
   const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
+  const [hotelAccessErr,setHotelAccessErr]=useState('');
   const [refreshing,setRefreshing]=useState(false);
   const [unreadMessages,setUnreadMessages]=useState({});
   const [partnerMessages,setPartnerMessages]=useState([]);
@@ -1493,10 +1495,12 @@ function AdminView(){
     setBadgeHotelMsgs((msgs||[]).length);
   }
   async function saveHotelAccess(){
-    setSavingHotelAccess(true);
-    await supabase.from('hotels').update({slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}).eq('id',selHotel.id);
+    setSavingHotelAccess(true);setHotelAccessErr('');
+    const{error}=await supabase.from('hotels').update({slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}).eq('id',selHotel.id);
+    setSavingHotelAccess(false);
+    if(error){setHotelAccessErr('Erreur : '+error.message);return;}
     setSelHotel(s=>({...s,slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}));
-    setSavingHotelAccess(false);setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
+    setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
   }
   async function sendSms(telephone,nom,status,access_code){
     let message;
@@ -1512,13 +1516,19 @@ function AdminView(){
     });
     console.log('[SMS] Réponse →',res.status,await res.text().catch(()=>''));
   }
-  async function updateHotelStatus(id,status){
-    await supabase.from('hotels').update({status}).eq('id',id);
+  async function updateHotelStatus(id,status,slug,access_code){
+    const updates={status};
+    if(slug)updates.slug=slug;
+    if(access_code)updates.access_code=access_code;
+    const{error}=await supabase.from('hotels').update(updates).eq('id',id);
+    if(error){setHotelAccessErr('Erreur approbation : '+error.message);return;}
     const item=hotels.find(h=>h.id===id);
-    setHotels(hs=>hs.map(h=>h.id===id?{...h,status}:h));
-    setSelHotel(s=>s?.id===id?{...s,status}:s);
+    const extra=slug&&access_code?{slug,access_code}:{};
+    setHotels(hs=>hs.map(h=>h.id===id?{...h,status,...extra}:h));
+    setSelHotel(s=>s?.id===id?{...s,status,...extra}:s);
+    if(slug&&access_code)setHotelAccess({slug,access_code});
     setConfirmHotelReject(false);
-    if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS hotel error:',err));
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS hotel error:',err));
     fetchBadges();
   }
   async function openPartner(p){
@@ -1545,7 +1555,7 @@ function AdminView(){
   }
   async function openHotel(h){
     setSelHotel(h);setConfirmHotelReject(false);
-    setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);
+    setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);setHotelAccessErr('');
     setHotelMessages([]);setLoadingHM(true);
     const{data:msgs}=await supabase.from('messages').select('*').eq('hotel_slug',h.slug||'').order('created_at',{ascending:false});
     const unread=(msgs||[]).filter(m=>m.status==='non_lu');
@@ -1573,10 +1583,12 @@ function AdminView(){
   },[authed,tab]);
 
   async function saveAccess(){
-    setSavingAccess(true);
-    await supabase.from('candidates').update({slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}).eq('id',sel.id);
+    setSavingAccess(true);setAccessErr('');
+    const{error}=await supabase.from('candidates').update({slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}).eq('id',sel.id);
+    setSavingAccess(false);
+    if(error){setAccessErr('Erreur : '+error.message);return;}
     setSel(s=>({...s,slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}));
-    setSavingAccess(false);setAccessSaved(true);setTimeout(()=>setAccessSaved(false),2500);
+    setAccessSaved(true);setTimeout(()=>setAccessSaved(false),2500);
   }
   function copyPartnerLink(){
     navigator.clipboard.writeText(`locally-gules.vercel.app/partner/${selAccess.slug.trim()}`);
@@ -1594,13 +1606,19 @@ function AdminView(){
     const loc=json.results?.[0]?.geometry?.location;
     if(loc)await supabase.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
   }
-  async function updateStatus(id,status){
-    await supabase.from('candidates').update({status}).eq('id',id);
+  async function updateStatus(id,status,slug,access_code){
+    const updates={status};
+    if(slug)updates.slug=slug;
+    if(access_code)updates.access_code=access_code;
+    const{error}=await supabase.from('candidates').update(updates).eq('id',id);
+    if(error){setAccessErr('Erreur approbation : '+error.message);return;}
     const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
-    setCands(cs=>cs.map(c=>c.id===id?{...c,status}:c));
-    setSel(s=>s?.id===id?{...s,status}:s);
+    const extra=slug&&access_code?{slug,access_code}:{};
+    setCands(cs=>cs.map(c=>c.id===id?{...c,status,...extra}:c));
+    setSel(s=>s?.id===id?{...s,status,...extra}:s);
+    if(slug&&access_code)setSelAccess({slug,access_code});
     if(status==='approuve'){
-      if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve'}]);
+      if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve',...extra}]);
       if(item?.adresse)geocodePartner(id,item.adresse).catch(()=>{});
     } else {
       setPartners(ps=>ps.filter(p=>p.id!==id));
@@ -1608,7 +1626,7 @@ function AdminView(){
     setSelPartner(null);
     setConfirmReject(false);
     setConfirmPDisable(false);
-    if(item?.telephone) sendSms(item.telephone,item.nom,status,item.access_code).catch(err=>console.error('SMS commerce error:',err));
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS commerce error:',err));
     fetchBadges();
   }
 
@@ -1663,7 +1681,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1749,7 +1767,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='rejete').length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
                 {cands.filter(c=>c.status==='rejete').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1917,6 +1935,7 @@ function AdminView(){
                       </button>
                     )}
                   </div>
+                  {accessErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444',marginTop:2}}>{accessErr}</div>}
                 </div>
               )}
             </div>
@@ -1925,15 +1944,17 @@ function AdminView(){
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateStatus(sel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateStatus(sel.id,'en_attente')}>En attente</button>
                 <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
+                  setAccessErr('');
                   if(!sel.slug){
                     const base=generateSlug(sel.nom);
                     const{data:existing}=await supabase.from('candidates').select('slug').ilike('slug',base+'%').neq('id',sel.id);
                     const slugs=new Set((existing||[]).map(c=>c.slug));
                     let slug=base,i=2;
                     while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
-                    setSelAccess({slug,access_code:generateCode()});
+                    await updateStatus(sel.id,'approuve',slug,generateCode());
+                  } else {
+                    await updateStatus(sel.id,'approuve');
                   }
-                  updateStatus(sel.id,'approuve');
                 }}>Approuver</button>
                 <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmReject(true)}>Rejeter</button>
               </div>
@@ -2101,6 +2122,7 @@ function AdminView(){
                       </button>
                     )}
                   </div>
+                  {hotelAccessErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444',marginTop:2}}>{hotelAccessErr}</div>}
                 </div>
               )}
               {hotelMessages.length>0&&(
@@ -2129,15 +2151,17 @@ function AdminView(){
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateHotelStatus(selHotel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateHotelStatus(selHotel.id,'en_attente')}>En attente</button>
                 <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
+                  setHotelAccessErr('');
                   if(!selHotel.slug){
                     const base=generateSlug(selHotel.nom);
                     const{data:existing}=await supabase.from('hotels').select('slug').ilike('slug',base+'%').neq('id',selHotel.id);
                     const slugs=new Set((existing||[]).map(h=>h.slug));
                     let slug=base,i=2;
                     while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
-                    setHotelAccess({slug,access_code:generateCode()});
+                    await updateHotelStatus(selHotel.id,'approuve',slug,generateCode());
+                  } else {
+                    await updateHotelStatus(selHotel.id,'approuve');
                   }
-                  updateHotelStatus(selHotel.id,'approuve');
                 }}>Approuver</button>
                 <button className="adm-sbtn adm-s-reject fb" onClick={()=>setConfirmHotelReject(true)}>Rejeter</button>
               </div>
