@@ -1330,6 +1330,19 @@ function generateCode(){
   const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   return Array.from({length:6},()=>c[Math.floor(Math.random()*36)]).join('');
 }
+function getMetierLabels(categorie){
+  switch(categorie){
+    case 'Restauration':
+    case 'Boulangerie':
+      return{ongletLabel:'Mon menu',sectionLabel:'Notre menu',ajouterLabel:'+ Ajouter un article',emptyLabel:'Aucun article dans le menu.',formTitle:(edit)=>edit?"Modifier l'article":'Nouvel article'};
+    case 'Sport':
+      return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation'};
+    case 'Bien-être':
+      return{ongletLabel:'Mes services',sectionLabel:'Nos services',ajouterLabel:'+ Ajouter un service',emptyLabel:'Aucun service ajouté.',formTitle:(edit)=>edit?'Modifier le service':'Nouveau service'};
+    default:
+      return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre'};
+  }
+}
 
 function AdminView(){
   const [authed,setAuthed]=useState(()=>sessionStorage.getItem('adm')==='1');
@@ -2237,7 +2250,7 @@ function PartnerView({onLogout}){
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
   const [tab,setTab]=useState('profil');
-  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:''});
+  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:''});
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
@@ -2289,7 +2302,7 @@ function PartnerView({onLogout}){
       if(error)throw error;
       if(data){
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
         setHoraires(data.horaires||{});
       }
     }catch(e){console.error('loadPartner:',e);}
@@ -2299,7 +2312,7 @@ function PartnerView({onLogout}){
   async function saveSettingsInfo(){
     setSavingInfo(true);setInfoErr('');
     try{
-      const{error}=await supabase.from('candidates').update({nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim()}).eq('id',partner.id);
+      const{error}=await supabase.from('candidates').update({nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null}).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,...partnerForm}));
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
@@ -2436,7 +2449,7 @@ function PartnerView({onLogout}){
     if(data){
       localStorage.setItem('partner_slug',slug);
       setPartner(data);
-      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||''});
+      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
       setHoraires(data.horaires||{});
       setAuthed(true);
     }else{
@@ -2623,7 +2636,7 @@ function PartnerView({onLogout}){
         </div>
       </div>
       <div className="prt-tabs-bar">
-        {[['profil','Mon profil'],['menu','Mon menu'],['messages','Messages'],['stats','Mes stats'],['valider','Valider'],['parametres','Paramètres']].map(([v,l])=>(
+        {[['profil','Mon profil'],['menu',getMetierLabels(partner?.categorie).ongletLabel],['messages','Messages'],['stats','Mes stats'],['valider','Valider'],['parametres','Paramètres']].map(([v,l])=>(
           <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
         ))}
       </div>
@@ -2740,10 +2753,10 @@ function PartnerView({onLogout}){
           <>
             {menuForm!==null&&(
               <div className="prt-menu-form">
-                <div className="prt-section-label fb">{menuForm.id?"Modifier l'article":"Nouvel article"}</div>
+                <div className="prt-section-label fb">{getMetierLabels(partner?.categorie).formTitle(!!menuForm.id)}</div>
                 <div className="prt-field">
                   <div className="prt-label fb">Nom *</div>
-                  <input className="prt-input fb" value={menuForm.nom||''} onChange={e=>setMenuForm(f=>({...f,nom:e.target.value}))} placeholder="Nom de l'article"/>
+                  <input className="prt-input fb" value={menuForm.nom||''} onChange={e=>setMenuForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
                 </div>
                 <div className="prt-field">
                   <div className="prt-label fb">Description</div>
@@ -2772,12 +2785,12 @@ function PartnerView({onLogout}){
             )}
             {menuForm===null&&(
               <button className="prt-add-btn fb" onClick={()=>setMenuForm({nom:'',description:'',prix:'',photo_url:''})}>
-                + Ajouter un article
+                {getMetierLabels(partner?.categorie).ajouterLabel}
               </button>
             )}
             {loadingMenu?<div className="prt-loading fb">Chargement…</div>:(
               <div className="prt-menu-list">
-                {menuItems.length===0&&<div className="prt-empty fb">Aucun article dans le menu.</div>}
+                {menuItems.length===0&&<div className="prt-empty fb">{getMetierLabels(partner?.categorie).emptyLabel}</div>}
                 {menuItems.map(item=>(
                   <div key={item.id} className="prt-menu-item">
                     {item.photo_url&&<img src={item.photo_url} className="prt-menu-item-img" alt=""/>}
@@ -3036,6 +3049,10 @@ function PartnerView({onLogout}){
                   <input className="prt-input" type="url" value={partnerForm.google_review_url} onChange={e=>setPartnerForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
                 </div>
                 <div>
+                  <label className="prt-label fb">Site web ou réseaux sociaux</label>
+                  <input className="prt-input" type="url" value={partnerForm.site_web} onChange={e=>setPartnerForm(f=>({...f,site_web:e.target.value}))} placeholder="https://…"/>
+                </div>
+                <div>
                   <label className="prt-label fb">Description courte</label>
                   <textarea className="prt-input" rows={3} value={partnerForm.description} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" style={{resize:'vertical'}}/>
                 </div>
@@ -3220,18 +3237,29 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
           )}
         </div>
 
-        {partner.google_review_url&&(
-          <div style={{marginBottom:32}}>
-            <button
-              className="btn-call fb"
-              style={{display:'inline-flex',alignItems:'center',gap:8}}
-              onClick={()=>{
-                supabase.from('review_clicks').insert({partner_id:partner.id});
-                window.open(partner.google_review_url,'_blank','noopener');
-              }}
-            >
-              ⭐ Laisser un avis Google
-            </button>
+        {(partner.google_review_url||partner.site_web)&&(
+          <div style={{marginBottom:32,display:'flex',gap:10,flexWrap:'wrap'}}>
+            {partner.google_review_url&&(
+              <button
+                className="btn-call fb"
+                style={{display:'inline-flex',alignItems:'center',gap:8}}
+                onClick={()=>{
+                  supabase.from('review_clicks').insert({partner_id:partner.id});
+                  window.open(partner.google_review_url,'_blank','noopener');
+                }}
+              >
+                ⭐ Laisser un avis Google
+              </button>
+            )}
+            {partner.site_web&&(
+              <button
+                className="btn-call fb"
+                style={{display:'inline-flex',alignItems:'center',gap:8,background:'transparent',border:'1px solid rgba(107,29,29,.25)',color:'#6B1D1D'}}
+                onClick={()=>window.open(partner.site_web,'_blank','noopener')}
+              >
+                Visiter le site →
+              </button>
+            )}
           </div>
         )}
 
@@ -3360,10 +3388,10 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
           )}
         </div>
 
-        {/* Menu */}
+        {/* Menu / Prestations / Services / Offres */}
         {(loadingMenu||menuItems.length>0)&&(
           <div className="gpp-section">
-            <div className="gpp-section-title fd">Notre <em>menu</em></div>
+            <div className="gpp-section-title fd">{(()=>{const[first,...rest]=getMetierLabels(partner.categorie).sectionLabel.split(' ');return<>{first} <em>{rest.join(' ')}</em></>;})()}</div>
             {loadingMenu?(
               <div className="fb" style={{fontSize:13,color:'#7A6555',padding:'16px 0'}}>Chargement…</div>
             ):(
