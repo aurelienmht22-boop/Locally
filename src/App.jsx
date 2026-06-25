@@ -1621,6 +1621,15 @@ function AdminView(){
     if(slug&&access_code)setHotelAccess({slug,access_code});
     setConfirmHotelReject(false);
     if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS hotel error:',err));
+    if(status==='approuve'&&item?.email){
+      const finalSlug=slug||item.slug;
+      const finalCode=access_code||item.access_code;
+      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
+        body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'hotel'}),
+      }).catch(err=>console.error('Email hotel error:',err));
+    }
     fetchBadges();
   }
   async function openPartner(p){
@@ -1719,6 +1728,15 @@ function AdminView(){
     setConfirmReject(false);
     setConfirmPDisable(false);
     if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS commerce error:',err));
+    if(status==='approuve'&&item?.email){
+      const finalSlug=slug||item.slug;
+      const finalCode=access_code||item.access_code;
+      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
+        body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'partenaire'}),
+      }).catch(err=>console.error('Email partenaire error:',err));
+    }
     fetchBadges();
   }
 
