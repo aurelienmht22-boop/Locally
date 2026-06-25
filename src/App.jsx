@@ -20,13 +20,13 @@ function isOpen() {
 }
 
 const CATEGORIES = [
-  { id:"restauration", label:"Restauration", icon:"🍽", desc:"Kebabs, tacos, burgers et plus encore", active:true },
-  { id:"sport",        label:"Sport",         icon:"⚡", desc:"Salles, cours et activités sportives",  active:false },
-  { id:"bienetre",     label:"Bien-être",     icon:"🌿", desc:"Spa, massage, soins et relaxation",     active:false },
+  { id:"restauration", label:"Restauration", icon:"🍽", desc:"Restaurants, snacks et saveurs locales" },
+  { id:"boulangerie",  label:"Boulangerie",  icon:"🥐", desc:"Pains artisanaux, viennoiseries et pâtisseries" },
+  { id:"sport",        label:"Sport",        icon:"⚡", desc:"Salles, cours et activités sportives" },
+  { id:"bienetre",     label:"Bien-être",    icon:"🌿", desc:"Spa, massage, soins et relaxation" },
+  { id:"activite",     label:"Activité",     icon:"🎯", desc:"Sorties, visites et loisirs à Bordeaux" },
+  { id:"autre",        label:"Autre",        icon:"🏪", desc:"Commerces et services de proximité" },
 ];
-
-// Pour réactiver Sport et Bien-être, ajouter leurs ids ici : ['restauration','sport','bienetre']
-const CATEGORIES_ACTIVES = ['restauration'];
 
 const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite'};
 const TAGS_PAR_CATEGORIE={
@@ -843,26 +843,26 @@ function HomePage({ onNavigate }) {
         </FadeUp>
         <FadeUp delay={.1}>
           <div className="cat-grid">
-            {CATEGORIES.filter(cat=>CATEGORIES_ACTIVES.includes(cat.id)).map(cat=>{
+            {(()=>{
               const photos={
                 restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
+                boulangerie:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
                 sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
                 bienetre:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+                activite:"https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
+                autre:"https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
               };
-              return(
-                <div key={cat.id} className={"catcard-photo "+(cat.active?"active":"inactive")} onClick={()=>cat.active&&onNavigate("category",cat.id)}>
+              return CATEGORIES.map(cat=>(
+                <div key={cat.id} className="catcard-photo active" onClick={()=>onNavigate("category",cat.id)}>
                   <img src={photos[cat.id]} className="catcard-photo-img" alt={cat.label} loading="lazy"/>
                   <div className="catcard-photo-overlay"/>
                   <div className="catcard-photo-content">
                     <div className="catcard-photo-name">{cat.label}</div>
-                    {cat.active
-                      ?<div className="catcard-photo-cta fb">Voir les adresses →</div>
-                      :<div className="catcard-photo-soon fb">Bientôt disponible</div>
-                    }
+                    <div className="catcard-photo-cta fb">Voir les adresses →</div>
                   </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </FadeUp>
       </section>
