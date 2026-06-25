@@ -7,16 +7,42 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { email, nom, access_code, slug, type } = await req.json()
-
-    if (!email || !nom || !access_code || !slug) {
-      return new Response(JSON.stringify({ error: 'Paramètres manquants' }), {
+    // 1. Lecture du body
+    let body: { email?: string; nom?: string; access_code?: string; slug?: string; type?: string }
+    try {
+      body = await req.json()
+      console.log('[1] Body reçu:', JSON.stringify(body))
+    } catch (e) {
+      console.error('[1] Erreur lecture body:', e)
+      return new Response(JSON.stringify({ error: 'Body JSON invalide' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const loginUrl = `https://mylocally.fr/${type === 'hotel' ? 'hotel' : 'partner'}/${slug}`
+    const { email, nom, access_code, slug, type } = body
 
+    // 2. Validation paramètres
+    if (!email || !nom || !access_code || !slug) {
+      console.error('[2] Paramètres manquants:', { email: !!email, nom: !!nom, access_code: !!access_code, slug: !!slug })
+      return new Response(JSON.stringify({ error: 'Paramètres manquants', received: { email, nom, access_code, slug } }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    console.log('[2] Paramètres OK:', { email, nom, slug, type })
+
+    // 3. Lecture secrets
+    const apiKey = Deno.env.get('BREVO_API_KEY') ?? ''
+    const senderEmail = Deno.env.get('BREVO_SENDER_EMAIL') ?? 'contact@mylocally.fr'
+    console.log('[3] Secrets — BREVO_API_KEY présent:', apiKey.length > 0, '| BREVO_SENDER_EMAIL:', senderEmail)
+    if (!apiKey) {
+      console.error('[3] BREVO_API_KEY manquant ou vide')
+      return new Response(JSON.stringify({ error: 'BREVO_API_KEY non configuré' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // 4. Construction payload
+    const loginUrl = `https://mylocally.fr/${type === 'hotel' ? 'hotel' : 'partner'}/${slug}`
     const html = `
 <div style="background:#FAF4EC;padding:40px 20px;font-family:Georgia,serif;">
   <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:8px;overflow:hidden;">
@@ -40,37 +66,52 @@ Deno.serve(async (req) => {
   </div>
 </div>`
 
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': Deno.env.get('BREVO_API_KEY') ?? '',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: {
-          name: 'Locally',
-          email: Deno.env.get('BREVO_SENDER_EMAIL') ?? 'contact@mylocally.fr',
-        },
-        to: [{ email, name: nom }],
-        subject: `✓ Bienvenue sur Locally — ${nom}`,
-        htmlContent: html,
-      }),
-    })
+    const brevoPayload = {
+      sender: { name: 'Locally', email: senderEmail },
+      to: [{ email, name: nom }],
+      subject: `✓ Bienvenue sur Locally — ${nom}`,
+      htmlContent: html,
+    }
+    console.log('[4] Payload Brevo — to:', email, '| subject:', brevoPayload.subject)
 
-    if (!res.ok) {
-      const err = await res.text()
-      console.error('Brevo error:', err)
-      return new Response(JSON.stringify({ error: 'Échec envoi email', detail: err }), {
+    // 5. Appel Brevo API
+    console.log('[5] Envoi vers api.brevo.com...')
+    let res: Response
+    try {
+      res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(brevoPayload),
+      })
+    } catch (e) {
+      console.error('[5] Erreur fetch Brevo:', e)
+      return new Response(JSON.stringify({ error: 'Erreur réseau Brevo', detail: String(e) }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    // 6. Réponse Brevo
+    const resText = await res.text()
+    console.log('[6] Brevo réponse — status:', res.status, '| body:', resText)
+
+    if (!res.ok) {
+      console.error('[6] Brevo KO:', res.status, resText)
+      return new Response(JSON.stringify({ error: 'Échec envoi email', status: res.status, detail: resText }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    console.log('[6] Email envoyé avec succès')
+    return new Response(JSON.stringify({ success: true, brevo: resText }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+
   } catch (e) {
-    console.error('send-approval-email error:', e)
+    console.error('[catch] Erreur inattendue:', e)
     return new Response(JSON.stringify({ error: String(e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
