@@ -717,7 +717,7 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .nav-auth-name:hover{background:rgba(107,29,29,.06);border-color:#6B1D1D;}
 `;
 
-function HomePage({ onNavigate }) {
+function HomePage({ onNavigate, supabasePartners }) {
   const [loaded,setLoaded]=useState(false);
   const [partnerCount,setPartnerCount]=useState(null);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
@@ -852,7 +852,15 @@ function HomePage({ onNavigate }) {
                 activite:"https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
                 autre:"https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
               };
-              return CATEGORIES.map(cat=>(
+              const idToLabel=Object.fromEntries(Object.entries(CATEGORIE_MAP).map(([k,v])=>[v,k]));
+              const activeCats=new Set((supabasePartners||[]).map(p=>p.categorie));
+              const standardCats=new Set(Object.keys(CATEGORIE_MAP));
+              const hasOther=(supabasePartners||[]).some(p=>!standardCats.has(p.categorie));
+              const visibleCats=CATEGORIES.filter(cat=>
+                cat.id==='autre'?hasOther:activeCats.has(idToLabel[cat.id])
+              );
+              if(visibleCats.length===0)return null;
+              return visibleCats.map(cat=>(
                 <div key={cat.id} className="catcard-photo active" onClick={()=>onNavigate("category",cat.id)}>
                   <img src={photos[cat.id]} className="catcard-photo-img" alt={cat.label} loading="lazy"/>
                   <div className="catcard-photo-overlay"/>
@@ -4974,7 +4982,7 @@ export default function App() {
       </nav>
       {user&&profile?.session_expires_at&&<div style={{position:'fixed',top:78,left:16,right:16,zIndex:199}}><SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/></div>}
       {page==="dashboard"&&<DashboardPage/>}
-      {page==="home"&&<HomePage onNavigate={navigate}/>}
+      {page==="home"&&<HomePage onNavigate={navigate} supabasePartners={supabasePartners}/>}
       {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
