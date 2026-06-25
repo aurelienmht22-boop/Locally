@@ -38,6 +38,7 @@ const TAGS_PAR_CATEGORIE={
   'Autre':[],
 };
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const TAG_ICONS={'Sur place':'🍽️','À emporter':'📦','Livraison':'🛵','Végétarien':'🥗','Halal':'🌙','Brunch':'☕','Snack':'🥪','Gastronomique':'⭐','Viennoiseries':'🥐','Pain artisanal':'🍞','Pâtisserie':'🍰','Sans gluten':'🌾','Bio':'🌿','Massage':'💆','Yoga':'🧘','Méditation':'🕊️','Coiffure':'✂️','Barbier':'💈','Esthétique':'💄','Spa':'🛁','Naturopathie':'🌿','Ostéopathie':'🫁','Salle de sport':'🏋️','Coach privé':'💪','Natation':'🏊','Arts martiaux':'🥋','Pilates':'🧘','Crossfit':'⚡','Nautique':'⛵','Vélo':'🚵','Randonnée':'🥾','Visite guidée':'🗺️','Urbain':'🏙️','Plein air':'🌳','Culturel':'🎭','Aventure':'🧗','Détente':'😌','En famille':'👨‍👩‍👧'};
 function getOpenStatus(horaires){
   if(!horaires||!Object.keys(horaires).some(k=>horaires[k]))return null;
   const now=new Date();
@@ -2339,10 +2340,13 @@ function PartnerView({onLogout}){
   const [horaires,setHoraires]=useState({});
   const [msgText,setMsgText]=useState('');
   const [partnerTags,setPartnerTags]=useState([]);
-  const [tagSearch,setTagSearch]=useState('');
   const [savingTags,setSavingTags]=useState(false);
   const [tagsSaved,setTagsSaved]=useState(false);
   const [tagsErr,setTagsErr]=useState('');
+  const [horaireOpen,setHoraireOpen]=useState(false);
+  const [savingHoraires,setSavingHoraires]=useState(false);
+  const [horairesSaved,setHorairesSaved]=useState(false);
+  const [horairesErr,setHorairesErr]=useState('');
   const [sendingMsg,setSendingMsg]=useState(false);
   const [msgSent,setMsgSent]=useState(false);
   const [msgErr,setMsgErr]=useState('');
@@ -2382,14 +2386,31 @@ function PartnerView({onLogout}){
   useEffect(()=>{if(authed)loadPartner();},[]);
 
   async function saveSettingsInfo(){
-    setSavingInfo(true);setInfoErr('');
+    setSavingInfo(true);setInfoErr('');setReductionErr('');
+    if(partnerForm.reduction.trim()){
+      const rv=parseReduction(partnerForm.reduction);
+      if(rv===0||rv<10){setReductionErr('La réduction minimum est de 10%.');setSavingInfo(false);return;}
+      if(rv>50){setReductionErr('La réduction maximum est de 50%.');setSavingInfo(false);return;}
+    }
     try{
-      const{error}=await supabase.from('candidates').update({nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null}).eq('id',partner.id);
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:partnerForm.google_maps.trim(),reduction:partnerForm.reduction,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
+      const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
-      setPartner(p=>({...p,...partnerForm}));
+      setPartner(p=>({...p,...payload}));
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
     }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingInfo(false);
+  }
+
+  async function saveHoraires(){
+    setSavingHoraires(true);setHorairesErr('');
+    try{
+      const{error}=await supabase.from('candidates').update({horaires}).eq('id',partner.id);
+      if(error)throw error;
+      setPartner(p=>({...p,horaires}));
+      setHorairesSaved(true);setTimeout(()=>setHorairesSaved(false),2500);
+    }catch(e){setHorairesErr('Erreur lors de la sauvegarde. Réessayez.');}
+    setSavingHoraires(false);
   }
 
   async function saveSettingsTags(){
@@ -2553,23 +2574,6 @@ function PartnerView({onLogout}){
     link.href=canvas.toDataURL('image/png');
     link.click();
   }
-  async function saveProfile(){
-    setSavingProfile(true);setProfileErr('');
-    if(partnerForm.reduction.trim()){
-      const rv=parseReduction(partnerForm.reduction);
-      if(rv===0||rv<10){setReductionErr('La réduction minimum est de 10%.');setSavingProfile(false);return;}
-      if(rv>50){setReductionErr('La réduction maximum est de 50%.');setSavingProfile(false);return;}
-    }
-    setReductionErr('');
-    try{
-      const payload={nom:partnerForm.nom,description:partnerForm.description,reduction:partnerForm.reduction,telephone:partnerForm.telephone,google_maps:partnerForm.google_maps,horaires};
-      const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
-      if(error)throw error;
-      setPartner(p=>({...p,...payload}));
-      setProfileSaved(true);setTimeout(()=>setProfileSaved(false),3000);
-    }catch(e){setProfileErr('Erreur lors de la sauvegarde. Réessayez.');}
-    setSavingProfile(false);
-  }
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
     const b64=await toBase64(file);
@@ -2726,6 +2730,7 @@ function PartnerView({onLogout}){
 
         {tab==='profil'&&(
           <>
+            {/* ── PHOTO ── */}
             <div className="prt-photo-section">
               <div className="prt-section-label fb">Photo principale</div>
               <div className="prt-photo-area">
@@ -2739,10 +2744,13 @@ function PartnerView({onLogout}){
                 </label>
               </div>
             </div>
+
+            {/* ── INFOS DE BASE ── */}
             <div className="prt-form">
               {[
                 ['nom',"Nom de l'établissement",'text','Le Café du Marché'],
                 ['telephone','Téléphone','text','06 00 00 00 00'],
+                ['email','Email','email','contact@exemple.fr'],
                 ['google_maps','Adresse','text','12 Rue de la Paix, Bordeaux'],
               ].map(([name,label,type,ph])=>(
                 <div key={name} className="prt-field">
@@ -2765,43 +2773,119 @@ function PartnerView({onLogout}){
                 <textarea className="prt-textarea fb" value={partnerForm.description||''} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…"/>
               </div>
               <div className="prt-field">
-                <div className="prt-label fb">Horaires d'ouverture</div>
-                <div className="prt-hours-grid">
-                  {DAYS.map(day=>{
-                    const h=horaires[day]||{ouvert:false,creneaux:[["",""]]};
-                    const cr=Array.isArray(h.creneaux)&&h.creneaux.length?h.creneaux:[["",""]];
-                    return(
-                      <div key={day} className="prt-hours-row" style={{alignItems:'flex-start'}}>
-                        <div className="prt-hours-day-name fb" style={{paddingTop:6}}>{day}</div>
-                        <div className="prt-hours-toggle" style={{flexShrink:0,paddingTop:4}}>
-                          <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',true)}>Ouvert</button>
-                          <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',false)}>Fermé</button>
-                        </div>
-                        {h.ouvert&&(
-                          <div className="prt-hours-slots">
-                            {cr.map((slot,si)=>(
-                              <div key={si} className="prt-hours-slot-row">
-                                <input className="prt-hours-time fb" type="time" value={slot[0]||''} onChange={e=>setDayTime(day,si,0,e.target.value)}/>
-                                <span className="prt-hours-time-sep fb">→</span>
-                                <input className="prt-hours-time fb" type="time" value={slot[1]||''} onChange={e=>setDayTime(day,si,1,e.target.value)}/>
-                                {si===0&&cr.length<2&&<button type="button" className="prt-hours-slot-add fb" onClick={()=>addDaySlot(day)}>+ 2ème créneau</button>}
-                                {si>0&&<button type="button" className="prt-hours-slot-rm" onClick={()=>removeDaySlot(day)}>×</button>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="prt-label fb">Site web</div>
+                <input className="prt-input fb" type="url" value={partnerForm.site_web||''} onChange={e=>setPartnerForm(f=>({...f,site_web:e.target.value}))} placeholder="https://…"/>
               </div>
-              {profileErr&&<div className="prt-err fb">{profileErr}</div>}
+              <div className="prt-field">
+                <div className="prt-label fb">Lien Google Avis</div>
+                <input className="prt-input fb" type="url" value={partnerForm.google_review_url||''} onChange={e=>setPartnerForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
+              </div>
+              {infoErr&&<div className="prt-err fb">{infoErr}</div>}
               <div>
-                <button className="prt-btn-primary fb" onClick={saveProfile} disabled={savingProfile}>
-                  {savingProfile?'Sauvegarde…':profileSaved?'✓ Sauvegardé':'Sauvegarder'}
+                <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!partnerForm.nom.trim()}>
+                  {savingInfo?'Sauvegarde…':infoSaved?'✓ Sauvegardé':'Sauvegarder'}
                 </button>
               </div>
             </div>
+
+            {/* ── VOS SPÉCIALITÉS ── */}
+            {(TAGS_PAR_CATEGORIE[partner?.categorie]||[]).length>0&&(
+              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
+                <div className="prt-section-label fb">Vos spécialités</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B8B7A',marginBottom:14}}>Sélectionnez jusqu'à 5 tags qui décrivent votre établissement.</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+                  {(TAGS_PAR_CATEGORIE[partner?.categorie]||[]).map(t=>{
+                    const checked=partnerTags.includes(t);
+                    const disabled=!checked&&partnerTags.length>=5;
+                    return(
+                      <button key={t} onClick={()=>{if(disabled)return;setPartnerTags(ts=>ts.includes(t)?ts.filter(x=>x!==t):[...ts,t]);}} style={{
+                        display:'flex',alignItems:'center',gap:8,textAlign:'left',
+                        padding:'10px 14px',borderRadius:12,fontSize:13,
+                        fontFamily:"'DM Sans',sans-serif",fontWeight:500,
+                        cursor:disabled?'not-allowed':'pointer',
+                        border:'1.5px solid',
+                        borderColor:checked?'#6B1D1D':'#E8DDD0',
+                        background:checked?'#6B1D1D':'#ffffff',
+                        color:checked?'#FAF4EC':disabled?'rgba(122,101,85,.35)':'#7A6555',
+                        boxShadow:checked?'0 2px 8px rgba(107,29,29,.18)':'none',
+                        transition:'all .15s',
+                      }}>
+                        <span style={{fontSize:16,flexShrink:0}}>{TAG_ICONS[t]||'•'}</span>
+                        <span>{t}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{textAlign:'right',fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B8B7A',marginBottom:16}}>
+                  {partnerTags.length}/5 sélectionnés
+                </div>
+                {tagsErr&&<div className="prt-err fb">{tagsErr}</div>}
+                <button onClick={saveSettingsTags} disabled={savingTags} style={{
+                  fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,
+                  background:'transparent',color:'#6B1D1D',
+                  border:'1.5px solid #6B1D1D',borderRadius:9,
+                  padding:'11px 22px',cursor:savingTags?'not-allowed':'pointer',letterSpacing:'.015em',
+                  opacity:savingTags?.6:1,
+                }}>
+                  {tagsSaved?'✓ Sauvegardé':savingTags?'Sauvegarde…':'Sauvegarder les spécialités'}
+                </button>
+              </div>
+            )}
+
+            {/* ── HORAIRES (ACCORDÉON) ── */}
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
+              <button type="button" onClick={()=>setHoraireOpen(o=>!o)} style={{
+                display:'flex',alignItems:'center',gap:8,background:'none',border:'none',cursor:'pointer',padding:0,width:'100%',marginBottom:horaireOpen?16:0,
+              }}>
+                <span className="prt-section-label fb" style={{margin:0,flex:1,textAlign:'left'}}>Horaires d'ouverture</span>
+                <span style={{fontSize:20,color:'#6B1D1D',lineHeight:1,display:'block',transform:horaireOpen?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
+              </button>
+              {horaireOpen&&(
+                <>
+                  <div className="prt-hours-grid">
+                    {DAYS.map(day=>{
+                      const h=horaires[day]||{ouvert:false,creneaux:[["",""]]};
+                      const cr=Array.isArray(h.creneaux)&&h.creneaux.length?h.creneaux:[["",""]];
+                      return(
+                        <div key={day} className="prt-hours-row" style={{alignItems:'flex-start'}}>
+                          <div className="prt-hours-day-name fb" style={{paddingTop:6}}>{day}</div>
+                          <div className="prt-hours-toggle" style={{flexShrink:0,paddingTop:4}}>
+                            <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',true)}>Ouvert</button>
+                            <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setDay(day,'ouvert',false)}>Fermé</button>
+                          </div>
+                          {h.ouvert&&(
+                            <div className="prt-hours-slots">
+                              {cr.map((slot,si)=>(
+                                <div key={si} className="prt-hours-slot-row">
+                                  <input className="prt-hours-time fb" type="time" value={slot[0]||''} onChange={e=>setDayTime(day,si,0,e.target.value)}/>
+                                  <span className="prt-hours-time-sep fb">→</span>
+                                  <input className="prt-hours-time fb" type="time" value={slot[1]||''} onChange={e=>setDayTime(day,si,1,e.target.value)}/>
+                                  {si===0&&cr.length<2&&<button type="button" className="prt-hours-slot-add fb" onClick={()=>addDaySlot(day)}>+ 2ème créneau</button>}
+                                  {si>0&&<button type="button" className="prt-hours-slot-rm" onClick={()=>removeDaySlot(day)}>×</button>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {horairesErr&&<div className="prt-err fb" style={{marginTop:12}}>{horairesErr}</div>}
+                  <div style={{marginTop:16}}>
+                    <button onClick={saveHoraires} disabled={savingHoraires} style={{
+                      fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,
+                      background:'transparent',color:'#6B1D1D',
+                      border:'1.5px solid #6B1D1D',borderRadius:9,
+                      padding:'11px 22px',cursor:savingHoraires?'not-allowed':'pointer',letterSpacing:'.015em',
+                      opacity:savingHoraires?.6:1,
+                    }}>
+                      {horairesSaved?'✓ Sauvegardé':savingHoraires?'Sauvegarde…':'Sauvegarder les horaires'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* ── QR COMPTOIR ── */}
             <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
               <div className="prt-section-label fb">QR code comptoir</div>
@@ -3112,81 +3196,6 @@ function PartnerView({onLogout}){
           <div style={{maxWidth:520,display:'flex',flexDirection:'column',gap:32}}>
 
             <div>
-              <div className="prt-section-label fb">Modifier mes informations</div>
-              <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                <div>
-                  <label className="prt-label fb">Nom de l'établissement</label>
-                  <input className="prt-input" value={partnerForm.nom} onChange={e=>setPartnerForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
-                </div>
-                <div>
-                  <label className="prt-label fb">Téléphone</label>
-                  <input className="prt-input" value={partnerForm.telephone} onChange={e=>setPartnerForm(f=>({...f,telephone:e.target.value}))} placeholder="06 xx xx xx xx"/>
-                </div>
-                <div>
-                  <label className="prt-label fb">Email</label>
-                  <input className="prt-input" type="email" value={partnerForm.email} onChange={e=>setPartnerForm(f=>({...f,email:e.target.value}))} placeholder="contact@exemple.fr"/>
-                </div>
-                <div>
-                  <label className="prt-label fb">Lien Google Avis</label>
-                  <input className="prt-input" type="url" value={partnerForm.google_review_url} onChange={e=>setPartnerForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
-                </div>
-                <div>
-                  <label className="prt-label fb">Site web ou réseaux sociaux</label>
-                  <input className="prt-input" type="url" value={partnerForm.site_web} onChange={e=>setPartnerForm(f=>({...f,site_web:e.target.value}))} placeholder="https://…"/>
-                </div>
-                <div>
-                  <label className="prt-label fb">Description courte</label>
-                  <textarea className="prt-input" rows={3} value={partnerForm.description} onChange={e=>setPartnerForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" style={{resize:'vertical'}}/>
-                </div>
-                {infoErr&&<div className="prt-err fb">{infoErr}</div>}
-                <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!partnerForm.nom.trim()}>
-                  {infoSaved?'✓ Sauvegardé':savingInfo?'Sauvegarde…':'Sauvegarder'}
-                </button>
-              </div>
-            </div>
-
-            {(TAGS_PAR_CATEGORIE[partner?.categorie]||[]).length>0&&(
-            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
-              <div className="prt-section-label fb">Vos spécialités</div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B8B7A',marginBottom:12}}>Sélectionnez jusqu'à 5 tags qui décrivent votre établissement.</div>
-              <input
-                className="prt-input"
-                placeholder="Rechercher un tag…"
-                value={tagSearch}
-                onChange={e=>setTagSearch(e.target.value)}
-                style={{marginBottom:12}}
-              />
-              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
-                {(TAGS_PAR_CATEGORIE[partner?.categorie]||[])
-                  .filter(t=>!tagSearch||t.toLowerCase().includes(tagSearch.toLowerCase()))
-                  .map(t=>{
-                    const checked=partnerTags.includes(t);
-                    const disabled=!checked&&partnerTags.length>=5;
-                    return(
-                      <button
-                        key={t}
-                        onClick={()=>{if(disabled)return;setPartnerTags(ts=>ts.includes(t)?ts.filter(x=>x!==t):[...ts,t]);}}
-                        style={{
-                          padding:'5px 13px',borderRadius:999,fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,
-                          cursor:disabled?'not-allowed':'pointer',
-                          border:'1px solid',
-                          borderColor:checked?'#6B1D1D':'rgba(28,18,8,.15)',
-                          background:checked?'#6B1D1D':'transparent',
-                          color:checked?'#F7F3EE':disabled?'rgba(122,101,85,.35)':'#7A6555',
-                          transition:'all .15s',
-                        }}
-                      >{t}</button>
-                    );
-                  })}
-              </div>
-              {tagsErr&&<div className="prt-err fb">{tagsErr}</div>}
-              <button className="prt-btn-primary fb" onClick={saveSettingsTags} disabled={savingTags}>
-                {tagsSaved?'✓ Sauvegardé':savingTags?'Sauvegarde…':'Sauvegarder les spécialités'}
-              </button>
-            </div>
-            )}
-
-            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
               <div className="prt-section-label fb">Changer mon code d'accès</div>
               <div style={{display:'flex',flexDirection:'column',gap:14}}>
                 {settingsCodeErr&&<div className="auth-err fb">{settingsCodeErr}</div>}
