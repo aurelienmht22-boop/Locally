@@ -1407,15 +1407,15 @@ function getMetierLabels(categorie){
   switch(categorie){
     case 'Restauration':
     case 'Boulangerie':
-      return{ongletLabel:'Mon menu',sectionLabel:'Notre menu',ajouterLabel:'+ Ajouter un article',emptyLabel:'Aucun article dans le menu.',formTitle:(edit)=>edit?"Modifier l'article":'Nouvel article'};
+      return{ongletLabel:'Mon menu',sectionLabel:'Notre menu',ajouterLabel:'+ Ajouter un article',emptyLabel:'Aucun article dans le menu.',formTitle:(edit)=>edit?"Modifier l'article":'Nouvel article',nomPlaceholder:"Nom de l'article",descPlaceholder:"Description de l'article"};
     case 'Sport':
-      return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation'};
+      return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation',nomPlaceholder:'Nom de la prestation',descPlaceholder:'Description de la prestation'};
     case 'Bien-être':
-      return{ongletLabel:'Mes services',sectionLabel:'Nos services',ajouterLabel:'+ Ajouter un service',emptyLabel:'Aucun service ajouté.',formTitle:(edit)=>edit?'Modifier le service':'Nouveau service'};
+      return{ongletLabel:'Mes services',sectionLabel:'Nos services',ajouterLabel:'+ Ajouter un service',emptyLabel:'Aucun service ajouté.',formTitle:(edit)=>edit?'Modifier le service':'Nouveau service',nomPlaceholder:'Nom du service',descPlaceholder:'Description du service'};
     case 'Activité':
-      return{ongletLabel:'Mes activités',sectionLabel:'Nos activités',ajouterLabel:'+ Ajouter une activité',emptyLabel:'Aucune activité ajoutée.',formTitle:(edit)=>edit?"Modifier l'activité":'Nouvelle activité'};
+      return{ongletLabel:'Mes activités',sectionLabel:'Nos activités',ajouterLabel:'+ Ajouter une activité',emptyLabel:'Aucune activité ajoutée.',formTitle:(edit)=>edit?"Modifier l'activité":'Nouvelle activité',nomPlaceholder:"Nom de l'activité",descPlaceholder:"Description de l'activité"};
     default:
-      return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre'};
+      return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre',nomPlaceholder:"Nom de l'offre",descPlaceholder:"Description de l'offre"};
   }
 }
 
@@ -2685,7 +2685,7 @@ function PartnerView({onLogout}){
     if(!menuForm.nom||!menuForm.prix)return;
     setSavingMenu(true);setMenuErr('');
     try{
-      const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null};
+      const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null,duree:menuForm.duree||null};
       const q=menuForm.id
         ?supabase.from('menu_items').update(payload).eq('id',menuForm.id)
         :supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
@@ -2998,16 +2998,22 @@ function PartnerView({onLogout}){
                 <div className="prt-section-label fb">{getMetierLabels(partner?.categorie).formTitle(!!menuForm.id)}</div>
                 <div className="prt-field">
                   <div className="prt-label fb">Nom *</div>
-                  <input className="prt-input fb" value={menuForm.nom||''} onChange={e=>setMenuForm(f=>({...f,nom:e.target.value}))} placeholder="Nom"/>
+                  <input className="prt-input fb" value={menuForm.nom||''} onChange={e=>setMenuForm(f=>({...f,nom:e.target.value}))} placeholder={getMetierLabels(partner?.categorie).nomPlaceholder}/>
                 </div>
                 <div className="prt-field">
                   <div className="prt-label fb">Description</div>
-                  <textarea className="prt-textarea fb" value={menuForm.description||''} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder="Description de l'article"/>
+                  <textarea className="prt-textarea fb" value={menuForm.description||''} onChange={e=>setMenuForm(f=>({...f,description:e.target.value}))} placeholder={getMetierLabels(partner?.categorie).descPlaceholder}/>
                 </div>
                 <div className="prt-field">
                   <div className="prt-label fb">Prix (€) *</div>
                   <input className="prt-input fb" type="number" step="0.01" min="0" value={menuForm.prix||''} onChange={e=>setMenuForm(f=>({...f,prix:e.target.value}))} placeholder="0.00" style={{maxWidth:160}}/>
                 </div>
+                {['Sport','Bien-être','Activité'].includes(partner?.categorie)&&(
+                  <div className="prt-field">
+                    <div className="prt-label fb">Durée <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(optionnel)</span></div>
+                    <input className="prt-input fb" type="text" value={menuForm.duree||''} onChange={e=>setMenuForm(f=>({...f,duree:e.target.value}))} placeholder="ex : 1h, 45min, 2h30" style={{maxWidth:180}}/>
+                  </div>
+                )}
                 <div className="prt-field">
                   <div className="prt-label fb">Photo (optionnel)</div>
                   <label className="prt-photo-btn fb" style={{display:'inline-block'}}>
@@ -3026,7 +3032,7 @@ function PartnerView({onLogout}){
               </div>
             )}
             {menuForm===null&&(
-              <button className="prt-add-btn fb" onClick={()=>setMenuForm({nom:'',description:'',prix:'',photo_url:''})}>
+              <button className="prt-add-btn fb" onClick={()=>setMenuForm({nom:'',description:'',prix:'',photo_url:'',duree:''})}>
                 {getMetierLabels(partner?.categorie).ajouterLabel}
               </button>
             )}
@@ -3620,7 +3626,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
                       <div className="gpp-item-name">{item.nom}</div>
                       {item.description&&<div className="gpp-item-desc fb">{item.description}</div>}
                       <div className="gpp-item-foot">
-                        <div className="gpp-item-price">{Number(item.prix).toFixed(2)} €</div>
+                        <div className="gpp-item-price">{Number(item.prix).toFixed(2)} €{item.duree&&<span style={{color:'#9B8B7A',fontWeight:300,marginLeft:6}}>· {item.duree}</span>}</div>
                       </div>
                     </div>
                   </div>
