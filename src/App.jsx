@@ -884,38 +884,94 @@ const cardItem = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } },
 };
 
+const FILTER_CATS=['Tous','Restauration','Boulangerie','Bien-être','Activité','Sport','Autre'];
 function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
-  const cat=CATEGORIES.find(c=>c.id===categoryId);
-  const sbPartners=(supabasePartners||[]).filter(p=>CATEGORIE_MAP[p.categorie]===categoryId);
-  const total=sbPartners.length;
+  const all=supabasePartners||[];
+  const initCat=(()=>{
+    if(!categoryId)return'Tous';
+    const found=Object.keys(CATEGORIE_MAP).find(k=>CATEGORIE_MAP[k]===categoryId);
+    return found||'Tous';
+  })();
+  const [selCat,setSelCat]=useState(initCat);
+  const [selTags,setSelTags]=useState([]);
+
+  const cats=FILTER_CATS.filter(c=>c==='Tous'||all.some(p=>p.categorie===c));
+  const byCat=selCat==='Tous'?all:all.filter(p=>p.categorie===selCat);
+  const availTags=selCat!=='Tous'?(TAGS_PAR_CATEGORIE[selCat]||[]).filter(t=>byCat.some(p=>(p.tags||[]).includes(t))):[];
+  const filtered=selTags.length===0?byCat:byCat.filter(p=>selTags.some(t=>(p.tags||[]).includes(t)));
+  const total=filtered.length;
+
+  const heroCat=selCat==='Tous'?null:CATEGORIES.find(c=>c.id===CATEGORIE_MAP[selCat]);
+
+  function selectCat(c){setSelCat(c);setSelTags([]);}
+  function toggleTag(t){setSelTags(ts=>ts.includes(t)?ts.filter(x=>x!==t):[...ts,t]);}
+
+  const pillBase={whiteSpace:'nowrap',borderRadius:999,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,cursor:'pointer',transition:'all .15s',border:'1px solid'};
+
   return (
     <>
       <motion.div className="catpage-hero" variants={heroZoom} initial="initial" animate="animate">
         <button className="catpage-back fb" onClick={onBack}>← Retour</button>
-        <span className="catpage-icon">{cat.icon}</span>
-        <div className="catpage-title fd">{cat.label}<br/><em>à Bordeaux</em></div>
-        <div className="catpage-sub fb">{total} adresse{total>1?"s":""} disponible{total>1?"s":""}</div>
+        {heroCat?<span className="catpage-icon">{heroCat.icon}</span>:<span className="catpage-icon">🏪</span>}
+        <div className="catpage-title fd">{heroCat?heroCat.label:'Nos partenaires'}<br/><em>à Bordeaux</em></div>
+        <div className="catpage-sub fb">{total} adresse{total>1?'s':''} disponible{total>1?'s':''}</div>
       </motion.div>
-      <div style={{background:"#F7F3EE",padding:"64px 48px"}}>
-        <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
-          {sbPartners.map(p=>(
-            <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
-              <div className="pcard-img" style={{background:'#1C1208'}}>
-                {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}
-                {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={"pcard-status "+st}><div className={"sdot "+st}/><span className="fb">{lbl}</span></div>);})()}
-              </div>
-              <div className="pcard-body">
-                <div className="pcard-cat fb">{p.categorie}</div>
-                <div className="pcard-name fd">{p.nom}</div>
-                <div className="pcard-desc fb">{p.description||p.google_maps}</div>
-                <div className="pcard-foot">
-                  <span className="pcard-cta fb">Voir le commerce</span>
-                  <div className="pcard-icon">→</div>
+      <div style={{background:'#F7F3EE',padding:'48px 24px 64px'}}>
+        {/* Filtre catégories */}
+        <div style={{overflowX:'auto',display:'flex',gap:8,marginBottom:12,paddingBottom:4,WebkitOverflowScrolling:'touch'}}>
+          {cats.map(c=>{
+            const active=selCat===c;
+            return(
+              <button key={c} onClick={()=>selectCat(c)} style={{...pillBase,padding:'7px 16px',background:active?'#6B1D1D':'transparent',borderColor:active?'#6B1D1D':'rgba(28,18,8,.18)',color:active?'#F7F3EE':'#7A6555'}}>
+                {c}
+              </button>
+            );
+          })}
+        </div>
+        {/* Sous-filtre tags */}
+        {availTags.length>0&&(
+          <div style={{overflowX:'auto',display:'flex',gap:6,marginBottom:28,paddingBottom:4,WebkitOverflowScrolling:'touch'}}>
+            {availTags.map(t=>{
+              const active=selTags.includes(t);
+              return(
+                <button key={t} onClick={()=>toggleTag(t)} style={{...pillBase,padding:'4px 12px',fontSize:12,background:active?'rgba(107,29,29,.12)':'transparent',borderColor:active?'#6B1D1D':'rgba(28,18,8,.12)',color:active?'#6B1D1D':'#9B8B7A'}}>
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {/* Grille */}
+        {filtered.length===0?(
+          <div style={{textAlign:'center',padding:'48px 0',fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#9B8B7A'}}>Aucun partenaire pour ces filtres.</div>
+        ):(
+          <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
+            {filtered.map(p=>(
+              <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
+                <div className="pcard-img" style={{background:'#1C1208'}}>
+                  {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:null}
+                  {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={'pcard-status '+st}><div className={'sdot '+st}/><span className="fb">{lbl}</span></div>);})()}
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+                <div className="pcard-body">
+                  <div className="pcard-cat fb">{p.categorie}</div>
+                  <div className="pcard-name fd">{p.nom}</div>
+                  <div className="pcard-desc fb">{p.description||p.google_maps}</div>
+                  {(p.tags||[]).length>0&&(
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:8}}>
+                      {(p.tags||[]).slice(0,3).map(t=>(
+                        <span key={t} style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,color:'#6B1D1D',background:'rgba(107,29,29,.08)',borderRadius:999,padding:'2px 8px'}}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pcard-foot">
+                    <span className="pcard-cta fb">Voir le commerce</span>
+                    <div className="pcard-icon">→</div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
       <SiteFooter/>
     </>
