@@ -2282,6 +2282,11 @@ function PartnerView({onLogout}){
   const [reviewClicks,setReviewClicks]=useState(0);
   const [horaires,setHoraires]=useState({});
   const [msgText,setMsgText]=useState('');
+  const [partnerTags,setPartnerTags]=useState([]);
+  const [tagSearch,setTagSearch]=useState('');
+  const [savingTags,setSavingTags]=useState(false);
+  const [tagsSaved,setTagsSaved]=useState(false);
+  const [tagsErr,setTagsErr]=useState('');
   const [sendingMsg,setSendingMsg]=useState(false);
   const [msgSent,setMsgSent]=useState(false);
   const [msgErr,setMsgErr]=useState('');
@@ -2313,6 +2318,7 @@ function PartnerView({onLogout}){
       if(data){
         setPartner(data);
         setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+        setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
       }
     }catch(e){console.error('loadPartner:',e);}
@@ -2328,6 +2334,15 @@ function PartnerView({onLogout}){
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
     }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingInfo(false);
+  }
+
+  async function saveSettingsTags(){
+    setSavingTags(true);setTagsErr('');
+    const{error}=await supabase.from('candidates').update({tags:partnerTags}).eq('id',partner.id);
+    setSavingTags(false);
+    if(error){setTagsErr('Erreur : '+error.message);return;}
+    setPartner(p=>({...p,tags:partnerTags}));
+    setTagsSaved(true);setTimeout(()=>setTagsSaved(false),2500);
   }
 
   async function saveSettingsCode(){
@@ -2460,6 +2475,7 @@ function PartnerView({onLogout}){
       localStorage.setItem('partner_slug',slug);
       setPartner(data);
       setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+      setPartnerTags(data.tags||[]);
       setHoraires(data.horaires||{});
       setAuthed(true);
     }else{
@@ -3072,6 +3088,47 @@ function PartnerView({onLogout}){
                 </button>
               </div>
             </div>
+
+            {(TAGS_PAR_CATEGORIE[partner?.categorie]||[]).length>0&&(
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
+              <div className="prt-section-label fb">Vos spécialités</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#9B8B7A',marginBottom:12}}>Sélectionnez jusqu'à 5 tags qui décrivent votre établissement.</div>
+              <input
+                className="prt-input"
+                placeholder="Rechercher un tag…"
+                value={tagSearch}
+                onChange={e=>setTagSearch(e.target.value)}
+                style={{marginBottom:12}}
+              />
+              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>
+                {(TAGS_PAR_CATEGORIE[partner?.categorie]||[])
+                  .filter(t=>!tagSearch||t.toLowerCase().includes(tagSearch.toLowerCase()))
+                  .map(t=>{
+                    const checked=partnerTags.includes(t);
+                    const disabled=!checked&&partnerTags.length>=5;
+                    return(
+                      <button
+                        key={t}
+                        onClick={()=>{if(disabled)return;setPartnerTags(ts=>ts.includes(t)?ts.filter(x=>x!==t):[...ts,t]);}}
+                        style={{
+                          padding:'5px 13px',borderRadius:999,fontSize:12,fontFamily:"'DM Sans',sans-serif",fontWeight:500,
+                          cursor:disabled?'not-allowed':'pointer',
+                          border:'1px solid',
+                          borderColor:checked?'#6B1D1D':'rgba(28,18,8,.15)',
+                          background:checked?'#6B1D1D':'transparent',
+                          color:checked?'#F7F3EE':disabled?'rgba(122,101,85,.35)':'#7A6555',
+                          transition:'all .15s',
+                        }}
+                      >{t}</button>
+                    );
+                  })}
+              </div>
+              {tagsErr&&<div className="prt-err fb">{tagsErr}</div>}
+              <button className="prt-btn-primary fb" onClick={saveSettingsTags} disabled={savingTags}>
+                {tagsSaved?'✓ Sauvegardé':savingTags?'Sauvegarde…':'Sauvegarder les spécialités'}
+              </button>
+            </div>
+            )}
 
             <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
               <div className="prt-section-label fb">Changer mon code d'accès</div>
