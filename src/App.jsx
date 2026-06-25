@@ -1333,7 +1333,7 @@ function LoginView({onLogin}){
                   <div><div className="lgn-field-label fb">Catégorie</div>
                     <select className="lgn-select fb" value={cForm.categorie} onChange={e=>setCForm(f=>({...f,categorie:e.target.value}))} required>
                       <option value="" disabled>Choisir une catégorie</option>
-                      {['Restauration','Boulangerie','Sport','Bien-être','Autre'].map(c=><option key={c}>{c}</option>)}
+                      {['Restauration','Boulangerie','Sport','Bien-être','Activité','Autre'].map(c=><option key={c}>{c}</option>)}
                     </select>
                   </div>
                   {cForm.categorie==='Autre'&&<div><div className="lgn-field-label fb">Précisez la catégorie</div><input className="lgn-input fb" value={cForm.categorie_autre} onChange={e=>setCForm(f=>({...f,categorie_autre:e.target.value}))} placeholder="Ex: Librairie, Fleuriste…" required/></div>}
@@ -4681,6 +4681,7 @@ function JoindreView({onHome}){
                   <option>Boulangerie</option>
                   <option>Sport</option>
                   <option>Bien-être</option>
+                  <option>Activité</option>
                   <option>Autre</option>
                 </select>
               </div>
