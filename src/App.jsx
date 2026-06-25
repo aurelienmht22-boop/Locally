@@ -1426,6 +1426,10 @@ function AdminView(){
   const [savingAccess,setSavingAccess]=useState(false);
   const [accessSaved,setAccessSaved]=useState(false);
   const [accessErr,setAccessErr]=useState('');
+  const [selCatEdit,setSelCatEdit]=useState('');
+  const [savingCat,setSavingCat]=useState(false);
+  const [catSaved,setCatSaved]=useState(false);
+  const [catErr,setCatErr]=useState('');
   const [partners,setPartners]=useState([]);
   const [loadingPartners,setLoadingPartners]=useState(false);
   const [selPartner,setSelPartner]=useState(null);
@@ -1761,7 +1765,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1847,7 +1851,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='rejete').length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
                 {cands.filter(c=>c.status==='rejete').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1976,8 +1980,28 @@ function AdminView(){
               <button className="adm-modal-close fb" onClick={()=>{setSel(null);setConfirmReject(false);}}>✕</button>
             </div>
             <div className="adm-modal-body">
+              {/* Catégorie éditable */}
+              {(()=>{
+                const validCats=Object.keys(CATEGORIE_MAP);
+                const isValid=validCats.includes(selCatEdit);
+                return(
+                  <div className="adm-field" style={{marginBottom:12}}>
+                    <div className="adm-field-label">Catégorie</div>
+                    {!isValid&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'#B91C1C',marginBottom:6,fontWeight:500}}>⚠ Catégorie non reconnue — modifiez avant d'approuver</div>}
+                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                      <select value={selCatEdit} onChange={e=>{setSelCatEdit(e.target.value);setCatSaved(false);}} style={{flex:1,fontFamily:"'DM Sans',sans-serif",fontSize:13,padding:'7px 10px',borderRadius:7,border:'1px solid rgba(247,243,238,.15)',background:'rgba(247,243,238,.06)',color:'#F7F3EE',cursor:'pointer'}}>
+                        {!isValid&&<option value={selCatEdit}>{selCatEdit} (actuel)</option>}
+                        {validCats.map(c=><option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <button onClick={async()=>{setSavingCat(true);setCatErr('');const{error}=await supabase.from('candidates').update({categorie:selCatEdit}).eq('id',sel.id);setSavingCat(false);if(error){setCatErr('Erreur');return;}setSel(s=>({...s,categorie:selCatEdit}));setCatSaved(true);setTimeout(()=>setCatSaved(false),2500);}} disabled={savingCat||isValid&&selCatEdit===sel.categorie} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,padding:'7px 12px',borderRadius:7,border:'1px solid rgba(247,243,238,.2)',background:'rgba(247,243,238,.08)',color:'#F7F3EE',cursor:'pointer',whiteSpace:'nowrap',opacity:(savingCat||isValid&&selCatEdit===sel.categorie)?.45:1}}>
+                        {catSaved?'✓ OK':savingCat?'…':'Modifier'}
+                      </button>
+                    </div>
+                    {catErr&&<div style={{fontSize:11,color:'#EF4444',marginTop:4}}>{catErr}</div>}
+                  </div>
+                );
+              })()}
               {[
-                ['Catégorie',sel.categorie],
                 ['Adresse',sel.google_maps],
                 ['Téléphone',sel.telephone],
                 ['Email',sel.email],
@@ -2023,7 +2047,7 @@ function AdminView(){
               <div className="adm-modal-actions">
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateStatus(sel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateStatus(sel.id,'en_attente')}>En attente</button>
-                <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
+                <button className="adm-sbtn adm-s-ok fb" disabled={!Object.keys(CATEGORIE_MAP).includes(selCatEdit)} style={{opacity:Object.keys(CATEGORIE_MAP).includes(selCatEdit)?1:.4,cursor:Object.keys(CATEGORIE_MAP).includes(selCatEdit)?'pointer':'not-allowed'}} title={!Object.keys(CATEGORIE_MAP).includes(selCatEdit)?'Modifiez la catégorie avant d\'approuver':''} onClick={async()=>{
                   setAccessErr('');
                   if(!sel.slug){
                     const base=generateSlug(sel.nom);
