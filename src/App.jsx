@@ -2711,6 +2711,16 @@ function PartnerView({onLogout}){
   const totalV=statVisits.length;
   const scannedV=statVisits.filter(v=>v.scanned).length;
 
+  // Completion score
+  const cpHasPhoto=!!partner?.photo_url;
+  const cpHasDesc=(partnerForm.description||'').trim().length>=20;
+  const cpHasTags=partnerTags.length>=1;
+  const cpHasHoraires=Object.values(horaires).some(h=>h?.ouvert);
+  const cpHasSite=!!(partnerForm.site_web||'').trim();
+  const cpHasMenu=menuItems.length>=1;
+  const completionScore=(cpHasPhoto?25:0)+(cpHasDesc?25:0)+(cpHasTags?15:0)+(cpHasHoraires?15:0)+(cpHasSite?10:0)+(cpHasMenu?10:0);
+  const canPublish=cpHasPhoto&&cpHasDesc;
+
   return(
     <div className="prt-wrap">
       <style>{CSS}</style>
@@ -2730,6 +2740,40 @@ function PartnerView({onLogout}){
 
         {tab==='profil'&&(
           <>
+            {/* ── COMPLETION ── */}
+            {(()=>{
+              const offreLabel=getMetierLabels(partner?.categorie).ongletLabel.replace(/^(Mon |Mes )/,'');
+              const items=[
+                {label:'Photo principale',ok:cpHasPhoto,req:true},
+                {label:'Description',ok:cpHasDesc,req:true},
+                {label:'Tags / spécialités',ok:cpHasTags,req:false},
+                {label:"Horaires d'ouverture",ok:cpHasHoraires,req:false},
+                {label:'Site web',ok:cpHasSite,req:false},
+                {label:offreLabel+' en ligne',ok:cpHasMenu,req:false},
+              ];
+              return(
+                <div style={{background:'#FBF7F3',border:'1px solid #E8DDD0',borderRadius:14,padding:'18px 20px',marginBottom:24}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:'#1C1208'}}>Profil complété à {completionScore}%</span>
+                    {completionScore<50&&<span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:400,color:'#9B8B7A'}}>Complétez votre profil pour attirer plus de clients</span>}
+                  </div>
+                  <div style={{background:'#F0E8DE',borderRadius:999,height:7,overflow:'hidden',marginBottom:16}}>
+                    <div style={{background:'#6B1D1D',height:'100%',width:`${completionScore}%`,borderRadius:999,transition:'width .4s ease'}}/>
+                  </div>
+                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                    {items.map(({label,ok,req})=>(
+                      <div key={label} style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{fontSize:13,color:ok?'#2D6A4F':'#C8B8A8',flexShrink:0,lineHeight:1}}>{ok?'✓':'○'}</span>
+                        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:ok?500:400,color:ok?'#3D3028':'#9B8B7A'}}>
+                          {label}{req&&<span style={{color:'#B91C1C',marginLeft:2}}>*</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ── PHOTO ── */}
             <div className="prt-photo-section">
               <div className="prt-section-label fb">Photo principale</div>
@@ -3214,23 +3258,32 @@ function PartnerView({onLogout}){
             </div>
 
             <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
-              <div className="prt-section-label fb">Visibilité sur Locally</div>
-              {partner.visible===false?(
+              <div className="prt-section-label fb">Publier mon profil</div>
+              {partner.visible!==false?(
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#B91C1C',background:'rgba(185,28,28,.06)',border:'1px solid rgba(185,28,28,.15)',borderRadius:10,padding:'12px 16px'}}>
-                    Vous êtes actuellement masqué sur Locally. Vos clients ne peuvent pas vous trouver.
+                  <div style={{display:'flex',alignItems:'center',gap:10,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#2D6A4F',background:'rgba(45,106,79,.07)',border:'1px solid rgba(45,106,79,.2)',borderRadius:10,padding:'12px 16px'}}>
+                    <span style={{fontSize:16}}>✓</span> Votre profil est en ligne sur Locally
+                  </div>
+                  <button className="prt-btn-danger fb" onClick={toggleVisible} disabled={savingVisible}>
+                    {savingVisible?'Mise à jour…':'Mettre en pause'}
+                  </button>
+                </div>
+              ):canPublish?(
+                <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#7A6555',lineHeight:1.6}}>
+                    Votre profil est prêt. Publiez-le pour apparaître sur Locally et attirer vos premiers clients.
                   </div>
                   <button className="prt-btn-primary fb" onClick={toggleVisible} disabled={savingVisible}>
-                    {savingVisible?'Mise à jour…':'Réactiver mon établissement'}
+                    {savingVisible?'Publication…':'Publier mon profil sur Locally'}
                   </button>
                 </div>
               ):(
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',lineHeight:1.7,margin:0}}>
-                    Vos clients ne pourront plus vous trouver sur Locally tant que vous êtes désactivé.
-                  </p>
-                  <button className="prt-btn-danger fb" onClick={toggleVisible} disabled={savingVisible}>
-                    {savingVisible?'Mise à jour…':'Me désactiver temporairement'}
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#9B8B7A',background:'#F5F0EA',border:'1px solid #E8DDD0',borderRadius:10,padding:'12px 16px',lineHeight:1.6}}>
+                    Ajoutez une <strong style={{color:'#1C1208'}}>photo</strong> et une <strong style={{color:'#1C1208'}}>description</strong> (min. 20 caractères) pour pouvoir publier votre profil.
+                  </div>
+                  <button className="prt-btn-primary fb" disabled style={{opacity:.45,cursor:'not-allowed'}}>
+                    Publier mon profil sur Locally
                   </button>
                 </div>
               )}
