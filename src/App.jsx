@@ -4168,7 +4168,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
     if(m.includes('email not confirmed'))return'Email non confirmé. Vérifiez votre boîte mail.';
     if(m.includes('signup disabled'))return'Les inscriptions sont momentanément désactivées.';
     if(m.includes('weak password'))return'Mot de passe trop faible. Choisissez-en un plus sécurisé.';
-    return'Une erreur est survenue. Réessayez ou contactez contact.locally33@gmail.com.';
+    return'Une erreur est survenue. Réessayez ou contactez contact@mylocally.fr.';
   }
 
   async function handleLogin(e){
@@ -4351,7 +4351,7 @@ function MonCompteView({user,profile,setProfile,signOut,onHome}){
       headers:{Authorization:`Bearer ${session.access_token}`},
     });
     if(error){
-      setDeleteErr('Erreur lors de la suppression. Contactez contact.locally33@gmail.com');
+      setDeleteErr('Erreur lors de la suppression. Contactez contact@mylocally.fr');
       setDeleting(false);return;
     }
     await signOut();
@@ -4469,7 +4469,7 @@ function SiteFooter(){
       <div className="footer-links">
         <button className="footer-link" onClick={()=>siteNav('/mentions-legales')}>Mentions légales</button>
         <button className="footer-link" onClick={()=>siteNav('/confidentialite')}>Confidentialité</button>
-        <a className="footer-link" href="mailto:contact.locally33@gmail.com">Contact</a>
+        <a className="footer-link" href="mailto:contact@mylocally.fr">Contact</a>
         <button className="footer-link footer-link-commerce" onClick={()=>siteNav('/rejoindre')}>Vous êtes commerçant ?</button>
       </div>
       <div className="footer-copy fb">© 2026 · Bordeaux · Tous droits réservés</div>
@@ -4488,7 +4488,7 @@ function MentionsLegalesView({onHome}){
         <div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Éditeur</div>
           <p>Locally — plateforme locale de réductions partenaires, Bordeaux, France.</p>
-          <p>Contact : <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a></p>
+          <p>Contact : <a href="mailto:contact@mylocally.fr" style={{color:"#6B1D1D"}}>contact@mylocally.fr</a></p>
         </div>
         <div>
           <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:"#1C1208",marginBottom:8}}>Hébergement</div>
@@ -4519,7 +4519,7 @@ function ConfidentialiteView({onHome}){
       <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:"#7A6555",lineHeight:1.8,display:"flex",flexDirection:"column",gap:28}}>
         <div>
           <div style={sec}>1. Responsable du traitement</div>
-          <p>Locally, service opéré par un auto-entrepreneur basé à Bordeaux (France). Contact : <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>.</p>
+          <p>Locally, service opéré par un auto-entrepreneur basé à Bordeaux (France). Contact : <a href="mailto:contact@mylocally.fr" style={{color:"#6B1D1D"}}>contact@mylocally.fr</a>.</p>
         </div>
         <div>
           <div style={sec}>2. Données collectées</div>
@@ -4550,7 +4550,7 @@ function ConfidentialiteView({onHome}){
           <p>Vous pouvez supprimer votre compte à tout moment selon deux modalités :</p>
           <ul style={{paddingLeft:20,marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
             <li>Directement depuis votre <strong>espace Mon compte</strong> → section "Supprimer mon compte". La suppression est immédiate et irréversible.</li>
-            <li>Par e-mail à <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>, avec pour objet « Suppression de compte ».</li>
+            <li>Par e-mail à <a href="mailto:contact@mylocally.fr" style={{color:"#6B1D1D"}}>contact@mylocally.fr</a>, avec pour objet « Suppression de compte ».</li>
           </ul>
           <p style={{marginTop:8}}>Lors de la suppression, votre email et prénom sont effacés. Les transactions passées sont conservées de manière anonymisée (sans lien avec votre identité) à des fins de comptabilité opérationnelle.</p>
         </div>
@@ -4564,7 +4564,7 @@ function ConfidentialiteView({onHome}){
             <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format structuré.</li>
             <li><strong>Droit d'opposition</strong> : vous opposer à un traitement particulier.</li>
           </ul>
-          <p style={{marginTop:8}}>Pour exercer ces droits, contactez-nous à <a href="mailto:contact.locally33@gmail.com" style={{color:"#6B1D1D"}}>contact.locally33@gmail.com</a>. Nous nous engageons à répondre dans un délai de 30 jours. En cas de réclamation non résolue, vous pouvez saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" style={{color:"#6B1D1D"}}>CNIL</a>.</p>
+          <p style={{marginTop:8}}>Pour exercer ces droits, contactez-nous à <a href="mailto:contact@mylocally.fr" style={{color:"#6B1D1D"}}>contact@mylocally.fr</a>. Nous nous engageons à répondre dans un délai de 30 jours. En cas de réclamation non résolue, vous pouvez saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" style={{color:"#6B1D1D"}}>CNIL</a>.</p>
         </div>
         <div>
           <div style={sec}>7. Cookies et stockage local</div>
