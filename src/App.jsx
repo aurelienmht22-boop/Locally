@@ -896,7 +896,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
   const [selCat,setSelCat]=useState(initCat);
   const [selTags,setSelTags]=useState([]);
 
-  const cats=FILTER_CATS.filter(c=>c==='Tous'||all.some(p=>p.categorie===c));
+  const cats=FILTER_CATS;
   const byCat=selCat==='Tous'?all:all.filter(p=>p.categorie===selCat);
   const availTags=selCat!=='Tous'?(TAGS_PAR_CATEGORIE[selCat]||[]).filter(t=>byCat.some(p=>(p.tags||[]).includes(t))):[];
   const filtered=selTags.length===0?byCat:byCat.filter(p=>selTags.some(t=>(p.tags||[]).includes(t)));
