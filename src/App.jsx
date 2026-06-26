@@ -1635,7 +1635,7 @@ function AdminView(){
       const finalCode=access_code||item.access_code;
       fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
         body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'hotel'}),
       }).catch(err=>console.error('Email hotel error:',err));
     }
@@ -1742,7 +1742,7 @@ function AdminView(){
       const finalCode=access_code||item.access_code;
       fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
         body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'partenaire'}),
       }).catch(err=>console.error('Email partenaire error:',err));
     }

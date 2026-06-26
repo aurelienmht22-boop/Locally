@@ -7,6 +7,14 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
+    // 0. Vérification du secret partagé
+    const secret = Deno.env.get('LOCALLY_SECRET') ?? ''
+    if (!secret || req.headers.get('x-locally-secret') !== secret) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // 1. Lecture du body
     let body: { email?: string; nom?: string; access_code?: string; slug?: string; type?: string }
     try {
