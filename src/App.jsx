@@ -1515,7 +1515,7 @@ function AdminView(){
   }
   async function fetchAdminStats(){
     setLoadingAdminStats(true);
-    const{txnsAll,clientCount,qrTotal,qrScanned,partnerActiveCount,txns30,allCands}=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_stats'})}).then(r=>r.json());
+    const{txnsAll,clientCount,qrTotal,qrScanned,partnerActiveCount,txns30,allCands}=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_stats'})}).then(r=>r.json());
     const txns=txnsAll||[];
     const caTotal=txns.reduce((s,t)=>s+(t.montant_client||0),0);
     const economiesTotal=txns.reduce((s,t)=>s+(t.montant_reduction||0),0);
@@ -1547,12 +1547,12 @@ function AdminView(){
 
   async function fetchCands(){
     setLoadingCand(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_cands'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_cands'})}).then(r=>r.json());
     setCands(json.data||[]);setLoadingCand(false);
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_partners'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_partners'})}).then(r=>r.json());
     setPartners(json.data||[]);setLoadingPartners(false);
     const counts={};(json.msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
@@ -1560,12 +1560,12 @@ function AdminView(){
   }
   async function fetchVisits(){
     setLoadingVisits(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_visits'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_visits'})}).then(r=>r.json());
     setVisits(json.data||[]);setLoadingVisits(false);
   }
   async function fetchHotels(){
     setLoadingHotels(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_hotels'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_hotels'})}).then(r=>r.json());
     setHotels(json.data||[]);setLoadingHotels(false);
     const counts={};(json.msgs||[]).forEach(m=>{counts[m.hotel_slug]=(counts[m.hotel_slug]||0)+1;});
     setUnreadHotelMessages(counts);
@@ -1596,7 +1596,7 @@ function AdminView(){
   async function updateHotelStatus(id,status,slug,access_code){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
       body:JSON.stringify({action:'update_status',table:'hotels',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
     });
     const json=await res.json();
@@ -1622,7 +1622,7 @@ function AdminView(){
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);setPartnerMessages([]);
     setLoadingPV(true);setLoadingPM(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_partner',id:p.id})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_partner',id:p.id})}).then(r=>r.json());
     setPartnerVisits(json.visits||[]);setLoadingPV(false);
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
@@ -1643,7 +1643,7 @@ function AdminView(){
     setSelHotel(h);setConfirmHotelReject(false);
     setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);setHotelAccessErr('');
     setHotelMessages([]);setLoadingHM(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json());
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
@@ -1696,7 +1696,7 @@ function AdminView(){
   async function updateStatus(id,status,slug,access_code){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
       body:JSON.stringify({action:'update_status',table:'candidates',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
     });
     const json=await res.json();
