@@ -4924,7 +4924,7 @@ export default function App() {
     const path=window.location.pathname;
     if(path==="/dashboard"||path.startsWith("/dashboard"))return "dashboard";
     if(path==="/login")return "login";
-    if(path==="/rejoindre")return "rejoindre";
+    if(path==="/rejoindre"||path==="/candidature")return "rejoindre";
     if(path==="/mentions-legales")return "mentions";
     if(path==="/confidentialite")return "confidentialite";
     if(path==="/renouveler")return "renouveler";
@@ -4964,7 +4964,7 @@ export default function App() {
       const path=window.location.pathname;
       if(path==="/dashboard"||path.startsWith("/dashboard")){setPage("dashboard");return;}
       if(path==="/login"){setPage("login");return;}
-      if(path==="/rejoindre"){setPage("rejoindre");return;}
+      if(path==="/rejoindre"||path==="/candidature"){setPage("rejoindre");return;}
       if(path==="/mentions-legales"){setPage("mentions");return;}
       if(path==="/confidentialite"){setPage("confidentialite");return;}
       if(path==="/renouveler"){setPage("renouveler");return;}
