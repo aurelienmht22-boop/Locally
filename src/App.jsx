@@ -1515,25 +1515,7 @@ function AdminView(){
   }
   async function fetchAdminStats(){
     setLoadingAdminStats(true);
-    const thirtyDaysAgo=new Date();thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
-    const from30=thirtyDaysAgo.toISOString();
-    const[
-      {data:txnsAll},
-      {count:clientCount},
-      {count:qrTotal},
-      {count:qrScanned},
-      {count:partnerActiveCount},
-      {data:txns30},
-      {data:allCands},
-    ]=await Promise.all([
-      supabase.from('transactions').select('montant_client,montant_reduction,partner_id,created_at'),
-      supabase.from('profiles').select('*',{count:'exact',head:true}),
-      supabase.from('visits').select('*',{count:'exact',head:true}),
-      supabase.from('visits').select('*',{count:'exact',head:true}).eq('scanned',true),
-      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
-      supabase.from('transactions').select('montant_client,created_at').gte('created_at',from30),
-      supabase.from('candidates').select('id,nom').eq('status','approuve'),
-    ]);
+    const{txnsAll,clientCount,qrTotal,qrScanned,partnerActiveCount,txns30,allCands}=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_stats'})}).then(r=>r.json());
     const txns=txnsAll||[];
     const caTotal=txns.reduce((s,t)=>s+(t.montant_client||0),0);
     const economiesTotal=txns.reduce((s,t)=>s+(t.montant_reduction||0),0);
@@ -1565,35 +1547,29 @@ function AdminView(){
 
   async function fetchCands(){
     setLoadingCand(true);
-    const{data}=await supabase.from('candidates').select('*').order('created_at',{ascending:false});
-    setCands(data||[]);setLoadingCand(false);
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_cands'})}).then(r=>r.json());
+    setCands(json.data||[]);setLoadingCand(false);
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const[{data},{data:msgs}]=await Promise.all([
-      supabase.from('candidates').select('*').eq('status','approuve').order('created_at',{ascending:false}),
-      supabase.from('messages').select('partner_id').eq('status','non_lu').not('partner_id','is',null),
-    ]);
-    setPartners(data||[]);setLoadingPartners(false);
-    const counts={};(msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_partners'})}).then(r=>r.json());
+    setPartners(json.data||[]);setLoadingPartners(false);
+    const counts={};(json.msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
-    setBadgePartnerMsgs((msgs||[]).length);
+    setBadgePartnerMsgs((json.msgs||[]).length);
   }
   async function fetchVisits(){
     setLoadingVisits(true);
-    const{data}=await supabase.from('visits').select('*').order('created_at',{ascending:false});
-    setVisits(data||[]);setLoadingVisits(false);
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_visits'})}).then(r=>r.json());
+    setVisits(json.data||[]);setLoadingVisits(false);
   }
   async function fetchHotels(){
     setLoadingHotels(true);
-    const[{data},{data:msgs}]=await Promise.all([
-      supabase.from('hotels').select('*').order('created_at',{ascending:false}),
-      supabase.from('messages').select('hotel_slug').eq('status','non_lu').not('hotel_slug','is',null),
-    ]);
-    setHotels(data||[]);setLoadingHotels(false);
-    const counts={};(msgs||[]).forEach(m=>{counts[m.hotel_slug]=(counts[m.hotel_slug]||0)+1;});
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_hotels'})}).then(r=>r.json());
+    setHotels(json.data||[]);setLoadingHotels(false);
+    const counts={};(json.msgs||[]).forEach(m=>{counts[m.hotel_slug]=(counts[m.hotel_slug]||0)+1;});
     setUnreadHotelMessages(counts);
-    setBadgeHotelMsgs((msgs||[]).length);
+    setBadgeHotelMsgs((json.msgs||[]).length);
   }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
@@ -1646,18 +1622,16 @@ function AdminView(){
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);setPartnerMessages([]);
     setLoadingPV(true);setLoadingPM(true);
-    const[{data:visits},{data:msgs}]=await Promise.all([
-      supabase.from('visits').select('*').eq('partner_id',p.id).order('created_at',{ascending:false}),
-      supabase.from('messages').select('*').eq('partner_id',p.id).order('created_at',{ascending:false}),
-    ]);
-    setPartnerVisits(visits||[]);setLoadingPV(false);
-    const unread=(msgs||[]).filter(m=>m.status==='non_lu');
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_partner',id:p.id})}).then(r=>r.json());
+    setPartnerVisits(json.visits||[]);setLoadingPV(false);
+    const msgs=json.msgs||[];
+    const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
       await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
       setBadgePartnerMsgs(b=>Math.max(0,b-unread.length));
       setUnreadMessages(u=>{const n={...u};delete n[p.id];return n;});
     }
-    setPartnerMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingPM(false);
+    setPartnerMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingPM(false);
   }
   async function markAsRead(msgId,partnerId){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
@@ -1669,14 +1643,15 @@ function AdminView(){
     setSelHotel(h);setConfirmHotelReject(false);
     setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);setHotelAccessErr('');
     setHotelMessages([]);setLoadingHM(true);
-    const{data:msgs}=await supabase.from('messages').select('*').eq('hotel_slug',h.slug||'').order('created_at',{ascending:false});
-    const unread=(msgs||[]).filter(m=>m.status==='non_lu');
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json());
+    const msgs=json.msgs||[];
+    const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
       await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
       setBadgeHotelMsgs(b=>Math.max(0,b-unread.length));
       setUnreadHotelMessages(u=>{const n={...u};delete n[h.slug];return n;});
     }
-    setHotelMessages((msgs||[]).map(m=>({...m,status:'lu'})));setLoadingHM(false);
+    setHotelMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingHM(false);
   }
   async function markHotelMsgAsRead(msgId,hotelSlug){
     await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
