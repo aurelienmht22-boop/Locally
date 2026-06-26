@@ -1096,25 +1096,18 @@ function DashboardPage() {
       const dateFrom = ordersToAnalyze[0]?.created_at || new Date().toISOString();
       const dateTo = ordersToAnalyze[ordersToAnalyze.length - 1]?.created_at || new Date().toISOString();
 
-      const userPrompt = `Voici le contexte: ${lastAnalysis ? lastAnalysis.content : "Première analyse"}. Nouvelles commandes depuis la dernière analyse (${ordersToAnalyze.length} commandes): ${JSON.stringify(ordersToAnalyze)}. Génère une analyse business complète incluant: CA généré, articles les plus commandés, heures de pointe, tendances, comparaison avec période précédente si disponible, et 3 recommandations concrètes.`;
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/generate-analysis", {
         method: "POST",
         headers: {
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-          "content-type": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + import.meta.env.VITE_SUPABASE_ANON_KEY,
+          "x-locally-secret": import.meta.env.VITE_LOCALLY_SECRET,
         },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 2048,
-          system: "Tu es un assistant business expert pour Locally, plateforme de commande locale à Bordeaux. Tu analyses les données de commandes et produis des rapports business concis et actionnables en français.",
-          messages: [{ role: "user", content: userPrompt }],
-        }),
+        body: JSON.stringify({ commandes: ordersToAnalyze, lastAnalysis }),
       });
+      if (!res.ok) throw new Error("generate-analysis error " + res.status);
       const json = await res.json();
-      const content = json.content?.[0]?.text || "";
+      const content = json.content || "";
 
       const { error: insertError } = await supabase.from("analyses").insert({
         content,
