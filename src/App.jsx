@@ -1243,7 +1243,7 @@ function DashboardPage() {
 }
 
 
-let ADMIN_PWD="locally2024";
+let ADMIN_PWD=import.meta.env.VITE_DASHBOARD_PASSWORD||"";
 const STATUS_BADGES={
   pending:   {label:'Pending',    bg:'rgba(217,119,6,.15)',  color:'#D97706'},
   en_attente:{label:'En attente', bg:'rgba(59,130,246,.15)', color:'#3B82F6'},
@@ -1267,7 +1267,7 @@ function LoginView({onLogin}){
   async function handleLogin(e){
     e.preventDefault();setErr('');setLoading(true);
     try{
-      if(code.trim()==='locally2024'){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
+      if(ADMIN_PWD&&code.trim()===ADMIN_PWD){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
       const{data:cand}=await supabase.from('candidates').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
       if(cand?.slug){sessionStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
       const{data:hotel}=await supabase.from('hotels').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
