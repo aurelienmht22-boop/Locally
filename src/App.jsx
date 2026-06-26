@@ -1618,11 +1618,13 @@ function AdminView(){
     console.log('[SMS] Réponse →',res.status,await res.text().catch(()=>''));
   }
   async function updateHotelStatus(id,status,slug,access_code){
-    const updates={status};
-    if(slug)updates.slug=slug;
-    if(access_code)updates.access_code=access_code;
-    const{error}=await supabase.from('hotels').update(updates).eq('id',id);
-    if(error){setHotelAccessErr('Erreur approbation : '+error.message);return;}
+    const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      body:JSON.stringify({action:'update_status',table:'hotels',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
+    });
+    const json=await res.json();
+    if(!res.ok||json.error){setHotelAccessErr('Erreur approbation : '+(json.error||res.status));return;}
     const item=hotels.find(h=>h.id===id);
     const extra=slug&&access_code?{slug,access_code}:{};
     setHotels(hs=>hs.map(h=>h.id===id?{...h,status,...extra}:h));
@@ -1717,11 +1719,13 @@ function AdminView(){
     if(loc)await supabase.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
   }
   async function updateStatus(id,status,slug,access_code){
-    const updates={status};
-    if(slug)updates.slug=slug;
-    if(access_code)updates.access_code=access_code;
-    const{error}=await supabase.from('candidates').update(updates).eq('id',id);
-    if(error){setAccessErr('Erreur approbation : '+error.message);return;}
+    const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      body:JSON.stringify({action:'update_status',table:'candidates',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
+    });
+    const json=await res.json();
+    if(!res.ok||json.error){setAccessErr('Erreur approbation : '+(json.error||res.status));return;}
     const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
     const extra=slug&&access_code?{slug,access_code}:{};
     setCands(cs=>cs.map(c=>c.id===id?{...c,status,...extra}:c));
