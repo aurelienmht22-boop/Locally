@@ -1249,7 +1249,7 @@ function LoginView({onLogin}){
   const [cSent,setCSent]=useState(false);
   const [cErr,setCErr]=useState('');
   const [cLoading,setCLoading]=useState(false);
-  const [hForm,setHForm]=useState({nom:'',type:'',adresse:'',nombre_chambres:'',nom_responsable:'',email:'',telephone:''});
+  const [hForm,setHForm]=useState({nom:'',type:'',type_etablissement:'',adresse:'',nombre_chambres:'',nom_responsable:'',email:'',telephone:''});
   const [hSent,setHSent]=useState(false);
   const [hErr,setHErr]=useState('');
   const [hLoading,setHLoading]=useState(false);
@@ -1284,7 +1284,7 @@ function LoginView({onLogin}){
   async function handleHotelSubmit(e){
     e.preventDefault();setHErr('');setHLoading(true);
     try{
-      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending'}]);
+      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,type_etablissement:hForm.type_etablissement||null,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending'}]);
       if(error)throw error;
       setHSent(true);
     }catch{setHErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -1368,10 +1368,16 @@ function LoginView({onLogin}){
                   {[{label:"Nom de l'établissement",name:"nom",placeholder:"Hôtel des Quais"},{label:"Adresse",name:"adresse",placeholder:"12 Quai des Chartrons, Bordeaux"},{label:"Nom du responsable",name:"nom_responsable",placeholder:"Jean Dupont"},{label:"Email",name:"email",placeholder:"contact@hotel.fr",type:"email"},{label:"Téléphone",name:"telephone",placeholder:"05 56 00 00 00",type:"tel"}].map(({label,name,placeholder,type="text"})=>(
                     <div key={name}><div className="lgn-field-label fb">{label}</div><input className="lgn-input fb" type={type} value={hForm[name]} onChange={e=>setHForm(f=>({...f,[name]:e.target.value}))} placeholder={placeholder} required/></div>
                   ))}
-                  <div><div className="lgn-field-label fb">Type d'établissement</div>
+                  <div><div className="lgn-field-label fb">Type d'hébergement</div>
                     <select className="lgn-select fb" value={hForm.type} onChange={e=>setHForm(f=>({...f,type:e.target.value}))} required>
                       <option value="" disabled>Choisir un type</option>
                       {['Hôtel','Airbnb','Résidence'].map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div><div className="lgn-field-label fb">Type d'établissement</div>
+                    <select className="lgn-select fb" value={hForm.type_etablissement} onChange={e=>setHForm(f=>({...f,type_etablissement:e.target.value}))} required>
+                      <option value="" disabled>Choisir un type</option>
+                      {['Hôtel','Conciergerie','Co-hôte','Autre'].map(t=><option key={t}>{t}</option>)}
                     </select>
                   </div>
                   <div><div className="lgn-field-label fb">Nombre de chambres <span style={{color:'rgba(247,243,238,.25)',fontWeight:300,textTransform:'none',letterSpacing:0}}>— optionnel</span></div><input className="lgn-input fb" type="number" min="1" value={hForm.nombre_chambres} onChange={e=>setHForm(f=>({...f,nombre_chambres:e.target.value}))} placeholder="Ex: 20"/></div>
@@ -1809,7 +1815,10 @@ function AdminView(){
                   <div key={h.id} className="adm-row" onClick={()=>openHotel(h)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{h.nom}</div>
-                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-meta fb" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                        {h.type_etablissement&&<span style={{background:'rgba(107,29,29,.1)',color:'#6B1D1D',fontSize:10,fontWeight:600,borderRadius:100,padding:'2px 8px',letterSpacing:.3}}>{h.type_etablissement}</span>}
+                        {h.type} · {h.adresse}
+                      </div>
                       <div className="adm-row-sub fb">{h.email} · {admFmt(h.created_at)}</div>
                     </div>
                     <StatusBadge status={h.status}/>
@@ -1856,7 +1865,10 @@ function AdminView(){
                         {h.nom}
                         {unreadHotelMessages[h.slug]&&<span style={{background:'#EF4444',color:'#fff',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,borderRadius:100,padding:'2px 7px',lineHeight:1.4}}>{unreadHotelMessages[h.slug]}</span>}
                       </div>
-                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-meta fb" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                        {h.type_etablissement&&<span style={{background:'rgba(107,29,29,.1)',color:'#6B1D1D',fontSize:10,fontWeight:600,borderRadius:100,padding:'2px 8px',letterSpacing:.3}}>{h.type_etablissement}</span>}
+                        {h.type} · {h.adresse}
+                      </div>
                       <div className="adm-row-sub fb">{h.email} · Depuis le {admFmt(h.created_at)}</div>
                     </div>
                     <span className="adm-arrow">›</span>
@@ -1895,7 +1907,10 @@ function AdminView(){
                   <div key={h.id} className="adm-row" onClick={()=>openHotel(h)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{h.nom}</div>
-                      <div className="adm-row-meta fb">{h.type} · {h.adresse}</div>
+                      <div className="adm-row-meta fb" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                        {h.type_etablissement&&<span style={{background:'rgba(107,29,29,.1)',color:'#6B1D1D',fontSize:10,fontWeight:600,borderRadius:100,padding:'2px 8px',letterSpacing:.3}}>{h.type_etablissement}</span>}
+                        {h.type} · {h.adresse}
+                      </div>
                       <div className="adm-row-sub fb">{h.email} · {admFmt(h.created_at)}</div>
                     </div>
                     <StatusBadge status={h.status}/>
@@ -2233,7 +2248,7 @@ function AdminView(){
               <button className="adm-modal-close fb" onClick={()=>{setSelHotel(null);setConfirmHotelReject(false);}}>✕</button>
             </div>
             <div className="adm-modal-body">
-              {[['Type',selHotel.type],['Adresse',selHotel.adresse],['Responsable',selHotel.nom_responsable],['Email',selHotel.email],['Téléphone',selHotel.telephone],['Chambres',selHotel.nombre_chambres||'—'],['Date',admFmt(selHotel.created_at)]].map(([k,v])=>(
+              {[['Type',selHotel.type],selHotel.type_etablissement?['Type d\'établissement',selHotel.type_etablissement]:null,['Adresse',selHotel.adresse],['Responsable',selHotel.nom_responsable],['Email',selHotel.email],['Téléphone',selHotel.telephone],['Chambres',selHotel.nombre_chambres||'—'],['Date',admFmt(selHotel.created_at)]].filter(Boolean).map(([k,v])=>(
                 <div key={k} className="adm-field"><div className="adm-field-label">{k}</div><div className="adm-field-val fb">{v}</div></div>
               ))}
               <div className="adm-field"><div className="adm-field-label">Statut</div><div style={{marginTop:2}}><StatusBadge status={selHotel.status}/></div></div>
@@ -3678,7 +3693,7 @@ function HotelView({onLogout}){
   const [savingHtlCode,setSavingHtlCode]=useState(false);
   const [htlCodeErr,setHtlCodeErr]=useState('');
   const [htlCodeSaved,setHtlCodeSaved]=useState(false);
-  const [htlProfileForm,setHtlProfileForm]=useState({nom:'',type:'',email:'',telephone:''});
+  const [htlProfileForm,setHtlProfileForm]=useState({nom:'',type:'',type_etablissement:'',email:'',telephone:''});
   const [savingHtlProfile,setSavingHtlProfile]=useState(false);
   const [htlProfileSaved,setHtlProfileSaved]=useState(false);
   const [htlProfileErr,setHtlProfileErr]=useState('');
@@ -3694,7 +3709,7 @@ function HotelView({onLogout}){
       const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
       if(error)throw error;
       setHotel(data);
-      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',email:data.email||'',telephone:data.telephone||''});
+      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||''});
     }catch(e){setHtlLoadErr('Impossible de charger vos données. Vérifiez votre connexion.');}
     setLoading(false);
   }
@@ -3767,7 +3782,7 @@ function HotelView({onLogout}){
   async function saveHtlProfile(){
     setSavingHtlProfile(true);setHtlProfileErr('');
     try{
-      const{error}=await supabase.from('hotels').update({nom:htlProfileForm.nom.trim(),type:htlProfileForm.type.trim(),email:htlProfileForm.email.trim(),telephone:htlProfileForm.telephone.trim()}).eq('slug',slug);
+      const{error}=await supabase.from('hotels').update({nom:htlProfileForm.nom.trim(),type:htlProfileForm.type.trim(),type_etablissement:htlProfileForm.type_etablissement||null,email:htlProfileForm.email.trim(),telephone:htlProfileForm.telephone.trim()}).eq('slug',slug);
       if(error)throw error;
       setHotel(h=>({...h,...htlProfileForm}));
       setHtlProfileSaved(true);setTimeout(()=>setHtlProfileSaved(false),3000);
@@ -3794,7 +3809,7 @@ function HotelView({onLogout}){
       if(data){
         localStorage.setItem('hotel_slug',slug);
         setHotel(data);
-        setHtlProfileForm({nom:data.nom||'',type:data.type||'',email:data.email||'',telephone:data.telephone||''});
+        setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||''});
         setAuthed(true);
       }else{
         setLoginErr('Code incorrect ou accès non autorisé.');
@@ -3942,12 +3957,19 @@ function HotelView({onLogout}){
                 <div>
                   <div className="prt-section-label fb">Informations de l'établissement</div>
                   <div style={{display:'flex',flexDirection:'column',gap:14,marginTop:4}}>
-                    {[['nom','Nom de l\'hôtel','text','Grand Hôtel'],['type','Type','text','Hôtel 4 étoiles'],['telephone','Téléphone','text','05 56 00 00 00'],['email','Email','email','contact@hotel.fr']].map(([name,label,type,ph])=>(
+                    {[['nom','Nom de l\'hôtel','text','Grand Hôtel'],['type','Type d\'hébergement','text','Hôtel 4 étoiles'],['telephone','Téléphone','text','05 56 00 00 00'],['email','Email','email','contact@hotel.fr']].map(([name,label,type,ph])=>(
                       <div key={name}>
                         <label className="prt-label fb">{label}</label>
                         <input className="prt-input" type={type} value={htlProfileForm[name]||''} onChange={e=>setHtlProfileForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
                       </div>
                     ))}
+                    <div>
+                      <label className="prt-label fb">Type d'établissement</label>
+                      <select className="prt-input" value={htlProfileForm.type_etablissement||''} onChange={e=>setHtlProfileForm(f=>({...f,type_etablissement:e.target.value}))} style={{appearance:'auto'}}>
+                        <option value="">— Sélectionner —</option>
+                        {['Hôtel','Conciergerie','Co-hôte','Autre'].map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </div>
                     {htlProfileErr&&<div className="prt-err fb">{htlProfileErr}</div>}
                     <button className="prt-btn-primary fb" onClick={saveHtlProfile} disabled={savingHtlProfile||!htlProfileForm.nom.trim()}>
                       {htlProfileSaved?'✓ Sauvegardé':savingHtlProfile?'Sauvegarde…':'Sauvegarder'}
