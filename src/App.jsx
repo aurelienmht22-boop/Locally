@@ -5007,7 +5007,7 @@ export default function App() {
       if(path.startsWith("/partner/")){setPage("partner");return;}
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
       if(path==="/carte"){setPage("carte");return;}
-      setPage("home");
+      if(path==="/"||path==="")setPage("home");
     }
     window.addEventListener("popstate",onPopState);
     return ()=>window.removeEventListener("popstate",onPopState);
@@ -5034,9 +5034,9 @@ export default function App() {
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
       <style>{CSS}</style>
       <nav className="nav">
-        <div className="logo fd" onClick={()=>setPage("home")}>local<em>ly</em></div>
+        <div className="logo fd" onClick={()=>siteNav('/')}>local<em>ly</em></div>
         <ul className="nav-links">
-          <li><a onClick={()=>setPage("home")}>Accueil</a></li>
+          <li><a onClick={()=>siteNav('/')}>Accueil</a></li>
           {page==="category"&&<li><a onClick={()=>setPage("home")}>Catégories</a></li>}
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
