@@ -1726,7 +1726,7 @@ function AdminView(){
     if(slug&&access_code)setSelAccess({slug,access_code});
     if(status==='approuve'){
       if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve',...extra}]);
-      if(item?.adresse)geocodePartner(id,item.adresse).catch(()=>{});
+      if(item?.google_maps)geocodePartner(id,item.google_maps).catch(()=>{});
     } else {
       setPartners(ps=>ps.filter(p=>p.id!==id));
     }
