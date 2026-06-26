@@ -1,0 +1,11 @@
+[functions.admin-fetch]
+verify_jwt = false
+
+[functions.admin-status]
+verify_jwt = false
+
+[functions.send-approval-email]
+verify_jwt = false
+
+[functions.generate-analysis]
+verify_jwt = false
