@@ -4813,7 +4813,34 @@ function JoindreView({onHome}){
 function CartePage({partners,user,profile,onNavigatePartner,onBack}){
   const mapRef=useRef(null);
   const mapInstanceRef=useRef(null);
+  const markersRef=useRef([]);
+  const partnersRef=useRef(partners);
+  const onNavRef=useRef(onNavigatePartner);
+  partnersRef.current=partners;
+  onNavRef.current=onNavigatePartner;
   const sessionActive=!!(profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date());
+
+  function placePartnerMarkers(map,L,pts){
+    markersRef.current.forEach(m=>m.remove());
+    markersRef.current=[];
+    window.__locally_nav=(id)=>{const p=(partnersRef.current||[]).find(x=>x.id===id);if(p)onNavRef.current('generic',p);};
+    const pinIcon=L.divIcon({
+      html:`<svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 0C6.268 0 0 6.268 0 14c0 9.625 14 22 14 22s14-12.375 14-22C28 6.268 21.732 0 14 0z" fill="#6B1D1D"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>`,
+      iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38],className:'',
+    });
+    (pts||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
+      const r=p.reduction||'';
+      const m=L.marker([parseFloat(p.latitude),parseFloat(p.longitude)],{icon:pinIcon}).addTo(map).bindPopup(
+        `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;margin-bottom:3px">${p.nom}</div>
+          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${p.categorie||''}</div>
+          ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${r}</div>`:''}
+          <button onclick="window.__locally_nav('${p.id}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
+        </div>`,{maxWidth:240}
+      );
+      markersRef.current.push(m);
+    });
+  }
 
   useEffect(()=>{
     if(!user||!sessionActive)return;
@@ -4826,25 +4853,7 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
         attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
         maxZoom:19,
       }).addTo(map);
-      const pinIcon=L.divIcon({
-        html:`<svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 0C6.268 0 0 6.268 0 14c0 9.625 14 22 14 22s14-12.375 14-22C28 6.268 21.732 0 14 0z" fill="#6B1D1D"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>`,
-        iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38],className:'',
-      });
-      window.__locally_nav=(partnerId)=>{
-        const p=(partners||[]).find(x=>x.id===partnerId);
-        if(p)onNavigatePartner('generic',p);
-      };
-      (partners||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
-        const r=p.reduction||'';
-        L.marker([p.latitude,p.longitude],{icon:pinIcon}).addTo(map).bindPopup(
-          `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;margin-bottom:3px">${p.nom}</div>
-            <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${p.categorie||''}</div>
-            ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${r}</div>`:''}
-            <button onclick="window.__locally_nav('${p.id}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
-          </div>`,{maxWidth:240}
-        );
-      });
+      placePartnerMarkers(map,L,partnersRef.current);
       navigator.geolocation?.getCurrentPosition(pos=>{
         const{latitude,longitude}=pos.coords;
         map.setView([latitude,longitude],15);
@@ -4874,6 +4883,11 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
       delete window.__locally_nav;
     };
   },[]);
+
+  useEffect(()=>{
+    if(!mapInstanceRef.current||!window.L)return;
+    placePartnerMarkers(mapInstanceRef.current,window.L,partners);
+  },[partners]);
 
   if(!user||!profile) return(
     <div style={{minHeight:'calc(100dvh - 64px)',background:'#FDFAF6',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
