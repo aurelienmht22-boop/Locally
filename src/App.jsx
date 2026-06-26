@@ -4898,7 +4898,7 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
           Aucun partenaire géolocalisé pour l'instant.
         </div>
       )}
-      <div style={{position:'absolute',top:12,left:12,zIndex:999}}>
+      <div style={{position:'absolute',top:12,right:12,zIndex:1000}}>
         <button onClick={onBack} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,background:'rgba(253,250,246,.95)',color:'#1C1208',border:'none',borderRadius:8,padding:'8px 14px',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,.12)'}}>← Retour</button>
       </div>
       <div style={{position:'absolute',bottom:28,right:12,zIndex:999,background:'rgba(253,250,246,.92)',borderRadius:10,padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:400,color:'#7A6555',boxShadow:'0 2px 8px rgba(0,0,0,.1)'}}>
