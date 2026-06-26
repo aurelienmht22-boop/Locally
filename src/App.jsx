@@ -1269,9 +1269,9 @@ function LoginView({onLogin}){
     try{
       if(code.trim()==='locally2024'){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
       const{data:cand}=await supabase.from('candidates').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(cand?.slug){localStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
+      if(cand?.slug){sessionStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
       const{data:hotel}=await supabase.from('hotels').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(hotel?.slug){localStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
+      if(hotel?.slug){sessionStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
       setErr('Code incorrect.');
     }catch{setErr('Code incorrect.');}
     finally{setLoading(false);}
@@ -2386,7 +2386,7 @@ function BarChart({data}){
 
 function PartnerView({onLogout}){
   const slug=window.location.pathname.replace(/^\/partner\//,'').split('/')[0];
-  const [authed,setAuthed]=useState(()=>localStorage.getItem('partner_slug')===slug);
+  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('partner_slug')===slug);
   const [partner,setPartner]=useState(null);
   const [code,setCode]=useState('');
   const [loginErr,setLoginErr]=useState('');
@@ -2626,7 +2626,7 @@ function PartnerView({onLogout}){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
     const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
     if(data){
-      localStorage.setItem('partner_slug',slug);
+      sessionStorage.setItem('partner_slug',slug);
       setPartner(data);
       setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
       setPartnerTags(data.tags||[]);
@@ -2756,7 +2756,7 @@ function PartnerView({onLogout}){
     setMenuForm(f=>({...f,photo_url:b64}));
   }
 
-  function logout(){localStorage.removeItem('partner_slug');onLogout();}
+  function logout(){sessionStorage.removeItem('partner_slug');onLogout();}
 
   const pFmt=d=>d?new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 
@@ -3690,7 +3690,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
 
 function HotelView({onLogout}){
   const slug=window.location.pathname.replace(/^\/hotel\//,'').split('/')[0];
-  const [authed,setAuthed]=useState(()=>localStorage.getItem('hotel_slug')===slug);
+  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('hotel_slug')===slug);
   const [loginCode,setLoginCode]=useState('');
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
@@ -3819,7 +3819,7 @@ function HotelView({onLogout}){
       const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('access_code',loginCode.trim()).eq('status','approuve').maybeSingle();
       if(error)throw error;
       if(data){
-        localStorage.setItem('hotel_slug',slug);
+        sessionStorage.setItem('hotel_slug',slug);
         setHotel(data);
         setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||''});
         setAuthed(true);
@@ -3830,7 +3830,7 @@ function HotelView({onLogout}){
     setLoginLoading(false);
   }
 
-  function logout(){localStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
+  function logout(){sessionStorage.removeItem('hotel_slug');window.history.pushState({},'','/login');onLogout();}
 
   if(!authed) return(
     <div className="prt-login-wrap">
