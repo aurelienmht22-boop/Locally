@@ -2458,11 +2458,13 @@ function PartnerView({onLogout}){
       if(rv>50){setReductionErr('La réduction maximum est de 50%.');setSavingInfo(false);return;}
     }
     try{
-      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:partnerForm.google_maps.trim(),reduction:partnerForm.reduction,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
+      const newAdresse=partnerForm.google_maps.trim();
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:partnerForm.reduction,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,...payload}));
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
+      if(newAdresse&&newAdresse!==partner.google_maps)geocodePartner(partner.id,newAdresse).catch(()=>{});
     }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingInfo(false);
   }
