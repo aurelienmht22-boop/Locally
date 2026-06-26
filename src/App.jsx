@@ -4834,13 +4834,16 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
     markersRef.current.forEach(m=>m.remove());
     markersRef.current=[];
     window.__locally_nav=(id)=>{const p=(partnersRef.current||[]).find(x=>x.id===id);if(p)onNavRef.current('generic',p);};
-    const pinIcon=L.divIcon({
-      html:`<svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 0C6.268 0 0 6.268 0 14c0 9.625 14 22 14 22s14-12.375 14-22C28 6.268 21.732 0 14 0z" fill="#6B1D1D"/><circle cx="14" cy="14" r="5.5" fill="white" opacity=".9"/></svg>`,
-      iconSize:[28,36],iconAnchor:[14,36],popupAnchor:[0,-38],className:'',
-    });
     (pts||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
       const r=p.reduction||'';
-      const m=L.marker([parseFloat(p.latitude),parseFloat(p.longitude)],{icon:pinIcon}).addTo(map).bindPopup(
+      const svgWhite=(ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre'])
+        .replace(/stroke="#6B1D1D"/g,'stroke="white"')
+        .replace(/width="24" height="24"/,'width="18" height="18"');
+      const catIcon=L.divIcon({
+        html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#6B1D1D;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(107,29,29,.4)">${svgWhite}</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #6B1D1D;margin-top:-1px"></div></div>`,
+        iconSize:[36,44],iconAnchor:[18,44],popupAnchor:[0,-48],className:'',
+      });
+      const m=L.marker([parseFloat(p.latitude),parseFloat(p.longitude)],{icon:catIcon}).addTo(map).bindPopup(
         `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="flex-shrink:0;background:#FAF4EC;border:1px solid rgba(107,29,29,.1);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center">${ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}</span>
