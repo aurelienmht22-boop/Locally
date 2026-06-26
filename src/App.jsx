@@ -38,6 +38,14 @@ const TAGS_PAR_CATEGORIE={
   'Autre':[],
 };
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const ICONE_PAR_CATEGORIE={
+  'Restauration':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3"/><path d="M21 15v7"/></svg>`,
+  'Boulangerie':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4.6 13.11 5.79-3.21C11.39 9.3 12 8.6 12 8V2s-.96 1.08-3.33 2.83c-1.18.88-2.4 1.88-3.14 2.67A3.62 3.62 0 0 0 4.6 13.11Z"/><path d="m4.6 10.89C2.19 11.9.91 14.32 1.23 16.57a3.62 3.62 0 0 0 5.33 2.83l1.38-.76"/><path d="m10.89 4.6C11.9 2.19 14.32.91 16.57 1.23a3.62 3.62 0 0 1 2.83 5.33l-.76 1.38"/><path d="m19.4 13.11-5.79-3.21C12.61 9.3 12 8.6 12 8V2s.96 1.08 3.33 2.83c1.18.88 2.4 1.88 3.14 2.67a3.62 3.62 0 0 1-.07 5.61Z"/><path d="m19.4 10.89c2.41 1.01 3.69 3.43 3.37 5.68a3.62 3.62 0 0 1-5.33 2.83l-1.38-.76"/></svg>`,
+  'Sport':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6.5" y1="12" x2="17.5" y2="12"/><path d="M2.5 9H5v6H2.5z"/><path d="M5 10h2v4H5z"/><path d="M17 10h2v4h-2z"/><path d="M19 9h2.5v6H19z"/></svg>`,
+  'Bien-être':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`,
+  'Activité':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+  'Autre':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+};
 const TAG_ICONS={'Sur place':'🍽️','À emporter':'📦','Livraison':'🛵','Végétarien':'🥗','Halal':'🌙','Brunch':'☕','Snack':'🥪','Gastronomique':'⭐','Viennoiseries':'🥐','Pain artisanal':'🍞','Pâtisserie':'🍰','Sans gluten':'🌾','Bio':'🌿','Massage':'💆','Yoga':'🧘','Méditation':'🕊️','Coiffure':'✂️','Barbier':'💈','Esthétique':'💄','Spa':'🛁','Naturopathie':'🌿','Ostéopathie':'🫁','Salle de sport':'🏋️','Coach privé':'💪','Natation':'🏊','Arts martiaux':'🥋','Pilates':'🧘','Crossfit':'⚡','Nautique':'⛵','Vélo':'🚵','Randonnée':'🥾','Visite guidée':'🗺️','Urbain':'🏙️','Plein air':'🌳','Culturel':'🎭','Aventure':'🧗','Détente':'😌','En famille':'👨‍👩‍👧'};
 function getOpenStatus(horaires){
   if(!horaires||!Object.keys(horaires).some(k=>horaires[k]))return null;
@@ -864,6 +872,7 @@ function HomePage({ onNavigate, supabasePartners }) {
                 <div key={cat.id} className="catcard-photo active" onClick={()=>onNavigate("category",cat.id)}>
                   <img src={photos[cat.id]} className="catcard-photo-img" alt={cat.label} loading="lazy"/>
                   <div className="catcard-photo-overlay"/>
+                  <div style={{position:'absolute',top:14,left:14,zIndex:2,background:'rgba(250,244,236,.92)',borderRadius:10,width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[cat.label]||ICONE_PAR_CATEGORIE['Autre']}}/>
                   <div className="catcard-photo-content">
                     <div className="catcard-photo-name">{cat.label}</div>
                     <div className="catcard-photo-cta fb">Voir les adresses →</div>
@@ -959,6 +968,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
               <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
                 <div className="pcard-img" style={{background:'#1C1208'}}>
                   {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:null}
+                  <div style={{position:'absolute',top:12,left:12,zIndex:2,background:'rgba(250,244,236,.92)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}}/>
                   {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={'pcard-status '+st}><div className={'sdot '+st}/><span className="fb">{lbl}</span></div>);})()}
                 </div>
                 <div className="pcard-body">
@@ -4832,7 +4842,10 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
       const r=p.reduction||'';
       const m=L.marker([parseFloat(p.latitude),parseFloat(p.longitude)],{icon:pinIcon}).addTo(map).bindPopup(
         `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;margin-bottom:3px">${p.nom}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="flex-shrink:0;background:#FAF4EC;border:1px solid rgba(107,29,29,.1);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center">${ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}</span>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1">${p.nom}</div>
+          </div>
           <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${p.categorie||''}</div>
           ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${r}</div>`:''}
           <button onclick="window.__locally_nav('${p.id}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
