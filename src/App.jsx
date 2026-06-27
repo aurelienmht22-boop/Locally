@@ -1068,9 +1068,9 @@ function DashboardPage() {
 
   async function fetchOrders() {
     setLoadingOrders(true);
-    const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    if (error) console.error("Supabase error:", error);
-    setOrders(data || []);
+    const json = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_orders'})}).then(r=>r.json());
+    if (json.error) console.error("admin-fetch error:", json.error);
+    setOrders(json.data || []);
     setLoadingOrders(false);
   }
 
@@ -1089,10 +1089,8 @@ function DashboardPage() {
       const { data: lastData } = await supabase.from("analyses").select("*").order("created_at", { ascending: false }).limit(1);
       const lastAnalysis = lastData?.[0] || null;
 
-      let query = supabase.from("orders").select("*").order("created_at", { ascending: true });
-      if (lastAnalysis?.date_to) query = query.gt("created_at", lastAnalysis.date_to);
-      const { data: newOrders } = await query;
-      const ordersToAnalyze = newOrders || [];
+      const ordersJson = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_orders',...(lastAnalysis?.date_to?{date_from:lastAnalysis.date_to}:{})})}).then(r=>r.json());
+      const ordersToAnalyze = ordersJson.data || [];
 
       const dateFrom = ordersToAnalyze[0]?.created_at || new Date().toISOString();
       const dateTo = ordersToAnalyze[ordersToAnalyze.length - 1]?.created_at || new Date().toISOString();
@@ -1517,19 +1515,20 @@ function AdminView(){
   }
   function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
   async function fetchBadges(){
-    const[{count:pc},{count:hc},{count:pa},{count:ha},{count:pmu},{count:hmu}]=await Promise.all([
-      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','pending'),
-      supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','pending'),
-      supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
-      supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','approuve'),
-      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu').not('partner_id','is',null),
-      supabase.from('messages').select('*',{count:'exact',head:true}).eq('status','non_lu').not('hotel_slug','is',null),
+    const[[{count:pc},{count:hc},{count:pa},{count:ha}],badges]=await Promise.all([
+      Promise.all([
+        supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','pending'),
+        supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','pending'),
+        supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
+        supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','approuve'),
+      ]),
+      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_badges'})}).then(r=>r.json()),
     ]);
     setBadgePending((pc||0)+(hc||0));
     setCountPartners(pa||0);
     setCountHotels(ha||0);
-    setBadgePartnerMsgs(pmu||0);
-    setBadgeHotelMsgs(hmu||0);
+    setBadgePartnerMsgs(badges.partnerMsgCount||0);
+    setBadgeHotelMsgs(badges.hotelMsgCount||0);
   }
   useEffect(()=>{if(authed)fetchBadges();},[authed]);
   function saveAdminPwd(){
@@ -1652,14 +1651,14 @@ function AdminView(){
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
-      await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
+      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:m.id})})));
       setBadgePartnerMsgs(b=>Math.max(0,b-unread.length));
       setUnreadMessages(u=>{const n={...u};delete n[p.id];return n;});
     }
     setPartnerMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingPM(false);
   }
   async function markAsRead(msgId,partnerId){
-    await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
+    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:msgId})});
     setPartnerMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadMessages(u=>{const n={...u};n[partnerId]=Math.max(0,(n[partnerId]||1)-1);if(!n[partnerId])delete n[partnerId];return n;});
     setBadgePartnerMsgs(b=>Math.max(0,b-1));
@@ -1672,14 +1671,14 @@ function AdminView(){
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
-      await Promise.all(unread.map(m=>supabase.from('messages').update({status:'lu'}).eq('id',m.id)));
+      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:m.id})})));
       setBadgeHotelMsgs(b=>Math.max(0,b-unread.length));
       setUnreadHotelMessages(u=>{const n={...u};delete n[h.slug];return n;});
     }
     setHotelMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingHM(false);
   }
   async function markHotelMsgAsRead(msgId,hotelSlug){
-    await supabase.from('messages').update({status:'lu'}).eq('id',msgId);
+    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:msgId})});
     setHotelMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadHotelMessages(u=>{const n={...u};n[hotelSlug]=Math.max(0,(n[hotelSlug]||1)-1);if(!n[hotelSlug])delete n[hotelSlug];return n;});
     setBadgeHotelMsgs(b=>Math.max(0,b-1));

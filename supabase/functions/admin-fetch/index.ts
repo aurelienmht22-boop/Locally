@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'open_partner', 'open_hotel']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'open_partner', 'open_hotel']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, id } = await req.json()
+    const { action, id, date_from } = await req.json()
 
     if (!VALID_ACTIONS.includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
@@ -85,6 +85,22 @@ Deno.serve(async (req) => {
         sbGet(url, key, 'candidates?select=id,nom&status=eq.approuve'),
       ])
       result = { txnsAll, clientCount, qrTotal, qrScanned, partnerActiveCount, txns30, allCands }
+    }
+
+    else if (action === 'fetch_orders') {
+      const path = date_from
+        ? `orders?select=*&created_at=gt.${encodeURIComponent(date_from)}&order=created_at.asc`
+        : `orders?select=*&order=created_at.desc`
+      const data = await sbGet(url, key, path)
+      result = { data }
+    }
+
+    else if (action === 'fetch_badges') {
+      const [partnerMsgCount, hotelMsgCount] = await Promise.all([
+        sbCount(url, key, 'messages?select=id&status=eq.non_lu&partner_id=not.is.null'),
+        sbCount(url, key, 'messages?select=id&status=eq.non_lu&hotel_slug=not.is.null'),
+      ])
+      result = { partnerMsgCount, hotelMsgCount }
     }
 
     else if (action === 'open_partner') {
