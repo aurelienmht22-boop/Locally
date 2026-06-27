@@ -1256,6 +1256,10 @@ function LoginView({onLogin}){
   const [hSent,setHSent]=useState(false);
   const [hErr,setHErr]=useState('');
   const [hLoading,setHLoading]=useState(false);
+  const [forgotOpen,setForgotOpen]=useState(false);
+  const [forgotEmail,setForgotEmail]=useState('');
+  const [forgotLoading,setForgotLoading]=useState(false);
+  const [forgotDone,setForgotDone]=useState(false);
 
   async function handleLogin(e){
     e.preventDefault();setErr('');setLoading(true);
@@ -1294,6 +1298,18 @@ function LoginView({onLogin}){
     finally{setHLoading(false);}
   }
 
+  async function handleForgotCode(e){
+    e.preventDefault();setForgotLoading(true);
+    try{
+      await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-access-code',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+        body:JSON.stringify({email:forgotEmail.trim()}),
+      });
+    }catch{}
+    setForgotDone(true);setForgotLoading(false);
+  }
+
   return(
     <div className="lgn-wrap">
       <style>{CSS}</style>
@@ -1310,6 +1326,14 @@ function LoginView({onLogin}){
               {err&&<div className="lgn-err fb">{err}</div>}
               <button type="submit" className="lgn-btn fb" disabled={loading}>{loading?'Vérification…':'Se connecter →'}</button>
             </form>
+            {!forgotOpen&&<button type="button" className="fb" style={{background:'none',border:'none',color:'rgba(247,243,238,.35)',fontSize:12,cursor:'pointer',textDecoration:'underline',marginTop:10,padding:0,display:'block'}} onClick={()=>setForgotOpen(true)}>Code oublié ?</button>}
+            {forgotOpen&&(forgotDone
+              ?<div className="fb" style={{fontSize:12,color:'rgba(247,243,238,.5)',marginTop:12,lineHeight:1.6}}>Si un compte existe avec cet email, vous recevrez votre code.</div>
+              :<form onSubmit={handleForgotCode} style={{marginTop:12}}>
+                <input className="lgn-input fb" type="email" placeholder="Votre email" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} required/>
+                <button type="submit" className="lgn-btn fb" disabled={forgotLoading}>{forgotLoading?'Envoi…':'Recevoir mon code'}</button>
+              </form>
+            )}
             <hr className="lgn-divider"/>
             <div className="lgn-section-label fb">Faire une candidature</div>
             <button className="lgn-choice-btn fb" onClick={()=>setView('commerce')}><span>Je suis un commerce</span><span>→</span></button>
