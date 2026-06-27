@@ -46,6 +46,7 @@ const ICONE_PAR_CATEGORIE={
   'Activité':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
   'Autre':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
 };
+function escapeHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 const TAG_ICONS={'Sur place':'🍽️','À emporter':'📦','Livraison':'🛵','Végétarien':'🥗','Halal':'🌙','Brunch':'☕','Snack':'🥪','Gastronomique':'⭐','Viennoiseries':'🥐','Pain artisanal':'🍞','Pâtisserie':'🍰','Sans gluten':'🌾','Bio':'🌿','Massage':'💆','Yoga':'🧘','Méditation':'🕊️','Coiffure':'✂️','Barbier':'💈','Esthétique':'💄','Spa':'🛁','Naturopathie':'🌿','Ostéopathie':'🫁','Salle de sport':'🏋️','Coach privé':'💪','Natation':'🏊','Arts martiaux':'🥋','Pilates':'🧘','Crossfit':'⚡','Nautique':'⛵','Vélo':'🚵','Randonnée':'🥾','Visite guidée':'🗺️','Urbain':'🏙️','Plein air':'🌳','Culturel':'🎭','Aventure':'🧗','Détente':'😌','En famille':'👨‍👩‍👧'};
 function getOpenStatus(horaires){
   if(!horaires||!Object.keys(horaires).some(k=>horaires[k]))return null;
@@ -4843,11 +4844,11 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
         `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="flex-shrink:0;background:#FAF4EC;border:1px solid rgba(107,29,29,.1);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center">${ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}</span>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1">${p.nom}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1">${escapeHtml(p.nom)}</div>
           </div>
-          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${p.categorie||''}</div>
-          ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${r}</div>`:''}
-          <button onclick="window.__locally_nav('${p.id}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
+          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${escapeHtml(p.categorie)}</div>
+          ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${escapeHtml(r)}</div>`:''}
+          <button onclick="window.__locally_nav('${escapeHtml(p.id)}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
         </div>`,{maxWidth:240}
       );
       markersRef.current.push(m);
