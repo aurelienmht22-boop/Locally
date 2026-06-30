@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     // 4. Construction payload
-    const loginUrl = `https://locally-gules.vercel.app/${type === 'hotel' ? 'hotel' : 'partner'}/${slug}`
+    const loginUrl = `https://mylocally.fr/${type === 'hotel' ? 'hotel' : 'partner'}/${slug}`
     const html = `
 <div style="background:#FAF4EC;padding:40px 20px;font-family:Georgia,serif;">
   <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:8px;overflow:hidden;">

@@ -1603,7 +1603,7 @@ function AdminView(){
   }
   async function sendSms(telephone,nom,status,access_code){
     let message;
-    if(status==='approuve') message=`Bonjour ${nom}, votre candidature Locally a été acceptée ! Votre code d'accès : ${access_code}. Connectez-vous sur : locally-gules.vercel.app/login`;
+    if(status==='approuve') message=`Bonjour ${nom}, votre candidature Locally a été acceptée ! Votre code d'accès : ${access_code}. Connectez-vous sur : mylocally.fr/login`;
     else if(status==='rejete') message=`Bonjour ${nom}, nous avons bien étudié votre candidature Locally mais ne pouvons pas donner suite pour le moment. Merci de votre intérêt.`;
     else if(status==='en_attente') message=`Bonjour ${nom}, nous avons bien reçu votre candidature Locally. Nous revenons vers vous rapidement.`;
     else return;
@@ -1691,7 +1691,7 @@ function AdminView(){
     setAccessSaved(true);setTimeout(()=>setAccessSaved(false),2500);
   }
   function copyPartnerLink(){
-    navigator.clipboard.writeText(`locally-gules.vercel.app/partner/${selAccess.slug.trim()}`);
+    navigator.clipboard.writeText(`mylocally.fr/partner/${selAccess.slug.trim()}`);
   }
   async function saveCommActive(val){
     setSavingComm(true);
@@ -2248,7 +2248,7 @@ function AdminView(){
                       {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
                     </button>
                     {hotelAccess.slug.trim()&&(
-                      <button className="fb" style={{flex:1,padding:'9px 14px',background:'transparent',border:'1px solid rgba(247,243,238,.12)',borderRadius:8,color:'rgba(247,243,238,.5)',cursor:'pointer',fontSize:12,transition:'all .2s'}} onClick={()=>navigator.clipboard.writeText(`locally-gules.vercel.app/hotel/${hotelAccess.slug.trim()}`)}>
+                      <button className="fb" style={{flex:1,padding:'9px 14px',background:'transparent',border:'1px solid rgba(247,243,238,.12)',borderRadius:8,color:'rgba(247,243,238,.5)',cursor:'pointer',fontSize:12,transition:'all .2s'}} onClick={()=>navigator.clipboard.writeText(`mylocally.fr/hotel/${hotelAccess.slug.trim()}`)}>
                         Copier le lien ↗
                       </button>
                     )}
@@ -3619,7 +3619,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
                         <div className="visit-qr-partner-tag fb">Partenaire Locally</div>
                       </div>
                       <div className="visit-qr-box">
-                        <QRCodeSVG value={`https://locally-gules.vercel.app/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
+                        <QRCodeSVG value={`https://mylocally.fr/scan?id=${visitData.qr_code_id}`} size={220} fgColor="#1C1208" bgColor="#FFFFFF" level="M"/>
                       </div>
                       <div className="visit-qr-client">
                         <div className="visit-qr-name fd">{visitData.clientName}</div>
@@ -4272,7 +4272,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
     if(!resetEmail.trim()){setErr('Veuillez saisir votre adresse email.');return;}
     if(!/\S+@\S+\.\S+/.test(resetEmail.trim())){setErr('Adresse email invalide.');return;}
     setLoading(true);
-    const{error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:'https://locally-gules.vercel.app/reset-password'});
+    const{error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:'https://mylocally.fr/reset-password'});
     setLoading(false);
     if(error){setErr(xlErr(error.message));return;}
     setResetSent(true);
