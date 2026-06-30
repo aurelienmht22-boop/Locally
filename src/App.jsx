@@ -1280,7 +1280,7 @@ function LoginView({onLogin}){
     setCLoading(true);
     try{
       const cat=cForm.categorie==='Autre'?cForm.categorie_autre.trim():cForm.categorie;
-      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:cForm.reduction.trim()+'%',email:cForm.email.trim(),status:'pending'}]);
+      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:parseInt(cForm.reduction)||null,email:cForm.email.trim(),status:'pending'}]);
       if(error)throw error;
       setCSent(true);
     }catch(err){console.error('[Locally] candidates INSERT error:',err);setCErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -1366,7 +1366,7 @@ function LoginView({onLogin}){
                   <div><div className="lgn-field-label fb">Description courte</div><textarea className="lgn-textarea fb" value={cForm.description} onChange={e=>setCForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" required/></div>
                   <div><div className="lgn-field-label fb">Réduction proposée</div>
                     <div className="lgn-input-group">
-                      <input className="lgn-input fb" type="number" min="1" max="100" value={cForm.reduction} onChange={e=>setCForm(f=>({...f,reduction:e.target.value}))} placeholder="10" required style={{MozAppearance:'textfield'}}/>
+                      <input className="lgn-input fb" type="number" min="10" max="50" value={cForm.reduction} onChange={e=>setCForm(f=>({...f,reduction:e.target.value}))} placeholder="10" required style={{MozAppearance:'textfield'}}/>
                       <span className="lgn-input-suffix fb">%</span>
                     </div>
                   </div>
@@ -2053,7 +2053,7 @@ function AdminView(){
                 ['Téléphone',sel.telephone],
                 ['Email',sel.email],
                 ['Description',sel.description],
-                ['Réduction',sel.reduction],
+                ['Réduction',sel.reduction!=null?sel.reduction+'%':null],
                 ['Date',admFmt(sel.created_at)],
               ].map(([k,v])=>(
                 <div key={k} className="adm-field">
@@ -2140,7 +2140,7 @@ function AdminView(){
                   ['Téléphone',selPartner.telephone],
                   ['Email',selPartner.email],
                   ['Adresse',selPartner.google_maps],
-                  ['Réduction',selPartner.reduction],
+                  ['Réduction',selPartner.reduction!=null?selPartner.reduction+'%':null],
                 ].map(([k,v])=>(
                   <div key={k} className="adm-field">
                     <div className="adm-field-label">{k}</div>
@@ -2448,7 +2448,7 @@ function PartnerView({onLogout}){
       if(error)throw error;
       if(data){
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
       }
@@ -2465,7 +2465,7 @@ function PartnerView({onLogout}){
     }
     try{
       const newAdresse=partnerForm.google_maps.trim();
-      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:partnerForm.reduction,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,...payload}));
@@ -2624,7 +2624,7 @@ function PartnerView({onLogout}){
     if(data){
       sessionStorage.setItem('partner_slug',slug);
       setPartner(data);
-      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction||'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
       setPartnerTags(data.tags||[]);
       setHoraires(data.horaires||{});
       setAuthed(true);
@@ -2877,7 +2877,7 @@ function PartnerView({onLogout}){
               ))}
               <div className="prt-field">
                 <div className="prt-label fb">Réduction proposée <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(min. 10%, max. 50%)</span></div>
-                <input className="prt-input fb" type="text" value={partnerForm.reduction||''} onChange={e=>{setPartnerForm(f=>({...f,reduction:e.target.value}));setReductionErr('');}} placeholder="10% sur tous les achats"/>
+                <input className="prt-input fb" type="number" min="10" max="50" value={partnerForm.reduction||''} onChange={e=>{setPartnerForm(f=>({...f,reduction:e.target.value}));setReductionErr('');}} placeholder="15"/>
                 {reductionErr&&<div className="prt-err fb" style={{marginTop:6,fontSize:12}}>{reductionErr}</div>}
                 {partner.commission_active===true&&parseReduction(partnerForm.reduction)>=10&&(
                   <div style={{marginTop:8,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'#6B1D1D',background:'rgba(107,29,29,.06)',border:'1px solid rgba(107,29,29,.12)',borderRadius:8,padding:'10px 12px',lineHeight:1.6}}>
@@ -3448,7 +3448,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
     else onAuthRequired((u,prof)=>generateVisit(u,prof));
   }
 
-  const fmtR=r=>r&&/^[\d.]+$/.test(r.trim())?r.trim()+'%':r;
+  const fmtR=r=>{const s=String(r??'').trim();return s&&/^[\d.]+$/.test(s)?s+'%':s;};
   const horaires=partner.horaires||{};
   const hasHoraires=Object.keys(horaires).some(k=>horaires[k]);
 
@@ -4684,7 +4684,7 @@ function JoindreView({onHome}){
     setLoading(true);
     try{
       const cat=form.categorie==='Autre'?form.categorie_autre.trim():form.categorie;
-      const reduction=form.reduction.trim()+'%';
+      const reduction=parseInt(form.reduction)||null;
       const{error}=await supabase.from('candidates').insert([{
         nom:form.nom.trim(),
         categorie:cat,
@@ -4760,7 +4760,7 @@ function JoindreView({onHome}){
               <div className="join-field">
                 <div className="join-label fb">Réduction proposée</div>
                 <div className="join-input-group">
-                  <input className="join-input fb" type="number" name="reduction" min="1" max="100" value={form.reduction} onChange={handleChange} placeholder="10" required style={{MozAppearance:'textfield'}}/>
+                  <input className="join-input fb" type="number" name="reduction" min="10" max="50" value={form.reduction} onChange={handleChange} placeholder="10" required style={{MozAppearance:'textfield'}}/>
                   <span className="join-input-suffix fb">%</span>
                 </div>
               </div>
@@ -4831,7 +4831,7 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
     markersRef.current=[];
     window.__locally_nav=(id)=>{const p=(partnersRef.current||[]).find(x=>x.id===id);if(p)onNavRef.current('generic',p);};
     (pts||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
-      const r=p.reduction||'';
+      const r=p.reduction!=null?p.reduction+'%':'';
       const svgWhite=(ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre'])
         .replace(/stroke="#6B1D1D"/g,'stroke="white"')
         .replace(/width="24" height="24"/,'width="18" height="18"');
