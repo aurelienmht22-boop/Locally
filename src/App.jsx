@@ -4215,8 +4215,8 @@ function CommentCaMarchePage({onHome}){
   );
 }
 
-function AuthModal({onClose,onSuccess,defaultTab='login'}){
-  const[tab,setTab]=useState(defaultTab);
+function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
+  const[tab,setTab]=useState(canRegister?defaultTab:'login');
   const[loading,setLoading]=useState(false);
   const[err,setErr]=useState('');
   const[info,setInfo]=useState('');
@@ -4280,6 +4280,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
 
   async function handleRegister(e){
     e.preventDefault();setErr('');
+    if(!localStorage.getItem('source_hotel')){setErr('Pour créer un compte, scannez le QR code de votre hôtel.');return;}
     if(!regPrenom.trim()||regPrenom.trim().length<2){setErr('Le prénom doit contenir au moins 2 caractères.');return;}
     if(regPwd.length<8){setErr('Le mot de passe doit contenir au moins 8 caractères.');return;}
     if(regPwd!==regPwd2){setErr('Les mots de passe ne correspondent pas.');return;}
@@ -4332,7 +4333,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
             <div className="auth-sub fb">{tab==='login'?'Connectez-vous pour générer votre QR code.':'Créez votre compte pour profiter des réductions.'}</div>
             <div className="auth-tabs">
               <button className={'auth-tab fb'+(tab==='login'?' active':'')} onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button>
-              <button className={'auth-tab fb'+(tab==='register'?' active':'')} onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button>
+              {canRegister&&<button className={'auth-tab fb'+(tab==='register'?' active':'')} onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button>}
             </div>
 
             {err&&<div className="auth-err fb">{err}</div>}
@@ -4386,7 +4387,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login'}){
 
             <div className="auth-switch fb">
               {tab==='login'
-                ?<>Pas encore de compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button></>
+                ?(canRegister&&<>Pas encore de compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('register');setErr('');setInfo('');}}>Créer un compte</button></>)
                 :<>Déjà un compte ?{' '}<button className="auth-switch-btn fb" onClick={()=>{setTab('login');setErr('');setInfo('');}}>Se connecter</button></>
               }
             </div>
@@ -5054,7 +5055,7 @@ export default function App() {
       {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==='carte'&&<CartePage partners={supabasePartners} user={user} profile={profile} onNavigatePartner={navPartner} onBack={()=>siteNav('/')}/>}
-      {authModal.open&&<AuthModal defaultTab={authModal.tab} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
+      {authModal.open&&<AuthModal defaultTab={authModal.tab} canRegister={!!pendingHotelSlug||!!localStorage.getItem('source_hotel')} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
 }
