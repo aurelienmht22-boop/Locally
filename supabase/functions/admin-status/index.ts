@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, table, id, status, slug, new_code } = await req.json()
+    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to } = await req.json()
 
-    if (!['update_status', 'mark_read', 'change_code'].includes(action)) {
+    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -134,6 +134,28 @@ Deno.serve(async (req) => {
         : `slug=eq.${encodeURIComponent(slug)}`
       const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${filter}`, {
         method: 'PATCH', headers: patchHeaders, body: JSON.stringify({ access_code: hash }),
+      })
+      if (!res.ok) {
+        const err = await res.text()
+        return new Response(JSON.stringify({ error: 'Supabase error', detail: err }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    else if (action === 'insert_analysis') {
+      if (!content) {
+        return new Response(JSON.stringify({ error: 'content requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const res = await fetch(`${supabaseUrl}/rest/v1/analyses`, {
+        method: 'POST',
+        headers: patchHeaders,
+        body: JSON.stringify({ content, orders_count, date_from, date_to }),
       })
       if (!res.ok) {
         const err = await res.text()

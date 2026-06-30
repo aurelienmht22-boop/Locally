@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'open_partner', 'open_hotel']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, id, date_from } = await req.json()
+    const { action, id, date_from, limit: limitCount } = await req.json()
 
     if (!VALID_ACTIONS.includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
@@ -95,6 +95,14 @@ Deno.serve(async (req) => {
       const path = date_from
         ? `orders?select=*&created_at=gt.${encodeURIComponent(date_from)}&order=created_at.asc`
         : `orders?select=*&order=created_at.desc`
+      const data = await sbGet(url, key, path)
+      result = { data }
+    }
+
+    else if (action === 'fetch_analyses') {
+      const path = limitCount
+        ? `analyses?select=*&order=created_at.desc&limit=${limitCount}`
+        : `analyses?select=*&order=created_at.desc`
       const data = await sbGet(url, key, path)
       result = { data }
     }

@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.admin-regenerate-code]
 verify_jwt = false
+
+[functions.partner-menu]
+verify_jwt = false

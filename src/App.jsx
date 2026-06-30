@@ -1076,9 +1076,8 @@ function DashboardPage() {
 
   async function fetchAnalyses() {
     setLoadingAnalyses(true);
-    const { data, error } = await supabase.from("analyses").select("*").order("created_at", { ascending: false });
-    if (error) console.error("Supabase analyses error:", error);
-    setAnalyses(data || []);
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_analyses'})}).then(r=>r.json());
+    setAnalyses(json.data||[]);
     setLoadingAnalyses(false);
   }
 
@@ -1086,8 +1085,8 @@ function DashboardPage() {
     setGenerating(true);
     setFreshAnalysis(null);
     try {
-      const { data: lastData } = await supabase.from("analyses").select("*").order("created_at", { ascending: false }).limit(1);
-      const lastAnalysis = lastData?.[0] || null;
+      const lastJson=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_analyses',limit:1})}).then(r=>r.json());
+      const lastAnalysis = lastJson.data?.[0] || null;
 
       const ordersJson = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_orders',...(lastAnalysis?.date_to?{date_from:lastAnalysis.date_to}:{})})}).then(r=>r.json());
       const ordersToAnalyze = ordersJson.data || [];
@@ -1108,13 +1107,7 @@ function DashboardPage() {
       const json = await res.json();
       const content = json.content || "";
 
-      const { error: insertError } = await supabase.from("analyses").insert({
-        content,
-        orders_count: ordersToAnalyze.length,
-        date_from: dateFrom,
-        date_to: dateTo,
-      });
-      if (insertError) console.error("Supabase insert error:", insertError);
+      await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'insert_analysis',content,orders_count:ordersToAnalyze.length,date_from:dateFrom,date_to:dateTo})});
 
       setFreshAnalysis(content);
       await fetchAnalyses();
@@ -2719,11 +2712,14 @@ function PartnerView({onLogout}){
     setSavingMenu(true);setMenuErr('');
     try{
       const payload={nom:menuForm.nom,description:menuForm.description||null,prix:parseFloat(menuForm.prix),photo_url:menuForm.photo_url||null,duree:menuForm.duree||null};
-      const q=menuForm.id
-        ?supabase.from('menu_items').update(payload).eq('id',menuForm.id)
-        :supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
-      const{error}=await q;
-      if(error)throw error;
+      if(menuForm.id){
+        const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/partner-menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update',partner_id:partner.id,item_id:menuForm.id,payload})});
+        const json=await res.json();
+        if(!res.ok||json.error)throw new Error(json.error||res.status);
+      }else{
+        const{error}=await supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
+        if(error)throw error;
+      }
       setMenuForm(null);await fetchMenu();
     }catch(e){setMenuErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingMenu(false);
@@ -2731,8 +2727,9 @@ function PartnerView({onLogout}){
 
   async function deleteMenuItem(id){
     try{
-      const{error}=await supabase.from('menu_items').delete().eq('id',id);
-      if(error)throw error;
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/partner-menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',partner_id:partner.id,item_id:id})});
+      const json=await res.json();
+      if(!res.ok||json.error)throw new Error(json.error||res.status);
       setMenuItems(ms=>ms.filter(m=>m.id!==id));
     }catch(e){setMenuErr('Erreur lors de la suppression. Réessayez.');}
     setDeletingId(null);
