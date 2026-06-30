@@ -12,3 +12,9 @@ verify_jwt = false
 
 [functions.send-access-code]
 verify_jwt = false
+
+[functions.verify-code]
+verify_jwt = false
+
+[functions.admin-regenerate-code]
+verify_jwt = false

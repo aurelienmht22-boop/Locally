@@ -13,6 +13,10 @@ async function sbGet(url: string, key: string, path: string): Promise<unknown[]>
   return await res.json()
 }
 
+function stripCode(items: unknown[]): unknown[] {
+  return items.map(r => { const { access_code: _ac, ...rest } = r as Record<string, unknown>; return rest })
+}
+
 async function sbCount(url: string, key: string, path: string): Promise<number> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
     method: 'HEAD',
@@ -46,24 +50,24 @@ Deno.serve(async (req) => {
     let result: unknown
 
     if (action === 'fetch_cands') {
-      const data = await sbGet(url, key, 'candidates?select=*&order=created_at.desc')
+      const data = stripCode(await sbGet(url, key, 'candidates?select=*&order=created_at.desc'))
       result = { data }
     }
 
     else if (action === 'fetch_partners') {
-      const [data, msgs] = await Promise.all([
+      const [raw, msgs] = await Promise.all([
         sbGet(url, key, 'candidates?select=*&status=eq.approuve&order=created_at.desc'),
         sbGet(url, key, 'messages?select=partner_id&status=eq.non_lu&partner_id=not.is.null'),
       ])
-      result = { data, msgs }
+      result = { data: stripCode(raw), msgs }
     }
 
     else if (action === 'fetch_hotels') {
-      const [data, msgs] = await Promise.all([
+      const [raw, msgs] = await Promise.all([
         sbGet(url, key, 'hotels?select=*&order=created_at.desc'),
         sbGet(url, key, 'messages?select=hotel_slug&status=eq.non_lu&hotel_slug=not.is.null'),
       ])
-      result = { data, msgs }
+      result = { data: stripCode(raw), msgs }
     }
 
     else if (action === 'fetch_visits') {

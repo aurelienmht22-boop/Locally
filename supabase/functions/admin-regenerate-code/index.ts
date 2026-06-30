@@ -26,10 +26,12 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { email } = await req.json()
-    if (!email) return new Response(JSON.stringify({ error: 'Email requis' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    const { table, id } = await req.json()
+    if (!id || !['candidates', 'hotels'].includes(table)) {
+      return new Response(JSON.stringify({ error: 'Paramètres invalides' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     const url = Deno.env.get('SUPABASE_URL') ?? ''
     const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -39,40 +41,33 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json', 'Prefer': 'return=minimal',
     }
 
-    // Search candidates then hotels by email
-    let found: { nom: string; slug: string; id?: string } | null = null
-    let foundTable = 'candidates'
-
-    const candRes = await fetch(
-      `${url}/rest/v1/candidates?email=eq.${encodeURIComponent(email)}&status=eq.approuve&select=id,nom,slug`,
+    // Fetch email + nom
+    const infoRes = await fetch(
+      `${url}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&select=email,nom`,
       { headers: getHeaders }
     )
-    const cands = await candRes.json()
-    if (Array.isArray(cands) && cands.length > 0) { found = cands[0]; foundTable = 'candidates' }
+    const infoArr = await infoRes.json()
+    const info = Array.isArray(infoArr) && infoArr.length > 0 ? infoArr[0] : null
 
-    if (!found) {
-      const hotelRes = await fetch(
-        `${url}/rest/v1/hotels?email=eq.${encodeURIComponent(email)}&status=eq.approuve&select=id,nom,slug`,
-        { headers: getHeaders }
-      )
-      const hotels = await hotelRes.json()
-      if (Array.isArray(hotels) && hotels.length > 0) { found = hotels[0]; foundTable = 'hotels' }
-    }
-
-    // Always return neutral response to avoid user enumeration
-    if (!found) {
-      return new Response(JSON.stringify({ success: false }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!info?.email) {
+      return new Response(JSON.stringify({ error: 'Compte introuvable' }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Generate new code + hash, update DB
+    // Generate new code + hash + update DB
     const plainCode = generateCode()
     const hash = await bcrypt.hash(plainCode, 10)
 
-    await fetch(`${url}/rest/v1/${foundTable}?id=eq.${encodeURIComponent(found.id ?? '')}`, {
+    const patchRes = await fetch(`${url}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, {
       method: 'PATCH', headers: patchHeaders, body: JSON.stringify({ access_code: hash }),
     })
+    if (!patchRes.ok) {
+      const err = await patchRes.text()
+      return new Response(JSON.stringify({ error: 'Supabase error', detail: err }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     // Send email with new plain code
     const apiKey = Deno.env.get('BREVO_API_KEY') ?? ''
@@ -86,14 +81,14 @@ Deno.serve(async (req) => {
       <p style="margin:6px 0 0;font-size:13px;color:rgba(250,244,236,0.7);">Le meilleur de Bordeaux, à portée de main.</p>
     </div>
     <div style="padding:32px;">
-      <h2 style="margin:0 0 12px;font-size:20px;color:#1A0A0A;font-weight:normal;">Votre nouveau code d'accès</h2>
-      <p style="margin:0 0 24px;font-size:14px;color:#7A6555;line-height:1.7;">Bonjour ${found.nom}, voici votre nouveau code d'accès. L'ancien code a été désactivé.</p>
+      <h2 style="margin:0 0 12px;font-size:20px;color:#1A0A0A;font-weight:normal;">Votre code d'accès a été régénéré</h2>
+      <p style="margin:0 0 24px;font-size:14px;color:#7A6555;line-height:1.7;">Bonjour ${info.nom}, voici votre nouveau code d'accès Locally. L'ancien code a été désactivé.</p>
       <div style="background:#FAF4EC;border-left:3px solid #6B1D1D;padding:14px 18px;margin:0 0 24px;border-radius:0 6px 6px 0;">
         <p style="margin:0 0 6px;font-size:12px;color:#B0A090;">Votre code d'accès</p>
         <p style="margin:0;font-size:20px;font-weight:bold;color:#6B1D1D;letter-spacing:2px;">${plainCode}</p>
       </div>
       <a href="https://locally-gules.vercel.app/login" style="display:block;background:#6B1D1D;color:#FAF4EC;text-decoration:none;text-align:center;padding:14px 24px;border-radius:6px;font-size:14px;font-family:Georgia,serif;letter-spacing:0.3px;">Accéder à mon espace →</a>
-      <p style="margin:24px 0 0;font-size:12px;color:#B0A090;line-height:1.6;">Si vous n'avez pas demandé ce code, contactez-nous immédiatement.</p>
+      <p style="margin:24px 0 0;font-size:12px;color:#B0A090;line-height:1.6;">Si vous n'avez pas demandé ce changement, contactez-nous immédiatement.</p>
     </div>
     <div style="border-top:1px solid #F0E8DE;padding:20px 32px;text-align:center;">
       <p style="margin:0;font-size:12px;color:#B0A090;">© 2026 Locally · Bordeaux · <a href="mailto:contact@mylocally.fr" style="color:#6B1D1D;text-decoration:none;">contact@mylocally.fr</a></p>
@@ -106,7 +101,7 @@ Deno.serve(async (req) => {
       headers: { 'accept': 'application/json', 'api-key': apiKey, 'content-type': 'application/json' },
       body: JSON.stringify({
         sender: { name: 'Locally', email: senderEmail },
-        to: [{ email, name: found.nom }],
+        to: [{ email: info.email, name: info.nom }],
         subject: "Votre nouveau code d'accès Locally",
         htmlContent: html,
       }),

@@ -1245,6 +1245,7 @@ const STATUS_BADGES={
 function LoginView({onLogin}){
   const [view,setView]=useState('home');
   const [code,setCode]=useState('');
+  const [loginEmail,setLoginEmail]=useState('');
   const [err,setErr]=useState('');
   const [loading,setLoading]=useState(false);
   const [cForm,setCForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
@@ -1264,11 +1265,11 @@ function LoginView({onLogin}){
     e.preventDefault();setErr('');setLoading(true);
     try{
       if(ADMIN_PWD&&code.trim()===ADMIN_PWD){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
-      const{data:cand}=await supabase.from('candidates').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(cand?.slug){sessionStorage.setItem('partner_slug',cand.slug);window.history.pushState({},'',`/partner/${cand.slug}`);onLogin('partner');return;}
-      const{data:hotel}=await supabase.from('hotels').select('slug').eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-      if(hotel?.slug){sessionStorage.setItem('hotel_slug',hotel.slug);window.history.pushState({},'',`/hotel/${hotel.slug}`);onLogin('hotel');return;}
-      setErr('Code incorrect.');
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({email:loginEmail.trim(),code:code.trim()})});
+      const json=await res.json();
+      if(json.valid&&json.type==='partner'&&json.data?.slug){sessionStorage.setItem('partner_slug',json.data.slug);window.history.pushState({},'',`/partner/${json.data.slug}`);onLogin('partner');return;}
+      if(json.valid&&json.type==='hotel'&&json.data?.slug){sessionStorage.setItem('hotel_slug',json.data.slug);window.history.pushState({},'',`/hotel/${json.data.slug}`);onLogin('hotel');return;}
+      setErr('Email ou code incorrect.');
     }catch{setErr('Code incorrect.');}
     finally{setLoading(false);}
   }
@@ -1321,6 +1322,7 @@ function LoginView({onLogin}){
             <hr className="lgn-divider"/>
             <div className="lgn-section-label fb">Se connecter</div>
             <form onSubmit={handleLogin}>
+              <input className="lgn-input fb" type="email" autoComplete="username" placeholder="Email" value={loginEmail} onChange={e=>{setLoginEmail(e.target.value);setErr('');}} required/>
               <input className="lgn-input fb" type="password" autoComplete="current-password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setErr('');}} required/>
               {err&&<div className="lgn-err fb">{err}</div>}
               <button type="submit" className="lgn-btn fb" disabled={loading}>{loading?'Vérification…':'Se connecter →'}</button>
@@ -1462,7 +1464,7 @@ function AdminView(){
   const [loadingCand,setLoadingCand]=useState(false);
   const [sel,setSel]=useState(null);
   const [confirmReject,setConfirmReject]=useState(false);
-  const [selAccess,setSelAccess]=useState({slug:'',access_code:''});
+  const [selAccess,setSelAccess]=useState({slug:''});
   const [savingAccess,setSavingAccess]=useState(false);
   const [accessSaved,setAccessSaved]=useState(false);
   const [accessErr,setAccessErr]=useState('');
@@ -1487,10 +1489,12 @@ function AdminView(){
   const [loadingHotels,setLoadingHotels]=useState(false);
   const [selHotel,setSelHotel]=useState(null);
   const [confirmHotelReject,setConfirmHotelReject]=useState(false);
-  const [hotelAccess,setHotelAccess]=useState({slug:'',access_code:''});
+  const [hotelAccess,setHotelAccess]=useState({slug:''});
   const [savingHotelAccess,setSavingHotelAccess]=useState(false);
   const [hotelAccessSaved,setHotelAccessSaved]=useState(false);
   const [hotelAccessErr,setHotelAccessErr]=useState('');
+  const [regenLoading,setRegenLoading]=useState(false);
+  const [regenDone,setRegenDone]=useState(false);
   const [refreshing,setRefreshing]=useState(false);
   const [unreadMessages,setUnreadMessages]=useState({});
   const [partnerMessages,setPartnerMessages]=useState([]);
@@ -1597,10 +1601,10 @@ function AdminView(){
   }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
-    const{error}=await supabase.from('hotels').update({slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}).eq('id',selHotel.id);
+    const{error}=await supabase.from('hotels').update({slug:hotelAccess.slug.trim()}).eq('id',selHotel.id);
     setSavingHotelAccess(false);
     if(error){setHotelAccessErr('Erreur : '+error.message);return;}
-    setSelHotel(s=>({...s,slug:hotelAccess.slug.trim(),access_code:hotelAccess.access_code.trim()}));
+    setSelHotel(s=>({...s,slug:hotelAccess.slug.trim()}));
     setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
   }
   async function sendSms(telephone,nom,status,access_code){
@@ -1617,30 +1621,21 @@ function AdminView(){
     });
     console.log('[SMS] Réponse →',res.status,await res.text().catch(()=>''));
   }
-  async function updateHotelStatus(id,status,slug,access_code){
+  async function updateHotelStatus(id,status,slug){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
-      body:JSON.stringify({action:'update_status',table:'hotels',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
+      body:JSON.stringify({action:'update_status',table:'hotels',id,status,...(slug?{slug}:{})}),
     });
     const json=await res.json();
     if(!res.ok||json.error){setHotelAccessErr('Erreur approbation : '+(json.error||res.status));return;}
     const item=hotels.find(h=>h.id===id);
-    const extra=slug&&access_code?{slug,access_code}:{};
+    const extra=slug?{slug}:{};
     setHotels(hs=>hs.map(h=>h.id===id?{...h,status,...extra}:h));
     setSelHotel(s=>s?.id===id?{...s,status,...extra}:s);
-    if(slug&&access_code)setHotelAccess({slug,access_code});
+    if(slug)setHotelAccess({slug});
     setConfirmHotelReject(false);
-    if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS hotel error:',err));
-    if(status==='approuve'&&item?.email){
-      const finalSlug=slug||item.slug;
-      const finalCode=access_code||item.access_code;
-      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
-        body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'hotel'}),
-      }).catch(err=>console.error('Email hotel error:',err));
-    }
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,json.plain_code||'').catch(err=>console.error('SMS hotel error:',err));
     fetchBadges();
   }
   async function openPartner(p){
@@ -1665,7 +1660,7 @@ function AdminView(){
   }
   async function openHotel(h){
     setSelHotel(h);setConfirmHotelReject(false);
-    setHotelAccess({slug:h.slug||'',access_code:h.access_code||''});setHotelAccessSaved(false);setHotelAccessErr('');
+    setHotelAccess({slug:h.slug||''});setHotelAccessSaved(false);setHotelAccessErr('');
     setHotelMessages([]);setLoadingHM(true);
     const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json());
     const msgs=json.msgs||[];
@@ -1695,10 +1690,10 @@ function AdminView(){
 
   async function saveAccess(){
     setSavingAccess(true);setAccessErr('');
-    const{error}=await supabase.from('candidates').update({slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}).eq('id',sel.id);
+    const{error}=await supabase.from('candidates').update({slug:selAccess.slug.trim()}).eq('id',sel.id);
     setSavingAccess(false);
     if(error){setAccessErr('Erreur : '+error.message);return;}
-    setSel(s=>({...s,slug:selAccess.slug.trim(),access_code:selAccess.access_code.trim()}));
+    setSel(s=>({...s,slug:selAccess.slug.trim()}));
     setAccessSaved(true);setTimeout(()=>setAccessSaved(false),2500);
   }
   function copyPartnerLink(){
@@ -1717,19 +1712,19 @@ function AdminView(){
     const loc=json.results?.[0]?.geometry?.location;
     if(loc)await supabase.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
   }
-  async function updateStatus(id,status,slug,access_code){
+  async function updateStatus(id,status,slug){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
-      body:JSON.stringify({action:'update_status',table:'candidates',id,status,...(slug?{slug}:{}),...(access_code?{access_code}:{})}),
+      body:JSON.stringify({action:'update_status',table:'candidates',id,status,...(slug?{slug}:{})}),
     });
     const json=await res.json();
     if(!res.ok||json.error){setAccessErr('Erreur approbation : '+(json.error||res.status));return;}
     const item=cands.find(c=>c.id===id)||partners.find(p=>p.id===id);
-    const extra=slug&&access_code?{slug,access_code}:{};
+    const extra=slug?{slug}:{};
     setCands(cs=>cs.map(c=>c.id===id?{...c,status,...extra}:c));
     setSel(s=>s?.id===id?{...s,status,...extra}:s);
-    if(slug&&access_code)setSelAccess({slug,access_code});
+    if(slug)setSelAccess({slug});
     if(status==='approuve'){
       if(item) setPartners(ps=>[...ps.filter(p=>p.id!==id),{...item,status:'approuve',...extra}]);
       if(item?.google_maps)geocodePartner(id,item.google_maps).catch(()=>{});
@@ -1739,16 +1734,7 @@ function AdminView(){
     setSelPartner(null);
     setConfirmReject(false);
     setConfirmPDisable(false);
-    if(item?.telephone) sendSms(item.telephone,item.nom,status,access_code||item.access_code).catch(err=>console.error('SMS commerce error:',err));
-    if(status==='approuve'&&item?.email){
-      const finalSlug=slug||item.slug;
-      const finalCode=access_code||item.access_code;
-      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-approval-email',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
-        body:JSON.stringify({email:item.email,nom:item.nom,access_code:finalCode,slug:finalSlug,type:'partenaire'}),
-      }).catch(err=>console.error('Email partenaire error:',err));
-    }
+    if(item?.telephone) sendSms(item.telephone,item.nom,status,json.plain_code||'').catch(err=>console.error('SMS commerce error:',err));
     fetchBadges();
   }
 
@@ -1803,7 +1789,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
                 {cands.filter(c=>c.status==='pending'||c.status==='en_attente').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -1895,7 +1881,7 @@ function AdminView(){
               <div className="adm-list">
                 {cands.filter(c=>c.status==='rejete').length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
                 {cands.filter(c=>c.status==='rejete').map(c=>(
-                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||'',access_code:c.access_code||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
+                  <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
                       <div className="adm-row-meta fb">{c.categorie} · {admFmt(c.created_at)}</div>
@@ -2073,8 +2059,8 @@ function AdminView(){
                     <input className="adm-input fb" value={selAccess.slug} onChange={e=>setSelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: snack-bodrum" style={{marginBottom:0}}/>
                   </div>
                   <div className="adm-field">
-                    <div className="adm-field-label">Code d'accès partenaire</div>
-                    <input className="adm-input fb" value={selAccess.access_code} onChange={e=>setSelAccess(a=>({...a,access_code:e.target.value}))} placeholder="ex: BODRUM24" style={{marginBottom:0}}/>
+                    <div className="adm-field-label">Code d'accès</div>
+                    <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({table:'candidates',id:sel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button>
                   </div>
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveAccess} disabled={savingAccess}>
@@ -2102,7 +2088,7 @@ function AdminView(){
                     const slugs=new Set((existing||[]).map(c=>c.slug));
                     let slug=base,i=2;
                     while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
-                    await updateStatus(sel.id,'approuve',slug,generateCode());
+                    await updateStatus(sel.id,'approuve',slug);
                   } else {
                     await updateStatus(sel.id,'approuve');
                   }
@@ -2262,7 +2248,7 @@ function AdminView(){
                 <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès hôtel</div>
                   <div className="adm-field"><div className="adm-field-label">Identifiant URL (slug)</div><input className="adm-input fb" value={hotelAccess.slug} onChange={e=>setHotelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: hotel-des-quais" style={{marginBottom:0}}/></div>
-                  <div className="adm-field"><div className="adm-field-label">Code d'accès hôtel</div><input className="adm-input fb" value={hotelAccess.access_code} onChange={e=>setHotelAccess(a=>({...a,access_code:e.target.value}))} placeholder="ex: HOTEL24" style={{marginBottom:0}}/></div>
+                  <div className="adm-field"><div className="adm-field-label">Code d'accès</div><button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setHotelAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({table:'hotels',id:selHotel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setHotelAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button></div>
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveHotelAccess} disabled={savingHotelAccess}>
                       {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
@@ -2309,7 +2295,7 @@ function AdminView(){
                     const slugs=new Set((existing||[]).map(h=>h.slug));
                     let slug=base,i=2;
                     while(slugs.has(slug)){slug=`${base}-${i}`;i++;}
-                    await updateHotelStatus(selHotel.id,'approuve',slug,generateCode());
+                    await updateHotelStatus(selHotel.id,'approuve',slug);
                   } else {
                     await updateHotelStatus(selHotel.id,'approuve');
                   }
@@ -2501,8 +2487,9 @@ function PartnerView({onLogout}){
     if(settingsCodeForm.code1!==settingsCodeForm.code2){setSettingsCodeErr('Les codes ne correspondent pas.');return;}
     setSavingSettingsCode(true);
     try{
-      const{error}=await supabase.from('candidates').update({access_code:settingsCodeForm.code1}).eq('id',partner.id);
-      if(error)throw error;
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'change_code',table:'candidates',id:partner.id,new_code:settingsCodeForm.code1})});
+      const json=await res.json();
+      if(!res.ok||json.error)throw new Error(json.error||res.status);
       setSettingsCodeSaved(true);setTimeout(()=>setSettingsCodeSaved(false),3000);
       setSettingsCodeForm({code1:'',code2:''});
     }catch(e){setSettingsCodeErr('Erreur lors de la mise à jour. Réessayez.');}
@@ -2620,17 +2607,21 @@ function PartnerView({onLogout}){
 
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
-    const{data}=await supabase.from('candidates').select('*').eq('slug',slug).eq('access_code',code.trim()).eq('status','approuve').maybeSingle();
-    if(data){
-      sessionStorage.setItem('partner_slug',slug);
-      setPartner(data);
-      setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
-      setPartnerTags(data.tags||[]);
-      setHoraires(data.horaires||{});
-      setAuthed(true);
-    }else{
-      setLoginErr('Code incorrect ou accès non autorisé.');
-    }
+    try{
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({slug,code:code.trim(),type:'partner'})});
+      const json=await res.json();
+      if(json.valid&&json.data){
+        const data=json.data;
+        sessionStorage.setItem('partner_slug',slug);
+        setPartner(data);
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+        setPartnerTags(data.tags||[]);
+        setHoraires(data.horaires||{});
+        setAuthed(true);
+      }else{
+        setLoginErr('Code incorrect ou accès non autorisé.');
+      }
+    }catch{setLoginErr('Code incorrect ou accès non autorisé.');}
     setLoginLoading(false);
   }
 
@@ -3779,8 +3770,9 @@ function HotelView({onLogout}){
     if(htlCodeForm.code1!==htlCodeForm.code2){setHtlCodeErr('Les codes ne correspondent pas.');return;}
     setHtlCodeErr('');setSavingHtlCode(true);
     try{
-      const{error}=await supabase.from('hotels').update({access_code:htlCodeForm.code1.trim()}).eq('slug',slug);
-      if(error)throw error;
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'change_code',table:'hotels',slug,new_code:htlCodeForm.code1.trim()})});
+      const json=await res.json();
+      if(!res.ok||json.error)throw new Error(json.error||res.status);
       setHtlCodeSaved(true);setHtlCodeForm({code1:'',code2:''});
       setTimeout(()=>setHtlCodeSaved(false),2500);
     }catch(e){setHtlCodeErr('Erreur lors de la sauvegarde. Réessayez.');}
@@ -3812,9 +3804,10 @@ function HotelView({onLogout}){
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
     try{
-      const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('access_code',loginCode.trim()).eq('status','approuve').maybeSingle();
-      if(error)throw error;
-      if(data){
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({slug,code:loginCode.trim(),type:'hotel'})});
+      const json=await res.json();
+      if(json.valid&&json.data){
+        const data=json.data;
         sessionStorage.setItem('hotel_slug',slug);
         setHotel(data);
         setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||''});
