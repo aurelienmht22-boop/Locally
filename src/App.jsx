@@ -1265,6 +1265,7 @@ function LoginView({onLogin}){
     e.preventDefault();setErr('');setLoading(true);
     try{
       if(ADMIN_PWD&&code.trim()===ADMIN_PWD){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
+      if(!loginEmail.trim()){setErr('Email requis.');setLoading(false);return;}
       const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({email:loginEmail.trim(),code:code.trim()})});
       const json=await res.json();
       if(json.valid&&json.type==='partner'&&json.data?.slug){sessionStorage.setItem('partner_slug',json.data.slug);window.history.pushState({},'',`/partner/${json.data.slug}`);onLogin('partner');return;}
@@ -1322,7 +1323,7 @@ function LoginView({onLogin}){
             <hr className="lgn-divider"/>
             <div className="lgn-section-label fb">Se connecter</div>
             <form onSubmit={handleLogin}>
-              <input className="lgn-input fb" type="email" autoComplete="username" placeholder="Email" value={loginEmail} onChange={e=>{setLoginEmail(e.target.value);setErr('');}} required/>
+              <input className="lgn-input fb" type="email" autoComplete="username" placeholder="Email" value={loginEmail} onChange={e=>{setLoginEmail(e.target.value);setErr('');}}/>
               <input className="lgn-input fb" type="password" autoComplete="current-password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setErr('');}} required/>
               {err&&<div className="lgn-err fb">{err}</div>}
               <button type="submit" className="lgn-btn fb" disabled={loading}>{loading?'Vérification…':'Se connecter →'}</button>
@@ -5017,7 +5018,7 @@ export default function App() {
     return <MonCompteView user={user} profile={profile} setProfile={setAuthProfile} signOut={signOut} onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   }
   if(page==="admin")return <AdminView/>;
-  if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
+  if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/login');setPage("login");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh"}}>
