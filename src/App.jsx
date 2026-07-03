@@ -28,13 +28,14 @@ const CATEGORIES = [
   { id:"autre",        label:"Autre",        icon:"🏪", desc:"Commerces et services de proximité" },
 ];
 
-const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite'};
+const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure'};
 const TAGS_PAR_CATEGORIE={
   'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
   'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
   'Bien-être':['Massage','Yoga','Méditation','Coiffure','Barbier','Esthétique','Spa','Naturopathie','Ostéopathie'],
   'Sport':['Salle de sport','Coach privé','Natation','Arts martiaux','Pilates','Crossfit'],
   'Activité':['Nautique','Vélo','Randonnée','Visite guidée','Urbain','Plein air','Culturel','Aventure','Détente','En famille'],
+  'Coiffure & Soins':['Coiffure femme','Coiffure homme','Coiffure enfant','Coloration','Coiffure à domicile','Barbier','Esthéticienne','Onglerie','Maquillage'],
   'Autre':[],
 };
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -44,6 +45,7 @@ const ICONE_PAR_CATEGORIE={
   'Sport':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6.5" y1="12" x2="17.5" y2="12"/><path d="M2.5 9H5v6H2.5z"/><path d="M5 10h2v4H5z"/><path d="M17 10h2v4h-2z"/><path d="M19 9h2.5v6H19z"/></svg>`,
   'Bien-être':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`,
   'Activité':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+  'Coiffure & Soins':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
   'Autre':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
 };
 function escapeHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
@@ -1355,7 +1357,7 @@ function LoginView({onLogin}){
                   <div><div className="lgn-field-label fb">Catégorie</div>
                     <select className="lgn-select fb" value={cForm.categorie} onChange={e=>setCForm(f=>({...f,categorie:e.target.value}))} required>
                       <option value="" disabled>Choisir une catégorie</option>
-                      {['Restauration','Boulangerie','Sport','Bien-être','Activité','Autre'].map(c=><option key={c}>{c}</option>)}
+                      {['Restauration','Boulangerie','Sport','Bien-être','Coiffure & Soins','Activité','Autre'].map(c=><option key={c}>{c}</option>)}
                     </select>
                   </div>
                   {cForm.categorie==='Autre'&&<div><div className="lgn-field-label fb">Précisez la catégorie</div><input className="lgn-input fb" value={cForm.categorie_autre} onChange={e=>setCForm(f=>({...f,categorie_autre:e.target.value}))} placeholder="Ex: Librairie, Fleuriste…" required/></div>}
@@ -1442,6 +1444,8 @@ function getMetierLabels(categorie){
       return{ongletLabel:'Mes services',sectionLabel:'Nos services',ajouterLabel:'+ Ajouter un service',emptyLabel:'Aucun service ajouté.',formTitle:(edit)=>edit?'Modifier le service':'Nouveau service',nomPlaceholder:'Nom du service',descPlaceholder:'Description du service'};
     case 'Activité':
       return{ongletLabel:'Mes activités',sectionLabel:'Nos activités',ajouterLabel:'+ Ajouter une activité',emptyLabel:'Aucune activité ajoutée.',formTitle:(edit)=>edit?"Modifier l'activité":'Nouvelle activité',nomPlaceholder:"Nom de l'activité",descPlaceholder:"Description de l'activité"};
+    case 'Coiffure & Soins':
+      return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation',nomPlaceholder:'Nom de la prestation',descPlaceholder:'Description de la prestation'};
     default:
       return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre',nomPlaceholder:"Nom de l'offre",descPlaceholder:"Description de l'offre"};
   }
@@ -2368,7 +2372,7 @@ function PartnerView({onLogout}){
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
   const [tab,setTab]=useState('profil');
-  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:''});
+  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:''});
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
@@ -2428,7 +2432,7 @@ function PartnerView({onLogout}){
       if(error)throw error;
       if(data){
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||''});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
       }
@@ -2445,7 +2449,7 @@ function PartnerView({onLogout}){
     }
     try{
       const newAdresse=partnerForm.google_maps.trim();
-      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null};
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,...payload}));
@@ -2608,7 +2612,7 @@ function PartnerView({onLogout}){
         const data=json.data;
         sessionStorage.setItem('partner_slug',slug);
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||''});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
         setAuthed(true);
@@ -2886,6 +2890,12 @@ function PartnerView({onLogout}){
                 <div className="prt-label fb">Lien Google Avis</div>
                 <input className="prt-input fb" type="url" value={partnerForm.google_review_url||''} onChange={e=>setPartnerForm(f=>({...f,google_review_url:e.target.value}))} placeholder="https://g.page/r/…"/>
               </div>
+              {partner?.categorie==='Coiffure & Soins'&&(
+                <div className="prt-field">
+                  <div className="prt-label fb">Lien de réservation en ligne <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(Planity, Treatwell…)</span></div>
+                  <input className="prt-input fb" type="url" value={partnerForm.booking_url||''} onChange={e=>setPartnerForm(f=>({...f,booking_url:e.target.value}))} placeholder="https://planity.com/…"/>
+                </div>
+              )}
               {infoErr&&<div className="prt-err fb">{infoErr}</div>}
               <div>
                 <button className="prt-btn-primary fb" onClick={saveSettingsInfo} disabled={savingInfo||!partnerForm.nom.trim()}>
@@ -3490,6 +3500,27 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
           )}
         </div>
 
+        {(partner.booking_url||(!partner.booking_url&&partner.telephone&&partner.categorie==='Coiffure & Soins'))&&(
+          <div style={{marginBottom:24,display:'flex',gap:10,flexWrap:'wrap'}}>
+            {partner.booking_url?(
+              <button
+                className="btn-call fb"
+                style={{display:'inline-flex',alignItems:'center',gap:8,background:'#6B1D1D',color:'#FAF4EC',border:'none'}}
+                onClick={()=>window.open(partner.booking_url,'_blank','noopener')}
+              >
+                Prendre RDV en ligne →
+              </button>
+            ):partner.telephone?(
+              <button
+                className="btn-call fb"
+                style={{display:'inline-flex',alignItems:'center',gap:8,background:'transparent',border:'1px solid rgba(107,29,29,.35)',color:'#6B1D1D'}}
+                onClick={()=>window.open(`tel:${partner.telephone.replace(/\s/g,'')}`)}
+              >
+                Appeler pour un RDV →
+              </button>
+            ):null}
+          </div>
+        )}
         {(partner.google_review_url||partner.site_web)&&(
           <div style={{marginBottom:32,display:'flex',gap:10,flexWrap:'wrap'}}>
             {partner.google_review_url&&(
