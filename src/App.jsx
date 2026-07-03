@@ -3437,7 +3437,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
     const expires_at=new Date(Date.now()+1*60*60*1000).toISOString();
-    const hotel_slug=localStorage.getItem('source_hotel')||null;
+    const hotel_slug=sessionStorage.getItem('source_hotel')||null;
     await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:prof.prenom,user_id:u.id,expires_at,...(hotel_slug?{hotel_slug}:{})});
     setVisitData({qr_code_id,expires_at,clientName:prof.prenom});setVisitLoading(false);
   }
@@ -4878,7 +4878,6 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
   }
 
   useEffect(()=>{
-    if(!user||!sessionActive)return;
     function initMap(){
       if(mapInstanceRef.current||!mapRef.current)return;
       const L=window.L;
@@ -4924,20 +4923,6 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
     placePartnerMarkers(mapInstanceRef.current,window.L,partners);
   },[partners]);
 
-  if(!user||!profile) return(
-    <div style={{minHeight:'calc(100dvh - 64px)',background:'#FDFAF6',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
-      <div className="sec-title fd" style={{marginBottom:12}}>Accès <em>réservé</em></div>
-      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',maxWidth:320,lineHeight:1.7,marginBottom:24}}>Connectez-vous pour accéder à la carte des partenaires Locally.</div>
-      <button className="btn-primary fb" onClick={onBack}>Retour à l'accueil</button>
-    </div>
-  );
-  if(!sessionActive) return(
-    <div style={{minHeight:'calc(100dvh - 64px)',background:'#FDFAF6',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
-      <div className="sec-title fd" style={{marginBottom:12}}>Session <em>expirée</em></div>
-      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:300,color:'#7A6555',maxWidth:320,lineHeight:1.7,marginBottom:24}}>Scannez le QR code de votre chambre pour renouveler vos 24h et accéder à la carte.</div>
-      <button className="btn-primary fb" onClick={()=>siteNav('/renouveler')}>Renouveler →</button>
-    </div>
-  );
   const placedCount=(partners||[]).filter(p=>p.latitude&&p.longitude).length;
   return(
     <div style={{position:'relative',height:'calc(100dvh - 64px)'}}>
@@ -4992,7 +4977,7 @@ export default function App() {
   const [activePartner,setActivePartner]=useState(null);
   const [supabasePartners,setSupabasePartners]=useState([]);
   useEffect(()=>{
-    if(pendingHotelSlug) localStorage.setItem('source_hotel',pendingHotelSlug);
+    if(pendingHotelSlug){localStorage.setItem('source_hotel',pendingHotelSlug);sessionStorage.setItem('source_hotel',pendingHotelSlug);}
     supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
   },[]);
   useEffect(()=>{
