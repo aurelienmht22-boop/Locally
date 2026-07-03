@@ -32,7 +32,7 @@ const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','
 const TAGS_PAR_CATEGORIE={
   'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
   'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
-  'Bien-être':['Massage','Yoga','Méditation','Coiffure','Barbier','Esthétique','Spa','Naturopathie','Ostéopathie'],
+  'Bien-être':['Massage','Yoga','Méditation','Esthétique','Spa','Naturopathie','Ostéopathie'],
   'Sport':['Salle de sport','Coach privé','Natation','Arts martiaux','Pilates','Crossfit'],
   'Activité':['Nautique','Vélo','Randonnée','Visite guidée','Urbain','Plein air','Culturel','Aventure','Détente','En famille'],
   'Coiffure & Soins':['Coiffure femme','Coiffure homme','Coiffure enfant','Coloration','Coiffure à domicile','Barbier','Esthéticienne','Onglerie','Maquillage'],
