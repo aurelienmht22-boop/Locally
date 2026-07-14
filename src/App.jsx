@@ -3393,6 +3393,7 @@ function PartnerView({onLogout}){
 function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(true);
+  const [lightboxImg,setLightboxImg]=useState(null);
   const [visitMode,setVisitMode]=useState(null);
   const [visitData,setVisitData]=useState(null);
   const [visitLoading,setVisitLoading]=useState(false);
@@ -3475,6 +3476,18 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
         </div>
       </div>
       <div className="gpp-body">
+
+        {/* Appeler pour réserver */}
+        {partner.telephone&&(
+          <div style={{marginBottom:28}}>
+            <button
+              className="btn-call fb"
+              style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,width:'100%'}}
+              onClick={()=>window.open(`tel:${partner.telephone.replace(/\s/g,'')}`)}>
+              Appeler pour réserver →
+            </button>
+          </div>
+        )}
 
         {/* Infos */}
         <div className="gpp-info-grid">
@@ -3686,7 +3699,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
               <div className="gpp-menu-grid">
                 {menuItems.map(item=>(
                   <div key={item.id} className="gpp-item">
-                    {item.photo_url?<div className="gpp-item-img"><img src={item.photo_url} alt={item.nom}/></div>:<div className="gpp-no-photo fb">Pas de photo</div>}
+                    {item.photo_url?<div className="gpp-item-img" style={{cursor:'zoom-in'}} onClick={()=>setLightboxImg(item.photo_url)}><img src={item.photo_url} alt={item.nom}/></div>:<div className="gpp-no-photo fb">Pas de photo</div>}
                     <div className="gpp-item-body">
                       <div className="gpp-item-name">{item.nom}</div>
                       {item.description&&<div className="gpp-item-desc fb">{item.description}</div>}
@@ -3704,6 +3717,12 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
         <SiteFooter/>
       </div>
 
+      {lightboxImg&&(
+        <div onClick={()=>setLightboxImg(null)} style={{position:'fixed',inset:0,background:'rgba(28,18,8,.9)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,cursor:'zoom-out'}}>
+          <button onClick={e=>{e.stopPropagation();setLightboxImg(null);}} style={{position:'absolute',top:16,right:16,background:'rgba(247,243,238,.15)',border:'none',borderRadius:'50%',width:40,height:40,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#F7F3EE',fontSize:20,lineHeight:1}}>✕</button>
+          <img src={lightboxImg} alt="" onClick={e=>e.stopPropagation()} style={{maxWidth:'100%',maxHeight:'90vh',objectFit:'contain',borderRadius:10}}/>
+        </div>
+      )}
     </>
   );
 }
