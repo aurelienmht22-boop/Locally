@@ -19,7 +19,7 @@ Plateforme web mobile qui connecte les voyageurs (hôtels, Airbnb) aux commerces
 
 ## Liens
 - Repo : aurelienmht22-boop/Locally
-- Site : locally-gules.vercel.app
+- Site : www.mylocally.fr
 - Local : `cd ~/Locally && npm run dev`
 
 ## Règles importantes

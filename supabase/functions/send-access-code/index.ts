@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
         <p style="margin:0 0 6px;font-size:12px;color:#B0A090;">Votre code d'accès</p>
         <p style="margin:0;font-size:20px;font-weight:bold;color:#6B1D1D;letter-spacing:2px;">${plainCode}</p>
       </div>
-      <a href="https://mylocally.fr/login" style="display:block;background:#6B1D1D;color:#FAF4EC;text-decoration:none;text-align:center;padding:14px 24px;border-radius:6px;font-size:14px;font-family:Georgia,serif;letter-spacing:0.3px;">Accéder à mon espace →</a>
+      <a href="https://www.mylocally.fr/login" style="display:block;background:#6B1D1D;color:#FAF4EC;text-decoration:none;text-align:center;padding:14px 24px;border-radius:6px;font-size:14px;font-family:Georgia,serif;letter-spacing:0.3px;">Accéder à mon espace →</a>
       <p style="margin:24px 0 0;font-size:12px;color:#B0A090;line-height:1.6;">Si vous n'avez pas demandé ce code, contactez-nous immédiatement.</p>
     </div>
     <div style="border-top:1px solid #F0E8DE;padding:20px 32px;text-align:center;">
