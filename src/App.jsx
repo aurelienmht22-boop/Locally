@@ -28,7 +28,7 @@ const CATEGORIES = [
   { id:"autre",        label:"Autre",        icon:"🏪", desc:"Commerces et services de proximité" },
 ];
 
-const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure'};
+const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure','Mobilité':'mobilite'};
 const TAGS_PAR_CATEGORIE={
   'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
   'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
@@ -36,6 +36,7 @@ const TAGS_PAR_CATEGORIE={
   'Sport':['Salle de sport','Coach privé','Natation','Arts martiaux','Pilates','Crossfit'],
   'Activité':['Nautique','Vélo','Randonnée','Visite guidée','Urbain','Plein air','Culturel','Aventure','Détente','En famille'],
   'Coiffure & Soins':['Coiffure femme','Coiffure homme','Coiffure enfant','Coloration','Coiffure à domicile','Barbier','Esthéticienne','Onglerie','Maquillage'],
+  'Mobilité':['VTC','Chauffeur privé','Taxi','Navette aéroport','Vélo','Trottinette','Scooter','Location de voiture'],
   'Autre':[],
 };
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -46,6 +47,7 @@ const ICONE_PAR_CATEGORIE={
   'Bien-être':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>`,
   'Activité':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
   'Coiffure & Soins':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,
+  'Mobilité':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2l2-4h14l2 4a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17" r="2.5"/><circle cx="16.5" cy="17" r="2.5"/><path d="M10 17h4"/><path d="M1 9h22"/></svg>`,
   'Autre':`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
 };
 function escapeHtml(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
@@ -1357,7 +1359,7 @@ function LoginView({onLogin}){
                   <div><div className="lgn-field-label fb">Catégorie</div>
                     <select className="lgn-select fb" value={cForm.categorie} onChange={e=>setCForm(f=>({...f,categorie:e.target.value}))} required>
                       <option value="" disabled>Choisir une catégorie</option>
-                      {['Restauration','Boulangerie','Sport','Bien-être','Coiffure & Soins','Activité','Autre'].map(c=><option key={c}>{c}</option>)}
+                      {['Restauration','Boulangerie','Sport','Bien-être','Coiffure & Soins','Activité','Mobilité','Autre'].map(c=><option key={c}>{c}</option>)}
                     </select>
                   </div>
                   {cForm.categorie==='Autre'&&<div><div className="lgn-field-label fb">Précisez la catégorie</div><input className="lgn-input fb" value={cForm.categorie_autre} onChange={e=>setCForm(f=>({...f,categorie_autre:e.target.value}))} placeholder="Ex: Librairie, Fleuriste…" required/></div>}
@@ -1445,6 +1447,8 @@ function getMetierLabels(categorie){
     case 'Activité':
       return{ongletLabel:'Mes activités',sectionLabel:'Nos activités',ajouterLabel:'+ Ajouter une activité',emptyLabel:'Aucune activité ajoutée.',formTitle:(edit)=>edit?"Modifier l'activité":'Nouvelle activité',nomPlaceholder:"Nom de l'activité",descPlaceholder:"Description de l'activité"};
     case 'Coiffure & Soins':
+      return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation',nomPlaceholder:'Nom de la prestation',descPlaceholder:'Description de la prestation'};
+    case 'Mobilité':
       return{ongletLabel:'Mes prestations',sectionLabel:'Nos prestations',ajouterLabel:'+ Ajouter une prestation',emptyLabel:'Aucune prestation ajoutée.',formTitle:(edit)=>edit?'Modifier la prestation':'Nouvelle prestation',nomPlaceholder:'Nom de la prestation',descPlaceholder:'Description de la prestation'};
     default:
       return{ongletLabel:'Mes offres',sectionLabel:'Nos offres',ajouterLabel:'+ Ajouter une offre',emptyLabel:'Aucune offre ajoutée.',formTitle:(edit)=>edit?"Modifier l'offre":'Nouvelle offre',nomPlaceholder:"Nom de l'offre",descPlaceholder:"Description de l'offre"};
@@ -4759,6 +4763,7 @@ function JoindreView({onHome}){
                   <option>Sport</option>
                   <option>Bien-être</option>
                   <option>Activité</option>
+                  <option>Mobilité</option>
                   <option>Autre</option>
                 </select>
               </div>
