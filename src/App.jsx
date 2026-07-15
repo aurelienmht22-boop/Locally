@@ -38,6 +38,7 @@ const VILLE_CONFIG={
     hero_sub:'Accédez aux meilleures adresses de Bordeaux et profitez de réductions exclusives chez nos partenaires locaux.',
     bandeau:['Produits locaux','Prix négociés','Bordeaux','Partenaires vérifiés','Expérience unique','100% local'],
     image_hero:null,
+    colors:{ primary:'#6B1D1D', bg:'#FAF4EC', text:'#1A0A0A' },
   },
   'Paris':{
     nom:'Paris',
@@ -45,7 +46,8 @@ const VILLE_CONFIG={
     hero_text:'Découvrez le meilleur de Paris',
     hero_sub:'Accédez aux meilleures adresses de Paris et profitez de réductions exclusives chez nos partenaires locaux.',
     bandeau:['Paris','Prix négociés','Partenaires vérifiés','Expérience unique','100% local','Île-de-France'],
-    image_hero:null,
+    image_hero:'https://images.unsplash.com/photo-1679231926885-0287bbe32008?q=80&w=1391&auto=format&fit=crop',
+    colors:{ primary:'#1B2A4A', bg:'#F5F3EE', accent:'#C9A84C', text:'#1A0A0A' },
   },
 };
 const TAGS_PAR_CATEGORIE={
@@ -802,12 +804,12 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
     <>
       {/* ── HERO ───────────────────────────────────────── */}
       <section className="hero hero-photo">
-        <div style={{position:"absolute",inset:0,backgroundImage:"url(https://images.unsplash.com/photo-1698608216843-67ae1151b2b8?q=80&w=1600&auto=format&fit=crop)",backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",inset:0,backgroundImage:`url(${ville.image_hero||'https://images.unsplash.com/photo-1698608216843-67ae1151b2b8?q=80&w=1600&auto=format&fit=crop'})`,backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
         <div style={{position:"absolute",inset:0,background:"rgba(28,18,8,.45)",pointerEvents:"none"}}/>
 
         <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
           <div className="hero-badge">
-            <div className="badge-dot"/>
+            <div className="badge-dot" style={{background:ville.colors.primary}}/>
             <span className="badge-txt fb">{ville.nom} · Partenaires locaux</span>
           </div>
         </div>
@@ -819,7 +821,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
         <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
           <p className="hero-desc fb">{ville.hero_sub}</p>
           <div className="hero-actions">
-            <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
+            <button className="btn-primary fb" style={{background:ville.colors.primary}} onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
               Explorer les adresses <IconArrow/>
             </button>
             <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
@@ -835,14 +837,15 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       </div>
 
       {/* ── VILLE SELECTOR ─────────────────────────────── */}
-      <div style={{background:'#FAF4EC',padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,borderBottom:'1px solid rgba(107,29,29,.08)'}}>
+      <div style={{background:ville.colors.bg,padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,borderBottom:'1px solid rgba(28,18,8,.07)'}}>
         {VILLES.map(v=>{
           const active=selVille===v;
+          const vc=VILLE_CONFIG[v].colors;
           return(
             <button key={v} onClick={()=>onVilleChange(v)}
-              style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,padding:'7px 20px',borderRadius:999,border:'1.5px solid #6B1D1D',cursor:'pointer',transition:'all .18s',letterSpacing:'.01em',
-                background:active?'#6B1D1D':'transparent',
-                color:active?'#FAF4EC':'#6B1D1D'}}>
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,padding:'7px 20px',borderRadius:999,border:`1.5px solid ${vc.primary}`,cursor:'pointer',transition:'all .18s',letterSpacing:'.01em',
+                background:active?vc.primary:'transparent',
+                color:active?'#FAF4EC':vc.primary}}>
               {v}
             </button>
           );
