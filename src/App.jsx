@@ -29,6 +29,7 @@ const CATEGORIES = [
 ];
 
 const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure','Mobilité':'mobilite'};
+const VILLES=['Bordeaux','Paris'];
 const TAGS_PAR_CATEGORIE={
   'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
   'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
@@ -730,7 +731,7 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .nav-auth-name:hover{background:rgba(107,29,29,.06);border-color:#6B1D1D;}
 `;
 
-function HomePage({ onNavigate, supabasePartners }) {
+function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
   const [loaded,setLoaded]=useState(false);
   const [partnerCount,setPartnerCount]=useState(null);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
@@ -813,6 +814,22 @@ function HomePage({ onNavigate, supabasePartners }) {
           {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
         </div>
       </div>
+
+      {/* ── VILLE SELECTOR ─────────────────────────────── */}
+      {(activeVilles||[]).length>1&&(
+        <div style={{background:'#F7F3EE',padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:8,borderBottom:'1px solid rgba(107,29,29,.07)'}}>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'#9B8B7A'}}>Ville :</span>
+          {[null,...(activeVilles||[])].map(v=>(
+            <button key={v??'all'} onClick={()=>onVilleChange(v)}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,padding:'5px 14px',borderRadius:999,border:'1px solid',cursor:'pointer',transition:'all .15s',
+                background:selVille===v?'#6B1D1D':'transparent',
+                borderColor:selVille===v?'#6B1D1D':'rgba(28,18,8,.18)',
+                color:selVille===v?'#F7F3EE':'#7A6555'}}>
+              {v??'Toutes'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── HOW IT WORKS ───────────────────────────────── */}
       <section className="section how-section" style={{background:"#F7F3EE"}}>
@@ -908,7 +925,7 @@ const cardItem = {
 };
 
 const FILTER_CATS=['Tous','Restauration','Boulangerie','Bien-être','Activité','Sport','Autre'];
-function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
+function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeActive }) {
   const all=supabasePartners||[];
   const initCat=(()=>{
     if(!categoryId)return'Tous';
@@ -936,7 +953,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners }) {
       <motion.div className="catpage-hero" variants={heroZoom} initial="initial" animate="animate">
         <button className="catpage-back fb" onClick={onBack}>← Retour</button>
         {heroCat?<span className="catpage-icon">{heroCat.icon}</span>:<span className="catpage-icon">🏪</span>}
-        <div className="catpage-title fd">{heroCat?heroCat.label:'Nos partenaires'}<br/><em>à Bordeaux</em></div>
+        <div className="catpage-title fd">{heroCat?heroCat.label:'Nos partenaires'}<br/><em>{villeActive?`à ${villeActive}`:'en France'}</em></div>
         <div className="catpage-sub fb">{total} adresse{total>1?'s':''} disponible{total>1?'s':''}</div>
       </motion.div>
       <div style={{background:'#F7F3EE',padding:'48px 24px 64px'}}>
@@ -1245,11 +1262,11 @@ function LoginView({onLogin}){
   const [loginEmail,setLoginEmail]=useState('');
   const [err,setErr]=useState('');
   const [loading,setLoading]=useState(false);
-  const [cForm,setCForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:''});
+  const [cForm,setCForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',ville:'Bordeaux'});
   const [cSent,setCSent]=useState(false);
   const [cErr,setCErr]=useState('');
   const [cLoading,setCLoading]=useState(false);
-  const [hForm,setHForm]=useState({nom:'',type:'',type_etablissement:'',adresse:'',nombre_chambres:'',nom_responsable:'',email:'',telephone:''});
+  const [hForm,setHForm]=useState({nom:'',type:'',type_etablissement:'',adresse:'',nombre_chambres:'',nom_responsable:'',email:'',telephone:'',ville:'Bordeaux'});
   const [hSent,setHSent]=useState(false);
   const [hErr,setHErr]=useState('');
   const [hLoading,setHLoading]=useState(false);
@@ -1279,7 +1296,7 @@ function LoginView({onLogin}){
     setCLoading(true);
     try{
       const cat=cForm.categorie==='Autre'?cForm.categorie_autre.trim():cForm.categorie;
-      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:parseInt(cForm.reduction)||null,email:cForm.email.trim(),status:'pending'}]);
+      const{error}=await supabase.from('candidates').insert([{nom:cForm.nom.trim(),categorie:cat,google_maps:cForm.google_maps.trim(),telephone:cForm.telephone.trim(),description:cForm.description.trim(),reduction:parseInt(cForm.reduction)||null,email:cForm.email.trim(),ville:cForm.ville||'Bordeaux',status:'pending'}]);
       if(error)throw error;
       setCSent(true);
     }catch(err){console.error('[Locally] candidates INSERT error:',err);setCErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -1289,7 +1306,7 @@ function LoginView({onLogin}){
   async function handleHotelSubmit(e){
     e.preventDefault();setHErr('');setHLoading(true);
     try{
-      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,type_etablissement:hForm.type_etablissement||null,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),status:'pending'}]);
+      const{error}=await supabase.from('hotels').insert([{nom:hForm.nom.trim(),type:hForm.type,type_etablissement:hForm.type_etablissement||null,adresse:hForm.adresse.trim(),nombre_chambres:hForm.nombre_chambres?parseInt(hForm.nombre_chambres):null,responsable:hForm.nom_responsable.trim(),email:hForm.email.trim(),telephone:hForm.telephone.trim(),ville:hForm.ville||'Bordeaux',status:'pending'}]);
       if(error)throw error;
       setHSent(true);
     }catch{setHErr('Une erreur est survenue. Veuillez réessayer.');}
@@ -1364,6 +1381,12 @@ function LoginView({onLogin}){
                   </div>
                   {cForm.categorie==='Autre'&&<div><div className="lgn-field-label fb">Précisez la catégorie</div><input className="lgn-input fb" value={cForm.categorie_autre} onChange={e=>setCForm(f=>({...f,categorie_autre:e.target.value}))} placeholder="Ex: Librairie, Fleuriste…" required/></div>}
                   <div><div className="lgn-field-label fb">Description courte</div><textarea className="lgn-textarea fb" value={cForm.description} onChange={e=>setCForm(f=>({...f,description:e.target.value}))} placeholder="Décrivez votre établissement…" required/></div>
+                  <div><div className="lgn-field-label fb">Ville</div>
+                    <select className="lgn-select fb" value={cForm.ville} onChange={e=>setCForm(f=>({...f,ville:e.target.value}))} required>
+                      {VILLES.map(v=><option key={v}>{v}</option>)}
+                      <option>Autre</option>
+                    </select>
+                  </div>
                   <div><div className="lgn-field-label fb">Réduction proposée</div>
                     <div className="lgn-input-group">
                       <input className="lgn-input fb" type="number" min="10" max="50" value={cForm.reduction} onChange={e=>setCForm(f=>({...f,reduction:e.target.value}))} placeholder="10" required style={{MozAppearance:'textfield'}}/>
@@ -1407,6 +1430,12 @@ function LoginView({onLogin}){
                     </select>
                   </div>
                   <div><div className="lgn-field-label fb">Nombre de chambres <span style={{color:'rgba(247,243,238,.25)',fontWeight:300,textTransform:'none',letterSpacing:0}}>— optionnel</span></div><input className="lgn-input fb" type="number" min="1" value={hForm.nombre_chambres} onChange={e=>setHForm(f=>({...f,nombre_chambres:e.target.value}))} placeholder="Ex: 20"/></div>
+                  <div><div className="lgn-field-label fb">Ville</div>
+                    <select className="lgn-select fb" value={hForm.ville} onChange={e=>setHForm(f=>({...f,ville:e.target.value}))} required>
+                      {VILLES.map(v=><option key={v}>{v}</option>)}
+                      <option>Autre</option>
+                    </select>
+                  </div>
                   {hErr&&<div className="lgn-err fb">{hErr}</div>}
                   <button type="submit" className="lgn-btn fb" disabled={hLoading}>{hLoading?'Envoi en cours…':'Envoyer la candidature →'}</button>
                 </form>
@@ -1513,6 +1542,7 @@ function AdminView(){
   const [adminChartData,setAdminChartData]=useState([]);
   const [adminTopPartners,setAdminTopPartners]=useState([]);
   const [loadingAdminStats,setLoadingAdminStats]=useState(false);
+  const [admVilleFilter,setAdmVilleFilter]=useState('');
 
   function login(e){
     e.preventDefault();
@@ -1783,14 +1813,18 @@ function AdminView(){
       <div className="adm-content">
         {tab==='candidatures'&&(
           <>
-            <div className="adm-filters">
+            <div className="adm-filters" style={{gap:8,flexWrap:'wrap'}}>
               <button className={'adm-filter fb'+(candSubTab==='commerces'?' act':'')} onClick={()=>setCandSubTab('commerces')}>Commerces</button>
               <button className={'adm-filter fb'+(candSubTab==='hotels'?' act':'')} onClick={()=>setCandSubTab('hotels')}>Hôtels</button>
+              <select value={admVilleFilter} onChange={e=>setAdmVilleFilter(e.target.value)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,border:'1px solid rgba(107,29,29,.2)',borderRadius:8,padding:'5px 10px',background:'white',color:'#1C1208',cursor:'pointer',marginLeft:'auto'}}>
+                <option value="">Toutes les villes</option>
+                {VILLES.map(v=><option key={v}>{v}</option>)}
+              </select>
             </div>
             {candSubTab==='commerces'&&(loadingCand?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {cands.filter(c=>c.status==='pending'||c.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
-                {cands.filter(c=>c.status==='pending'||c.status==='en_attente').map(c=>(
+                {cands.filter(c=>(c.status==='pending'||c.status==='en_attente')&&(!admVilleFilter||c.ville===admVilleFilter)).length===0&&<div className="adm-empty fb">Aucune candidature commerce.</div>}
+                {cands.filter(c=>(c.status==='pending'||c.status==='en_attente')&&(!admVilleFilter||c.ville===admVilleFilter)).map(c=>(
                   <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
@@ -1804,8 +1838,8 @@ function AdminView(){
             ))}
             {candSubTab==='hotels'&&(loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {hotels.filter(h=>h.status==='pending'||h.status==='en_attente').length===0&&<div className="adm-empty fb">Aucune candidature hôtel.</div>}
-                {hotels.filter(h=>h.status==='pending'||h.status==='en_attente').map(h=>(
+                {hotels.filter(h=>(h.status==='pending'||h.status==='en_attente')&&(!admVilleFilter||h.ville===admVilleFilter)).length===0&&<div className="adm-empty fb">Aucune candidature hôtel.</div>}
+                {hotels.filter(h=>(h.status==='pending'||h.status==='en_attente')&&(!admVilleFilter||h.ville===admVilleFilter)).map(h=>(
                   <div key={h.id} className="adm-row" onClick={()=>openHotel(h)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{h.nom}</div>
@@ -1826,10 +1860,16 @@ function AdminView(){
 
         {tab==='partenaires'&&(
           <>
+            <div className="adm-filters" style={{marginBottom:8}}>
+              <select value={admVilleFilter} onChange={e=>setAdmVilleFilter(e.target.value)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,border:'1px solid rgba(107,29,29,.2)',borderRadius:8,padding:'5px 10px',background:'white',color:'#1C1208',cursor:'pointer'}}>
+                <option value="">Toutes les villes</option>
+                {VILLES.map(v=><option key={v}>{v}</option>)}
+              </select>
+            </div>
             {loadingPartners?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {partners.length===0&&<div className="adm-empty fb">Aucun partenaire approuvé.</div>}
-                {partners.map(p=>(
+                {partners.filter(p=>!admVilleFilter||p.ville===admVilleFilter).length===0&&<div className="adm-empty fb">Aucun partenaire approuvé.</div>}
+                {partners.filter(p=>!admVilleFilter||p.ville===admVilleFilter).map(p=>(
                   <div key={p.id} className="adm-row" onClick={()=>openPartner(p)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name" style={{display:'flex',alignItems:'center',gap:8}}>
@@ -1849,10 +1889,16 @@ function AdminView(){
 
         {tab==='hotels'&&(
           <>
+            <div className="adm-filters" style={{marginBottom:8}}>
+              <select value={admVilleFilter} onChange={e=>setAdmVilleFilter(e.target.value)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,border:'1px solid rgba(107,29,29,.2)',borderRadius:8,padding:'5px 10px',background:'white',color:'#1C1208',cursor:'pointer'}}>
+                <option value="">Toutes les villes</option>
+                {VILLES.map(v=><option key={v}>{v}</option>)}
+              </select>
+            </div>
             {loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {hotels.filter(h=>h.status==='approuve').length===0&&<div className="adm-empty fb">Aucun hôtel approuvé.</div>}
-                {hotels.filter(h=>h.status==='approuve').map(h=>(
+                {hotels.filter(h=>h.status==='approuve'&&(!admVilleFilter||h.ville===admVilleFilter)).length===0&&<div className="adm-empty fb">Aucun hôtel approuvé.</div>}
+                {hotels.filter(h=>h.status==='approuve'&&(!admVilleFilter||h.ville===admVilleFilter)).map(h=>(
                   <div key={h.id} className="adm-row" onClick={()=>openHotel(h)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name" style={{display:'flex',alignItems:'center',gap:8}}>
@@ -1875,14 +1921,18 @@ function AdminView(){
 
         {tab==='rejetes'&&(
           <>
-            <div className="adm-filters">
+            <div className="adm-filters" style={{gap:8,flexWrap:'wrap'}}>
               <button className={'adm-filter fb'+(rejectedSubTab==='commerces'?' act':'')} onClick={()=>setRejectedSubTab('commerces')}>Commerces</button>
               <button className={'adm-filter fb'+(rejectedSubTab==='hotels'?' act':'')} onClick={()=>setRejectedSubTab('hotels')}>Hôtels</button>
+              <select value={admVilleFilter} onChange={e=>setAdmVilleFilter(e.target.value)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,border:'1px solid rgba(107,29,29,.2)',borderRadius:8,padding:'5px 10px',background:'white',color:'#1C1208',cursor:'pointer',marginLeft:'auto'}}>
+                <option value="">Toutes les villes</option>
+                {VILLES.map(v=><option key={v}>{v}</option>)}
+              </select>
             </div>
             {rejectedSubTab==='commerces'&&(loadingCand?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {cands.filter(c=>c.status==='rejete').length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
-                {cands.filter(c=>c.status==='rejete').map(c=>(
+                {cands.filter(c=>c.status==='rejete'&&(!admVilleFilter||c.ville===admVilleFilter)).length===0&&<div className="adm-empty fb">Aucun commerce rejeté.</div>}
+                {cands.filter(c=>c.status==='rejete'&&(!admVilleFilter||c.ville===admVilleFilter)).map(c=>(
                   <div key={c.id} className="adm-row" onClick={()=>{setSel(c);setConfirmReject(false);setSelAccess({slug:c.slug||''});setAccessSaved(false);setAccessErr('');setSelCatEdit(c.categorie||'');setCatSaved(false);setCatErr('');}}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{c.nom}</div>
@@ -1896,8 +1946,8 @@ function AdminView(){
             ))}
             {rejectedSubTab==='hotels'&&(loadingHotels?<div className="adm-empty fb">Chargement…</div>:(
               <div className="adm-list">
-                {hotels.filter(h=>h.status==='rejete').length===0&&<div className="adm-empty fb">Aucun hôtel rejeté.</div>}
-                {hotels.filter(h=>h.status==='rejete').map(h=>(
+                {hotels.filter(h=>h.status==='rejete'&&(!admVilleFilter||h.ville===admVilleFilter)).length===0&&<div className="adm-empty fb">Aucun hôtel rejeté.</div>}
+                {hotels.filter(h=>h.status==='rejete'&&(!admVilleFilter||h.ville===admVilleFilter)).map(h=>(
                   <div key={h.id} className="adm-row" onClick={()=>openHotel(h)}>
                     <div className="adm-row-body">
                       <div className="adm-row-name">{h.nom}</div>
@@ -2376,7 +2426,7 @@ function PartnerView({onLogout}){
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
   const [tab,setTab]=useState('profil');
-  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:''});
+  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:'',ville:'Bordeaux'});
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
@@ -2436,7 +2486,7 @@ function PartnerView({onLogout}){
       if(error)throw error;
       if(data){
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux'});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
       }
@@ -2453,7 +2503,7 @@ function PartnerView({onLogout}){
     }
     try{
       const newAdresse=partnerForm.google_maps.trim();
-      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null};
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null,ville:partnerForm.ville||'Bordeaux'};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,...payload}));
@@ -2616,7 +2666,7 @@ function PartnerView({onLogout}){
         const data=json.data;
         sessionStorage.setItem('partner_slug',slug);
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||''});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux'});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
         setAuthed(true);
@@ -2872,6 +2922,13 @@ function PartnerView({onLogout}){
                   <input className="prt-input fb" type={type} value={partnerForm[name]||''} onChange={e=>setPartnerForm(f=>({...f,[name]:e.target.value}))} placeholder={ph}/>
                 </div>
               ))}
+              <div className="prt-field">
+                <div className="prt-label fb">Ville</div>
+                <select className="prt-input fb" value={partnerForm.ville||'Bordeaux'} onChange={e=>setPartnerForm(f=>({...f,ville:e.target.value}))} style={{appearance:'auto'}}>
+                  {VILLES.map(v=><option key={v}>{v}</option>)}
+                  <option>Autre</option>
+                </select>
+              </div>
               <div className="prt-field">
                 <div className="prt-label fb">Réduction proposée <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(min. 10%, max. 50%)</span></div>
                 <input className="prt-input fb" type="number" min="10" max="50" value={partnerForm.reduction||''} onChange={e=>{setPartnerForm(f=>({...f,reduction:e.target.value}));setReductionErr('');}} placeholder="15"/>
@@ -3744,7 +3801,7 @@ function HotelView({onLogout}){
   const [savingHtlCode,setSavingHtlCode]=useState(false);
   const [htlCodeErr,setHtlCodeErr]=useState('');
   const [htlCodeSaved,setHtlCodeSaved]=useState(false);
-  const [htlProfileForm,setHtlProfileForm]=useState({nom:'',type:'',type_etablissement:'',email:'',telephone:''});
+  const [htlProfileForm,setHtlProfileForm]=useState({nom:'',type:'',type_etablissement:'',email:'',telephone:'',ville:'Bordeaux'});
   const [savingHtlProfile,setSavingHtlProfile]=useState(false);
   const [htlProfileSaved,setHtlProfileSaved]=useState(false);
   const [htlProfileErr,setHtlProfileErr]=useState('');
@@ -3760,7 +3817,7 @@ function HotelView({onLogout}){
       const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
       if(error)throw error;
       setHotel(data);
-      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||''});
+      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||'',ville:data.ville||'Bordeaux'});
     }catch(e){setHtlLoadErr('Impossible de charger vos données. Vérifiez votre connexion.');}
     setLoading(false);
   }
@@ -3834,7 +3891,7 @@ function HotelView({onLogout}){
   async function saveHtlProfile(){
     setSavingHtlProfile(true);setHtlProfileErr('');
     try{
-      const{error}=await supabase.from('hotels').update({nom:htlProfileForm.nom.trim(),type:htlProfileForm.type.trim(),type_etablissement:htlProfileForm.type_etablissement||null,email:htlProfileForm.email.trim(),telephone:htlProfileForm.telephone.trim()}).eq('slug',slug);
+      const{error}=await supabase.from('hotels').update({nom:htlProfileForm.nom.trim(),type:htlProfileForm.type.trim(),type_etablissement:htlProfileForm.type_etablissement||null,email:htlProfileForm.email.trim(),telephone:htlProfileForm.telephone.trim(),ville:htlProfileForm.ville||'Bordeaux'}).eq('slug',slug);
       if(error)throw error;
       setHotel(h=>({...h,...htlProfileForm}));
       setHtlProfileSaved(true);setTimeout(()=>setHtlProfileSaved(false),3000);
@@ -4021,6 +4078,13 @@ function HotelView({onLogout}){
                       <select className="prt-input" value={htlProfileForm.type_etablissement||''} onChange={e=>setHtlProfileForm(f=>({...f,type_etablissement:e.target.value}))} style={{appearance:'auto'}}>
                         <option value="">— Sélectionner —</option>
                         {['Hôtel','Conciergerie','Co-hôte','Autre'].map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="prt-label fb">Ville</label>
+                      <select className="prt-input" value={htlProfileForm.ville||'Bordeaux'} onChange={e=>setHtlProfileForm(f=>({...f,ville:e.target.value}))} style={{appearance:'auto'}}>
+                        {VILLES.map(v=><option key={v}>{v}</option>)}
+                        <option>Autre</option>
                       </select>
                     </div>
                     {htlProfileErr&&<div className="prt-err fb">{htlProfileErr}</div>}
@@ -4712,7 +4776,7 @@ function ConfidentialiteView({onHome}){
 }
 
 function JoindreView({onHome}){
-  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:''});
+  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:'',ville:'Bordeaux'});
   const [joinHoraires,setJoinHoraires]=useState({});
   const [loading,setLoading]=useState(false);
   const [sent,setSent]=useState(false);
@@ -4741,6 +4805,7 @@ function JoindreView({onHome}){
         email:form.email.trim(),
         horaires:Object.keys(joinHoraires).length?joinHoraires:null,
         infos_complementaires:form.infos_complementaires.trim()||null,
+        ville:form.ville||'Bordeaux',
         status:'pending'
       }]);
       if(error)throw error;
@@ -4795,6 +4860,13 @@ function JoindreView({onHome}){
               <div className="join-field">
                 <div className="join-label fb">Adresse</div>
                 <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="Ex: 12 Rue de la Paix, Bordeaux" required maxLength={500}/>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Ville</div>
+                <select className="join-select fb" name="ville" value={form.ville} onChange={handleChange} required>
+                  {VILLES.map(v=><option key={v}>{v}</option>)}
+                  <option>Autre</option>
+                </select>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Numéro de téléphone</div>
@@ -5000,9 +5072,14 @@ export default function App() {
   const [activeCat,setActiveCat]=useState(null);
   const [activePartner,setActivePartner]=useState(null);
   const [supabasePartners,setSupabasePartners]=useState([]);
+  const [selVille,setSelVille]=useState(null);
   useEffect(()=>{
     if(pendingHotelSlug){localStorage.setItem('source_hotel',pendingHotelSlug);sessionStorage.setItem('source_hotel',pendingHotelSlug);}
     supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
+    const hotelSlug=localStorage.getItem('source_hotel')||sessionStorage.getItem('source_hotel');
+    if(hotelSlug){
+      supabase.from('hotels').select('ville').eq('slug',hotelSlug).maybeSingle().then(({data})=>{if(data?.ville)setSelVille(data.ville);});
+    }
   },[]);
   useEffect(()=>{
     if(!user||!pendingHotelSlug)return;
@@ -5089,8 +5166,8 @@ export default function App() {
       </nav>
       {user&&profile?.session_expires_at&&<div style={{position:'fixed',top:78,left:16,right:16,zIndex:199}}><SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/></div>}
       {page==="dashboard"&&<DashboardPage/>}
-      {page==="home"&&<HomePage onNavigate={navigate} supabasePartners={supabasePartners}/>}
-      {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner}/>}
+      {page==="home"&&<HomePage onNavigate={navigate} supabasePartners={supabasePartners} selVille={selVille} onVilleChange={setSelVille} activeVilles={[...new Set(supabasePartners.map(p=>p.ville).filter(Boolean))]}/>}
+      {page==="category"&&<CategoryPage categoryId={activeCat} supabasePartners={selVille?supabasePartners.filter(p=>!p.ville||p.ville===selVille):supabasePartners} onBack={()=>setPage("home")} onNavigate={navPartner} villeActive={selVille}/>}
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
