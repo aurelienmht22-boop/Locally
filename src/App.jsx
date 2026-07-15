@@ -835,20 +835,19 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       </div>
 
       {/* ── VILLE SELECTOR ─────────────────────────────── */}
-      {(activeVilles||[]).length>1&&(
-        <div style={{background:'#F7F3EE',padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:8,borderBottom:'1px solid rgba(107,29,29,.07)'}}>
-          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'#9B8B7A'}}>Ville :</span>
-          {[null,...(activeVilles||[])].map(v=>(
-            <button key={v??'all'} onClick={()=>onVilleChange(v)}
-              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,padding:'5px 14px',borderRadius:999,border:'1px solid',cursor:'pointer',transition:'all .15s',
-                background:selVille===v?'#6B1D1D':'transparent',
-                borderColor:selVille===v?'#6B1D1D':'rgba(28,18,8,.18)',
-                color:selVille===v?'#F7F3EE':'#7A6555'}}>
-              {v??'Toutes'}
+      <div style={{background:'#FAF4EC',padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,borderBottom:'1px solid rgba(107,29,29,.08)'}}>
+        {VILLES.map(v=>{
+          const active=selVille===v;
+          return(
+            <button key={v} onClick={()=>onVilleChange(v)}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,padding:'7px 20px',borderRadius:999,border:'1.5px solid #6B1D1D',cursor:'pointer',transition:'all .18s',letterSpacing:'.01em',
+                background:active?'#6B1D1D':'transparent',
+                color:active?'#FAF4EC':'#6B1D1D'}}>
+              {v}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* ── HOW IT WORKS ───────────────────────────────── */}
       <section className="section how-section" style={{background:"#F7F3EE"}}>
