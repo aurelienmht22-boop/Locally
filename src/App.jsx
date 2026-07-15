@@ -737,7 +737,7 @@ function HomePage({ onNavigate, supabasePartners }) {
   useEffect(()=>{
     supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve').then(({count})=>setPartnerCount(count??0));
   },[]);
-  const TICKER=["Bordeaux","Partenaires locaux","Prix négociés","Retrait rapide","100% local","Sans inscription"];
+  const TICKER=["Produits locaux","Prix négociés","Bordeaux","Partenaires vérifiés","Expérience unique","100% local"];
 
   const IconBrowse = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
