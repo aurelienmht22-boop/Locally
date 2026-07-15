@@ -30,6 +30,24 @@ const CATEGORIES = [
 
 const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure','Mobilité':'mobilite'};
 const VILLES=['Bordeaux','Paris'];
+const VILLE_CONFIG={
+  'Bordeaux':{
+    nom:'Bordeaux',
+    tagline:'Le meilleur de Bordeaux, à portée de main.',
+    hero_text:'Découvrez le meilleur de Bordeaux',
+    hero_sub:'Accédez aux meilleures adresses de Bordeaux et profitez de réductions exclusives chez nos partenaires locaux.',
+    bandeau:['Produits locaux','Prix négociés','Bordeaux','Partenaires vérifiés','Expérience unique','100% local'],
+    image_hero:null,
+  },
+  'Paris':{
+    nom:'Paris',
+    tagline:'Le meilleur de Paris, à portée de main.',
+    hero_text:'Découvrez le meilleur de Paris',
+    hero_sub:'Accédez aux meilleures adresses de Paris et profitez de réductions exclusives chez nos partenaires locaux.',
+    bandeau:['Paris','Prix négociés','Partenaires vérifiés','Expérience unique','100% local','Île-de-France'],
+    image_hero:null,
+  },
+};
 const TAGS_PAR_CATEGORIE={
   'Restauration':['Sur place','À emporter','Livraison','Végétarien','Halal','Brunch','Snack','Gastronomique'],
   'Boulangerie':['Viennoiseries','Pain artisanal','Pâtisserie','Sans gluten','Bio'],
@@ -738,7 +756,8 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
   useEffect(()=>{
     supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve').then(({count})=>setPartnerCount(count??0));
   },[]);
-  const TICKER=["Produits locaux","Prix négociés","Bordeaux","Partenaires vérifiés","Expérience unique","100% local"];
+  const ville = VILLE_CONFIG[selVille||'Bordeaux'] ?? VILLE_CONFIG['Bordeaux'];
+  const TICKER = ville.bandeau;
 
   const IconBrowse = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -789,16 +808,16 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
         <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
           <div className="hero-badge">
             <div className="badge-dot"/>
-            <span className="badge-txt fb">Bordeaux · Partenaires locaux</span>
+            <span className="badge-txt fb">{ville.nom} · Partenaires locaux</span>
           </div>
         </div>
 
         <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s",position:'relative',zIndex:1}}>
-          <h1 className="hero-title fd">Le meilleur<br/>de <em>Bordeaux</em>,<br/>à portée de main.</h1>
+          <h1 className="hero-title fd">Le meilleur<br/>de <em>{ville.nom}</em>,<br/>à portée de main.</h1>
         </div>
 
         <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
-          <p className="hero-desc fb">Accédez aux meilleures adresses de Bordeaux et profitez de réductions exclusives chez nos partenaires locaux.</p>
+          <p className="hero-desc fb">{ville.hero_sub}</p>
           <div className="hero-actions">
             <button className="btn-primary fb" onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
               Explorer les adresses <IconArrow/>
@@ -868,7 +887,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       {/* ── CATEGORIES ─────────────────────────────────── */}
       <section className="section" id="categories" style={{background:"#F7F3EE"}}>
         <FadeUp>
-          <div className="sec-tag fb">À Bordeaux</div>
+          <div className="sec-tag fb">À {ville.nom}</div>
           <div className="sec-title fd">Que cherchez-<em>vous</em> ?</div>
         </FadeUp>
         <FadeUp delay={.1}>
@@ -907,7 +926,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       </section>
 
       {/* ── FOOTER ─────────────────────────────────────── */}
-      <SiteFooter/>
+      <SiteFooter ville={selVille||'Bordeaux'}/>
     </>
   );
 }
@@ -1014,7 +1033,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
           </motion.div>
         )}
       </div>
-      <SiteFooter/>
+      <SiteFooter ville={villeActive||'Bordeaux'}/>
     </>
   );
 }
@@ -3822,7 +3841,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
           </div>
         )}
 
-        <SiteFooter/>
+        <SiteFooter ville={partner?.ville||'Bordeaux'}/>
       </div>
 
       {lightboxImg&&(
@@ -4077,7 +4096,7 @@ function HotelView({onLogout}){
                     <QRCodeSVG value={`${window.location.origin}/?hotel=${slug}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
                   </div>
                   <div style={{marginTop:24,fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:600,color:'#1C1208',textAlign:'center',lineHeight:1.2}}>
-                    Découvrez le meilleur<br/>de Bordeaux
+                    Découvrez le meilleur<br/>de {hotel?.ville||'Bordeaux'}
                   </div>
                   <div style={{marginTop:10,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:240}}>
                     Scannez pour accéder aux adresses locales sélectionnées et profitez de réductions exclusives
@@ -4709,7 +4728,7 @@ function siteNav(path){
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-function SiteFooter(){
+function SiteFooter({ ville = 'Bordeaux' }){
   return(
     <footer className="footer" style={{background:"#F7F3EE"}}>
       <div className="footer-logo fd">local<em>ly</em></div>
@@ -4719,7 +4738,7 @@ function SiteFooter(){
         <a className="footer-link" href="mailto:contact@mylocally.fr">Contact</a>
         <button className="footer-link footer-link-commerce" onClick={()=>siteNav('/rejoindre')}>Vous êtes commerçant ?</button>
       </div>
-      <div className="footer-copy fb">© 2026 · Bordeaux · Tous droits réservés</div>
+      <div className="footer-copy fb">© 2026 · {ville} · Tous droits réservés</div>
     </footer>
   );
 }
