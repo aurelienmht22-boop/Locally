@@ -1543,6 +1543,9 @@ function AdminView(){
   const [adminTopPartners,setAdminTopPartners]=useState([]);
   const [loadingAdminStats,setLoadingAdminStats]=useState(false);
   const [admVilleFilter,setAdmVilleFilter]=useState('');
+  const [hotelStats,setHotelStats]=useState(null);
+  const [loadingHotelStats,setLoadingHotelStats]=useState(false);
+  const [hotelRecentVisits,setHotelRecentVisits]=useState([]);
 
   function login(e){
     e.preventDefault();
@@ -1694,15 +1697,22 @@ function AdminView(){
     setSelHotel(h);setConfirmHotelReject(false);
     setHotelAccess({slug:h.slug||''});setHotelAccessSaved(false);setHotelAccessErr('');
     setHotelMessages([]);setLoadingHM(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json());
+    setHotelStats(null);setLoadingHotelStats(true);setHotelRecentVisits([]);
+    const AFURL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch';
+    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+    const [json,statsJson]=await Promise.all([
+      fetch(AFURL,{method:'POST',headers:hdrs,body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json()),
+      h.slug?fetch(AFURL,{method:'POST',headers:hdrs,body:JSON.stringify({action:'open_hotel_stats',slug:h.slug})}).then(r=>r.json()):Promise.resolve({}),
+    ]);
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
-      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:m.id})})));
+      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:hdrs,body:JSON.stringify({action:'mark_read',id:m.id})})));
       setBadgeHotelMsgs(b=>Math.max(0,b-unread.length));
       setUnreadHotelMessages(u=>{const n={...u};delete n[h.slug];return n;});
     }
     setHotelMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingHM(false);
+    setHotelStats(statsJson||{});setHotelRecentVisits(statsJson?.recentVisits||[]);setLoadingHotelStats(false);
   }
   async function markHotelMsgAsRead(msgId,hotelSlug){
     await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:msgId})});
@@ -2292,10 +2302,51 @@ function AdminView(){
               <button className="adm-modal-close fb" onClick={()=>{setSelHotel(null);setConfirmHotelReject(false);}}>✕</button>
             </div>
             <div className="adm-modal-body">
-              {[['Type',selHotel.type],selHotel.type_etablissement?['Type d\'établissement',selHotel.type_etablissement]:null,['Adresse',selHotel.adresse],['Responsable',selHotel.nom_responsable],['Email',selHotel.email],['Téléphone',selHotel.telephone],['Chambres',selHotel.nombre_chambres||'—'],['Date',admFmt(selHotel.created_at)]].filter(Boolean).map(([k,v])=>(
+              {[['Type',selHotel.type],selHotel.type_etablissement?['Type d\'établissement',selHotel.type_etablissement]:null,['Adresse',selHotel.adresse],['Ville',selHotel.ville||'—'],['Responsable',selHotel.nom_responsable],['Email',selHotel.email],['Téléphone',selHotel.telephone],['Chambres',selHotel.nombre_chambres||'—'],['Date',admFmt(selHotel.created_at)]].filter(Boolean).map(([k,v])=>(
                 <div key={k} className="adm-field"><div className="adm-field-label">{k}</div><div className="adm-field-val fb">{v}</div></div>
               ))}
               <div className="adm-field"><div className="adm-field-label">Statut</div><div style={{marginTop:2}}><StatusBadge status={selHotel.status}/></div></div>
+
+              {/* ── STATS ── */}
+              {selHotel.status==='approuve'&&(
+                <div style={{marginTop:16}}>
+                  <div className="adm-section-label">Statistiques</div>
+                  {loadingHotelStats?(
+                    <div className="adm-empty fb" style={{padding:'10px 0',fontSize:12}}>Chargement…</div>
+                  ):(
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:8}}>
+                      {[
+                        ['QR générés',hotelStats?.qrTotal??'—'],
+                        ['QR scannés',hotelStats?.qrScanned??'—'],
+                        ['Dernière visite',hotelStats?.lastVisit?admFmt(hotelStats.lastVisit):'—'],
+                      ].map(([label,val])=>(
+                        <div key={label} style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.09)',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+                          <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,fontWeight:600,color:'#F7F3EE',lineHeight:1}}>{val}</div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:400,color:'rgba(247,243,238,.38)',marginTop:5,letterSpacing:'.04em'}}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── DERNIÈRES VISITES ── */}
+              {selHotel.status==='approuve'&&!loadingHotelStats&&hotelRecentVisits.length>0&&(
+                <div style={{marginTop:16}}>
+                  <div className="adm-section-label">Dernières visites</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:8}}>
+                    {hotelRecentVisits.map((v,i)=>(
+                      <div key={i} style={{background:'rgba(247,243,238,.03)',border:'1px solid rgba(247,243,238,.07)',borderRadius:8,padding:'9px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                        <div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,color:'rgba(247,243,238,.8)'}}>{v.client_name||'—'}</div>
+                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(247,243,238,.38)',marginTop:2}}>{v.candidates?.nom||v.partner_id||'—'}</div>
+                        </div>
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)',flexShrink:0}}>{admFmt(v.created_at)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {selHotel.status==='approuve'&&(
                 <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès hôtel</div>

@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, id, date_from, limit: limitCount } = await req.json()
+    const { action, id, slug, date_from, limit: limitCount } = await req.json()
 
     if (!VALID_ACTIONS.includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
@@ -132,6 +132,21 @@ Deno.serve(async (req) => {
       })
       const msgs = await sbGet(url, key, `messages?select=*&hotel_slug=eq.${encodeURIComponent(id)}&order=created_at.desc`)
       result = { msgs }
+    }
+
+    else if (action === 'open_hotel_stats') {
+      if (!slug) return new Response(JSON.stringify({ error: 'slug requis' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+      const enc = encodeURIComponent(slug)
+      const [qrTotal, qrScanned, lastVisitArr, recentVisits] = await Promise.all([
+        sbCount(url, key, `visits?select=id&hotel_slug=eq.${enc}`),
+        sbCount(url, key, `visits?select=id&hotel_slug=eq.${enc}&scanned=eq.true`),
+        sbGet(url, key, `visits?select=created_at&hotel_slug=eq.${enc}&order=created_at.desc&limit=1`),
+        sbGet(url, key, `visits?select=client_name,created_at,partner_id,candidates(nom)&hotel_slug=eq.${enc}&order=created_at.desc&limit=5`),
+      ])
+      const lastVisit = (lastVisitArr as Array<{created_at: string}>)[0]?.created_at ?? null
+      result = { qrTotal, qrScanned, lastVisit, recentVisits }
     }
 
     return new Response(JSON.stringify(result), {
