@@ -3529,6 +3529,7 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [countdown,setCountdown]=useState('01:00:00');
   const [countdownPct,setCountdownPct]=useState(100);
   const [scannedConfirm,setScannedConfirm]=useState(null);
+  const [googleRating,setGoogleRating]=useState(null);
   const sessionExpired=!!(profile?.session_expires_at&&new Date()>new Date(profile.session_expires_at));
 
   useEffect(()=>{
@@ -3538,6 +3539,26 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
     supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false}).then(({data})=>{
       setMenuItems(data||[]);setLoadingMenu(false);
     });
+  },[partner.id]);
+
+  useEffect(()=>{
+    const apiKey=import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if(!partner.google_review_url||!apiKey)return;
+    function extractPlaceId(url){
+      let m=url.match(/[?&]place_?id=(ChIJ[^&]+)/i);
+      if(m)return decodeURIComponent(m[1]);
+      m=url.match(/\/place\/[^/]+\/(ChIJ[^/?#]+)/);
+      if(m)return m[1];
+      m=url.match(/!1s(ChIJ[^!]+)/);
+      if(m)return decodeURIComponent(m[1]);
+      return null;
+    }
+    const placeId=extractPlaceId(partner.google_review_url);
+    if(!placeId)return;
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=rating,user_ratings_total&key=${apiKey}`)
+      .then(r=>r.json())
+      .then(d=>{if(d.result?.rating!=null)setGoogleRating({rating:d.result.rating,total:d.result.user_ratings_total||0});})
+      .catch(()=>{});
   },[partner.id]);
 
   useEffect(()=>{
@@ -3595,6 +3616,23 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
         <div className="gpp-hero-content">
           <div className="gpp-hero-cat fb">{partner.categorie}</div>
           <div className="gpp-hero-name fd">{partner.nom}</div>
+          {googleRating&&(
+            <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:6,marginTop:8}}>
+              <span style={{color:'#C9A84C',fontSize:15,letterSpacing:1.5,lineHeight:1}}>
+                {Array(5).fill(0).map((_,i)=>i<Math.round(googleRating.rating)?'★':'☆').join('')}
+              </span>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'rgba(247,243,238,.92)'}}>
+                {googleRating.rating.toFixed(1)}
+              </span>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'rgba(247,243,238,.5)'}}>
+                {googleRating.total.toLocaleString('fr-FR')} avis
+              </span>
+              <a href={partner.google_review_url} target="_blank" rel="noopener noreferrer"
+                style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'rgba(201,168,76,.8)',textDecoration:'none',marginLeft:2}}>
+                Voir les avis →
+              </a>
+            </div>
+          )}
           {openStatus&&(
             <div className={'gpp-status-badge '+openStatus}>
               <div className={'gpp-sdot '+openStatus}/>
