@@ -1,6 +1,9 @@
 [functions.admin-fetch]
 verify_jwt = false
 
+[functions.google-rating]
+verify_jwt = false
+
 [functions.admin-status]
 verify_jwt = false
 

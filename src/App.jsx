@@ -3542,22 +3542,15 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   },[partner.id]);
 
   useEffect(()=>{
-    const apiKey=import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if(!partner.google_review_url||!apiKey)return;
-    function extractPlaceId(url){
-      let m=url.match(/[?&]place_?id=(ChIJ[^&]+)/i);
-      if(m)return decodeURIComponent(m[1]);
-      m=url.match(/\/place\/[^/]+\/(ChIJ[^/?#]+)/);
-      if(m)return m[1];
-      m=url.match(/!1s(ChIJ[^!]+)/);
-      if(m)return decodeURIComponent(m[1]);
-      return null;
-    }
-    const placeId=extractPlaceId(partner.google_review_url);
-    if(!placeId)return;
-    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=rating,user_ratings_total&key=${apiKey}`)
+    const secret=import.meta.env.VITE_LOCALLY_SECRET;
+    if(!secret)return;
+    fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/google-rating',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-locally-secret':secret},
+      body:JSON.stringify({review_url:partner.google_review_url||null,nom:partner.nom,adresse:partner.google_maps||null}),
+    })
       .then(r=>r.json())
-      .then(d=>{if(d.result?.rating!=null)setGoogleRating({rating:d.result.rating,total:d.result.user_ratings_total||0});})
+      .then(d=>{if(d.rating!=null)setGoogleRating({rating:d.rating,total:d.total||0});})
       .catch(()=>{});
   },[partner.id]);
 
