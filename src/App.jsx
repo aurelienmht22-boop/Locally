@@ -751,6 +751,11 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .nav-auth-btn:hover{background:rgba(var(--lp-rgb),.06);border-color:rgba(var(--lp-rgb),.35);color:#1C1208;}
 .nav-auth-name{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--lp);cursor:pointer;margin-left:8px;padding:6px 12px;border:1px solid rgba(var(--lp-rgb),.3);border-radius:20px;background:transparent;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
 .nav-auth-name:hover{background:rgba(var(--lp-rgb),.06);border-color:var(--lp);}
+.paris-catcard{transition:transform .25s ease-out,box-shadow .25s ease-out,border-color .25s ease-out;}
+.paris-catcard:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.45);border-color:rgba(255,255,255,.5)!important;}
+.paris-catcard:active{transform:scale(.97);}
+.paris-catcard img{transition:filter .25s ease-out;}
+.paris-catcard:hover img{filter:brightness(1.1);}
 `;
 
 function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
@@ -995,7 +1000,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
         {isParis?(
           <div className="cat-grid" ref={catGridRef}>
             {visibleCats.map((cat,i)=>(
-              <div key={cat.id} onClick={()=>onNavigate("category",cat.id)}
+              <div key={cat.id} className="paris-catcard" onClick={()=>onNavigate("category",cat.id)}
                 style={{position:'relative',height:240,borderRadius:20,overflow:'hidden',cursor:'pointer',
                   background:'rgba(255,255,255,.08)',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',
                   border:'1px solid rgba(255,255,255,.35)',
@@ -1004,11 +1009,11 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
                   transition:`opacity .6s ease-out ${i*100}ms,transform .6s ease-out ${i*100}ms`}}>
                 <img src={photos[cat.id]||''} alt={cat.label} loading="lazy"
                   style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:.4}}/>
-                <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 60%,rgba(0,0,0,0) 100%)'}}/>
-                <div style={{position:'absolute',top:14,left:14,zIndex:2,background:'rgba(255,255,255,.15)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',filter:'brightness(0) invert(1)'}}
+                <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.2) 60%,rgba(0,0,0,0) 100%)'}}/>
+                <div style={{position:'absolute',top:14,left:14,zIndex:2,background:'rgba(255,255,255,.25)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.4)',borderRadius:10,width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',filter:'brightness(0) invert(1)'}}
                   dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[cat.label]||ICONE_PAR_CATEGORIE['Autre']}}/>
                 <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'20px 24px'}}>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:600,color:'#FFFFFF',lineHeight:1,marginBottom:6,textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>{cat.label}</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:600,color:'#FFFFFF',lineHeight:1,marginBottom:6,letterSpacing:'.3px',textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>{cat.label}</div>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'rgba(255,255,255,.85)',letterSpacing:'.03em',textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>Voir les adresses →</div>
                 </div>
               </div>
