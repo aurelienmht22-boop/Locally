@@ -998,18 +998,18 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
               <div key={cat.id} onClick={()=>onNavigate("category",cat.id)}
                 style={{position:'relative',height:240,borderRadius:20,overflow:'hidden',cursor:'pointer',
                   background:'rgba(255,255,255,.08)',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',
-                  border:'1px solid rgba(255,255,255,.15)',
+                  border:'1px solid rgba(255,255,255,.35)',
                   opacity:catsVisible?1:0,
                   transform:catsVisible?'none':'translateY(30px)',
                   transition:`opacity .6s ease-out ${i*100}ms,transform .6s ease-out ${i*100}ms`}}>
                 <img src={photos[cat.id]||''} alt={cat.label} loading="lazy"
-                  style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:.3}}/>
-                <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(15,25,35,.05) 0%,rgba(15,25,35,.75) 100%)'}}/>
+                  style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:.4}}/>
+                <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.2) 60%,rgba(0,0,0,0) 100%)'}}/>
                 <div style={{position:'absolute',top:14,left:14,zIndex:2,background:'rgba(255,255,255,.15)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',filter:'brightness(0) invert(1)'}}
                   dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[cat.label]||ICONE_PAR_CATEGORIE['Autre']}}/>
                 <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'20px 24px'}}>
-                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:700,color:'#F7F3EE',lineHeight:1,marginBottom:6}}>{cat.label}</div>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'rgba(255,255,255,.55)',letterSpacing:'.03em'}}>Voir les adresses →</div>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:600,color:'#FFFFFF',lineHeight:1,marginBottom:6,textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>{cat.label}</div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'rgba(255,255,255,.85)',letterSpacing:'.03em',textShadow:'0 1px 3px rgba(0,0,0,.5)'}}>Voir les adresses →</div>
                 </div>
               </div>
             ))}
