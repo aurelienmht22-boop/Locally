@@ -763,11 +763,16 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
   useEffect(()=>{
     setCatsVisible(false);
     if(selVille!=='Paris')return;
-    const el=catGridRef.current;
-    if(!el)return;
-    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setCatsVisible(true);},{threshold:.05});
-    obs.observe(el);
-    return()=>obs.disconnect();
+    const attach=()=>{
+      const el=catGridRef.current;
+      if(!el){setTimeout(attach,50);return;}
+      const rect=el.getBoundingClientRect();
+      if(rect.top<window.innerHeight){setCatsVisible(true);return;}
+      const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setCatsVisible(true);},{threshold:.05});
+      obs.observe(el);
+      return()=>obs.disconnect();
+    };
+    return attach()||undefined;
   },[selVille]);
   const ville = VILLE_CONFIG[selVille||'Bordeaux'] ?? VILLE_CONFIG['Bordeaux'];
   const TICKER = ville.bandeau;
