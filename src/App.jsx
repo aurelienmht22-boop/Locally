@@ -754,12 +754,24 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
   const [loaded,setLoaded]=useState(false);
   const [partnerCount,setPartnerCount]=useState(null);
+  const [catsVisible,setCatsVisible]=useState(false);
+  const catGridRef=useRef(null);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
   useEffect(()=>{
     supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve').then(({count})=>setPartnerCount(count??0));
   },[]);
+  useEffect(()=>{
+    setCatsVisible(false);
+    if(selVille!=='Paris')return;
+    const el=catGridRef.current;
+    if(!el)return;
+    const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setCatsVisible(true);},{threshold:.05});
+    obs.observe(el);
+    return()=>obs.disconnect();
+  },[selVille]);
   const ville = VILLE_CONFIG[selVille||'Bordeaux'] ?? VILLE_CONFIG['Bordeaux'];
   const TICKER = ville.bandeau;
+  const isParis=selVille==='Paris';
 
   const IconBrowse = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -800,46 +812,113 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
     ),
   };
 
+  const photos={
+    restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
+    boulangerie:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
+    sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
+    bienetre:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
+    activite:"https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
+    autre:"https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
+  };
+  const idToLabel=Object.fromEntries(Object.entries(CATEGORIE_MAP).map(([k,v])=>[v,k]));
+  const activeCats=new Set((supabasePartners||[]).map(p=>p.categorie));
+  const standardCats=new Set(Object.keys(CATEGORIE_MAP));
+  const hasOther=(supabasePartners||[]).some(p=>!standardCats.has(p.categorie));
+  const visibleCats=CATEGORIES.filter(cat=>cat.id==='autre'?hasOther:activeCats.has(idToLabel[cat.id]));
+
   return (
     <>
-      {/* ── HERO ───────────────────────────────────────── */}
-      <section className="hero hero-photo">
-        <div style={{position:"absolute",inset:0,backgroundImage:`url(${ville.image_hero||'https://images.unsplash.com/photo-1698608216843-67ae1151b2b8?q=80&w=1600&auto=format&fit=crop'})`,backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",inset:0,background:"rgba(28,18,8,.45)",pointerEvents:"none"}}/>
-
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
-          <div className="hero-badge">
-            <div className="badge-dot" style={{background:ville.colors.primary}}/>
-            <span className="badge-txt fb">{ville.nom} · Partenaires locaux</span>
+      {isParis ? (
+        /* ── HERO PARIS ──────────────────────────────── */
+        <section style={{minHeight:'100dvh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden',textAlign:'center',padding:'120px 24px 80px'}}>
+          <div style={{position:'absolute',inset:0,backgroundImage:`url(${ville.image_hero})`,backgroundSize:'cover',backgroundPosition:'center',pointerEvents:'none'}}/>
+          <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,.3) 0%,rgba(0,0,0,.6) 100%)',pointerEvents:'none'}}/>
+          <div style={{position:'relative',zIndex:1,display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{opacity:loaded?1:0,transform:loaded?'none':'translateY(14px)',transition:'opacity .7s ease .1s,transform .7s ease .1s'}}>
+              <div style={{display:'inline-flex',alignItems:'center',gap:10,marginBottom:36,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',borderRadius:100,padding:'8px 18px',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)'}}>
+                <div style={{width:6,height:6,borderRadius:'50%',background:'#fff',flexShrink:0}}/>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(255,255,255,.9)',fontWeight:500}}>Paris · Partenaires locaux</span>
+              </div>
+            </div>
+            <div style={{opacity:loaded?1:0,transform:loaded?'none':'translateY(28px)',transition:'opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s'}}>
+              <h1 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(48px,7vw,80px)',fontWeight:600,lineHeight:1,color:'#fff',marginBottom:28,letterSpacing:'-.01em'}}>
+                Le meilleur<br/>de <em style={{fontStyle:'italic',color:'rgba(255,255,255,.75)'}}>Paris</em>
+              </h1>
+            </div>
+            <div style={{opacity:loaded?1:0,transition:'opacity 1s ease .48s'}}>
+              <p style={{fontFamily:"'DM Sans',sans-serif",fontSize:16,fontWeight:300,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:400,marginBottom:36}}>{ville.hero_sub}</p>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+                <button
+                  style={{display:'inline-flex',alignItems:'center',background:'#fff',color:'#1B2A4A',fontFamily:"'DM Sans',sans-serif",fontSize:14,fontWeight:600,padding:'16px 44px',borderRadius:50,border:'none',cursor:'pointer',transition:'all .3s ease',boxShadow:'0 4px 24px rgba(0,0,0,.25)',letterSpacing:'.02em',whiteSpace:'nowrap'}}
+                  onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
+                  Explorer les adresses
+                </button>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(255,255,255,.35)',letterSpacing:'.05em'}}>Gratuit · Sans inscription · 100% local</span>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s",position:'relative',zIndex:1}}>
-          <h1 className="hero-title fd">Le meilleur<br/>de <em>{ville.nom}</em>,<br/>à portée de main.</h1>
-        </div>
-
-        <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
-          <p className="hero-desc fb">{ville.hero_sub}</p>
-          <div className="hero-actions">
-            <button className="btn-primary fb" style={{background:ville.colors.primary}} onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
-              Explorer les adresses <IconArrow/>
-            </button>
-            <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
+        </section>
+      ) : (
+        /* ── HERO BORDEAUX (inchangé) ─────────────────── */
+        <section className="hero hero-photo">
+          <div style={{position:"absolute",inset:0,backgroundImage:`url(${ville.image_hero||'https://images.unsplash.com/photo-1698608216843-67ae1151b2b8?q=80&w=1600&auto=format&fit=crop'})`,backgroundSize:"cover",backgroundPosition:"center 55%",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",inset:0,background:"rgba(28,18,8,.45)",pointerEvents:"none"}}/>
+          <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(14px)",transition:"opacity .7s ease .1s,transform .7s ease .1s",position:'relative',zIndex:1}}>
+            <div className="hero-badge">
+              <div className="badge-dot" style={{background:ville.colors.primary}}/>
+              <span className="badge-txt fb">{ville.nom} · Partenaires locaux</span>
+            </div>
           </div>
-        </div>
-      </section>
+          <div style={{opacity:loaded?1:0,transform:loaded?"none":"translateY(28px)",transition:"opacity 1s ease .22s,transform 1s cubic-bezier(.16,1,.3,1) .22s",position:'relative',zIndex:1}}>
+            <h1 className="hero-title fd">Le meilleur<br/>de <em>{ville.nom}</em>,<br/>à portée de main.</h1>
+          </div>
+          <div className="hero-foot" style={{opacity:loaded?1:0,transition:"opacity 1s ease .48s",position:'relative',zIndex:1}}>
+            <p className="hero-desc fb">{ville.hero_sub}</p>
+            <div className="hero-actions">
+              <button className="btn-primary fb" style={{background:ville.colors.primary}} onClick={()=>document.getElementById("categories")?.scrollIntoView({behavior:"smooth"})}>
+                Explorer les adresses <IconArrow/>
+              </button>
+              <span className="hero-note fb">Gratuit · Sans inscription · 100% local</span>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── TICKER ─────────────────────────────────────── */}
-      <div className="ticker-wrap">
+      <div style={{overflow:'hidden',padding:'14px 0',
+        background:isParis?'#1B2A4A':'rgba(107,29,29,.018)',
+        borderTop:isParis?'none':'1px solid rgba(107,29,29,.07)',
+        borderBottom:isParis?'none':'1px solid rgba(107,29,29,.07)'}}>
         <div className="ticker">
-          {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=><div className="ticker-item fd" key={i}>{t}</div>)}
+          {[...TICKER,...TICKER,...TICKER,...TICKER].map((t,i)=>isParis?(
+            <div key={i} style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,fontStyle:'italic',color:'rgba(255,255,255,.75)',padding:'0 28px',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center'}}>
+              {t}<span style={{marginLeft:28,color:'#C9A84C'}}>·</span>
+            </div>
+          ):(
+            <div className="ticker-item fd" key={i}>{t}</div>
+          ))}
         </div>
       </div>
 
       {/* ── VILLE SELECTOR ─────────────────────────────── */}
-      <div style={{background:ville.colors.bg,padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,borderBottom:'1px solid rgba(28,18,8,.07)'}}>
+      <div style={{
+        background:isParis?'#0F1923':ville.colors.bg,
+        padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'center',gap:10,
+        borderBottom:isParis?'1px solid rgba(255,255,255,.07)':'1px solid rgba(28,18,8,.07)'}}>
         {VILLES.map(v=>{
           const active=selVille===v;
+          if(isParis){
+            return(
+              <button key={v} onClick={()=>onVilleChange(v)}
+                style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,padding:'7px 20px',borderRadius:999,
+                  border:active&&v==='Paris'?'none':'1.5px solid rgba(255,255,255,.4)',
+                  cursor:'pointer',transition:'all .18s',letterSpacing:'.01em',
+                  background:active&&v==='Paris'?'#fff':active?'rgba(255,255,255,.1)':'transparent',
+                  color:active&&v==='Paris'?'#1B2A4A':'rgba(255,255,255,.85)'}}>
+                {v}
+              </button>
+            );
+          }
           const vc=VILLE_CONFIG[v].colors;
           return(
             <button key={v} onClick={()=>onVilleChange(v)}
@@ -880,38 +959,58 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       </section>
 
       {/* ── DIVIDER ────────────────────────────────────── */}
-      <div className="div-label">
-        <div className="div-line"/>
-        <span className="div-txt fd">Nos catégories</span>
-        <div className="div-line"/>
+      <div className="div-label" style={isParis?{background:'#0F1923'}:{}}>
+        <div className="div-line" style={isParis?{background:'rgba(255,255,255,.1)'}:{}}/>
+        <span className="div-txt fd" style={isParis?{color:'rgba(255,255,255,.2)'}:{}}>Nos catégories</span>
+        <div className="div-line" style={isParis?{background:'rgba(255,255,255,.1)'}:{}}/>
       </div>
 
       {/* ── CATEGORIES ─────────────────────────────────── */}
-      <section className="section" id="categories" style={{background:"#F7F3EE"}}>
+      <section className="section" id="categories" style={{background:isParis?'#0F1923':'#F7F3EE'}}>
         <FadeUp>
-          <div className="sec-tag fb">À {ville.nom}</div>
-          <div className="sec-title fd">Que cherchez-<em>vous</em> ?</div>
+          {isParis?(
+            <>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,letterSpacing:'.22em',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:18,display:'flex',alignItems:'center',gap:12}}>
+                <span style={{width:24,height:1,background:'rgba(255,255,255,.2)',display:'block',flexShrink:0}}/>
+                À {ville.nom}
+              </div>
+              <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'clamp(38px,5.5vw,64px)',fontWeight:600,lineHeight:1.04,color:'#F7F3EE',marginBottom:64}}>
+                Que cherchez-<em style={{fontStyle:'italic',color:'rgba(255,255,255,.45)'}}>vous</em> ?
+              </div>
+            </>
+          ):(
+            <>
+              <div className="sec-tag fb">À {ville.nom}</div>
+              <div className="sec-title fd">Que cherchez-<em>vous</em> ?</div>
+            </>
+          )}
         </FadeUp>
-        <FadeUp delay={.1}>
-          <div className="cat-grid">
-            {(()=>{
-              const photos={
-                restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
-                boulangerie:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
-                sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
-                bienetre:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-                activite:"https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
-                autre:"https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
-              };
-              const idToLabel=Object.fromEntries(Object.entries(CATEGORIE_MAP).map(([k,v])=>[v,k]));
-              const activeCats=new Set((supabasePartners||[]).map(p=>p.categorie));
-              const standardCats=new Set(Object.keys(CATEGORIE_MAP));
-              const hasOther=(supabasePartners||[]).some(p=>!standardCats.has(p.categorie));
-              const visibleCats=CATEGORIES.filter(cat=>
-                cat.id==='autre'?hasOther:activeCats.has(idToLabel[cat.id])
-              );
-              if(visibleCats.length===0)return null;
-              return visibleCats.map(cat=>(
+        {isParis?(
+          <div className="cat-grid" ref={catGridRef}>
+            {visibleCats.map((cat,i)=>(
+              <div key={cat.id} onClick={()=>onNavigate("category",cat.id)}
+                style={{position:'relative',height:240,borderRadius:20,overflow:'hidden',cursor:'pointer',
+                  background:'rgba(255,255,255,.08)',backdropFilter:'blur(16px)',WebkitBackdropFilter:'blur(16px)',
+                  border:'1px solid rgba(255,255,255,.15)',
+                  opacity:catsVisible?1:0,
+                  transform:catsVisible?'none':'translateY(30px)',
+                  transition:`opacity .6s ease-out ${i*100}ms,transform .6s ease-out ${i*100}ms`}}>
+                <img src={photos[cat.id]||''} alt={cat.label} loading="lazy"
+                  style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',opacity:.3}}/>
+                <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(15,25,35,.05) 0%,rgba(15,25,35,.75) 100%)'}}/>
+                <div style={{position:'absolute',top:14,left:14,zIndex:2,background:'rgba(255,255,255,.15)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,width:38,height:38,display:'flex',alignItems:'center',justifyContent:'center',filter:'brightness(0) invert(1)'}}
+                  dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[cat.label]||ICONE_PAR_CATEGORIE['Autre']}}/>
+                <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'20px 24px'}}>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:700,color:'#F7F3EE',lineHeight:1,marginBottom:6}}>{cat.label}</div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:400,color:'rgba(255,255,255,.55)',letterSpacing:'.03em'}}>Voir les adresses →</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ):(
+          <FadeUp delay={.1}>
+            <div className="cat-grid">
+              {visibleCats.map(cat=>(
                 <div key={cat.id} className="catcard-photo active" onClick={()=>onNavigate("category",cat.id)}>
                   <img src={photos[cat.id]} className="catcard-photo-img" alt={cat.label} loading="lazy"/>
                   <div className="catcard-photo-overlay"/>
@@ -921,10 +1020,10 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
                     <div className="catcard-photo-cta fb">Voir les adresses →</div>
                   </div>
                 </div>
-              ));
-            })()}
-          </div>
-        </FadeUp>
+              ))}
+            </div>
+          </FadeUp>
+        )}
       </section>
 
       {/* ── FOOTER ─────────────────────────────────────── */}
