@@ -4995,19 +4995,16 @@ function ConfidentialiteView({onHome}){
 
 function JoindreView({onHome}){
   const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:'',ville:'Bordeaux'});
-  const [joinHoraires,setJoinHoraires]=useState({});
+  const [noFixedAddress,setNoFixedAddress]=useState(false);
   const [loading,setLoading]=useState(false);
   const [sent,setSent]=useState(false);
   const [err,setErr]=useState('');
   function handleChange(e){const{name,value}=e.target;setForm(f=>({...f,[name]:value}));}
-  function setJoinDay(day,key,val){setJoinHoraires(h=>{const d=h[day]||{ouvert:false,creneaux:[["",""]]};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr,[key]:val}};});}
-  function setJoinDayTime(day,si,ti,val){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=(Array.isArray(d.creneaux)?d.creneaux:[["",""]]).map((s,i)=>i===si?s.map((t,j)=>j===ti?val:t):s);return{...h,[day]:{...d,creneaux:cr}};});}
-  function addJoinDaySlot(day){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];if(cr.length>=2)return h;return{...h,[day]:{...d,creneaux:[...cr,["",""]]}};});}
-  function removeJoinDaySlot(day){setJoinHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
   async function handleSubmit(e){
     e.preventDefault();
     setErr('');
     if(form.categorie==='Autre'&&!form.categorie_autre.trim()){setErr('Veuillez préciser la catégorie.');return;}
+    if(!noFixedAddress&&!form.google_maps.trim()){setErr('Veuillez indiquer une adresse ou cocher "lieu non fixe".');return;}
     if(!form.reduction.trim()){setErr('Veuillez indiquer une réduction.');return;}
     setLoading(true);
     try{
@@ -5016,12 +5013,11 @@ function JoindreView({onHome}){
       const{error}=await supabase.from('candidates').insert([{
         nom:form.nom.trim(),
         categorie:cat,
-        google_maps:form.google_maps.trim(),
+        google_maps:noFixedAddress?'Lieu non fixe':form.google_maps.trim(),
         telephone:form.telephone.trim(),
         description:form.description.trim(),
         reduction,
         email:form.email.trim(),
-        horaires:Object.keys(joinHoraires).length?joinHoraires:null,
         infos_complementaires:form.infos_complementaires.trim()||null,
         ville:form.ville||'Bordeaux',
         status:'pending'
@@ -5042,7 +5038,7 @@ function JoindreView({onHome}){
         {sent?(
           <div className="join-success">
             <div className="join-success-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B1D1D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <div className="join-success-title fd">Candidature envoyée</div>
             <div className="join-success-desc fb">Merci pour votre intérêt. Nous examinerons votre dossier et vous recontacterons sous 48h.</div>
@@ -5053,8 +5049,8 @@ function JoindreView({onHome}){
             <div className="join-sub fb">Vous souhaitez mettre votre commerce en avant et proposer des avantages exclusifs à nos clients ? Remplissez ce formulaire.</div>
             <form onSubmit={handleSubmit} noValidate>
               <div className="join-field">
-                <div className="join-label fb">Nom de l'établissement</div>
-                <input className="join-input fb" name="nom" value={form.nom} onChange={handleChange} placeholder="Le Café du Marché" required maxLength={100}/>
+                <div className="join-label fb">Nom ou nom commercial</div>
+                <input className="join-input fb" name="nom" value={form.nom} onChange={handleChange} placeholder="Ex: Le Café du Marché, Jean-Pierre VTC, Studio Yoga..." required maxLength={100}/>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Catégorie</div>
@@ -5076,8 +5072,14 @@ function JoindreView({onHome}){
                 </div>
               )}
               <div className="join-field">
-                <div className="join-label fb">Adresse</div>
-                <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="Ex: 12 Rue de la Paix, Bordeaux" required maxLength={500}/>
+                <div className="join-label fb">Adresse <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>{noFixedAddress?'— lieu non fixe':''}</span></div>
+                {!noFixedAddress&&(
+                  <input className="join-input fb" name="google_maps" value={form.google_maps} onChange={handleChange} placeholder="Ex: 12 Rue de la Paix, Bordeaux" required={!noFixedAddress} maxLength={500} style={{marginBottom:8}}/>
+                )}
+                <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',marginTop:noFixedAddress?0:4}}>
+                  <input type="checkbox" checked={noFixedAddress} onChange={e=>{setNoFixedAddress(e.target.checked);if(e.target.checked)setForm(f=>({...f,google_maps:''}));}} style={{width:15,height:15,accentColor:'var(--lp)',cursor:'pointer',flexShrink:0}}/>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'rgba(122,101,85,.8)'}}>Je n'ai pas d'adresse fixe (VTC, domicile, etc.)</span>
+                </label>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Ville</div>
@@ -5100,37 +5102,7 @@ function JoindreView({onHome}){
                   <input className="join-input fb" type="number" name="reduction" min="10" max="50" value={form.reduction} onChange={handleChange} placeholder="10" required style={{MozAppearance:'textfield'}}/>
                   <span className="join-input-suffix fb">%</span>
                 </div>
-              </div>
-              <div className="join-field">
-                <div className="join-label fb">Horaires d'ouverture</div>
-                <div className="prt-hours-grid">
-                  {DAYS.map(day=>{
-                    const h=joinHoraires[day]||{ouvert:false,creneaux:[["",""]]};
-                    const cr=Array.isArray(h.creneaux)&&h.creneaux.length?h.creneaux:[["",""]];
-                    return(
-                      <div key={day} className="prt-hours-row" style={{alignItems:'flex-start'}}>
-                        <div className="prt-hours-day-name fb" style={{paddingTop:6}}>{day}</div>
-                        <div className="prt-hours-toggle" style={{flexShrink:0,paddingTop:4}}>
-                          <button type="button" className={'prt-hours-toggle-btn fb'+(h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',true)}>Ouvert</button>
-                          <button type="button" className={'prt-hours-toggle-btn fb'+(!h.ouvert?' on':'')} onClick={()=>setJoinDay(day,'ouvert',false)}>Fermé</button>
-                        </div>
-                        {h.ouvert&&(
-                          <div className="prt-hours-slots">
-                            {cr.map((slot,si)=>(
-                              <div key={si} className="prt-hours-slot-row">
-                                <input className="prt-hours-time fb" type="time" value={slot[0]||''} onChange={e=>setJoinDayTime(day,si,0,e.target.value)}/>
-                                <span className="prt-hours-time-sep fb">→</span>
-                                <input className="prt-hours-time fb" type="time" value={slot[1]||''} onChange={e=>setJoinDayTime(day,si,1,e.target.value)}/>
-                                {si===0&&cr.length<2&&<button type="button" className="prt-hours-slot-add fb" onClick={()=>addJoinDaySlot(day)}>+ 2ème créneau</button>}
-                                {si>0&&<button type="button" className="prt-hours-slot-rm" onClick={()=>removeJoinDaySlot(day)}>×</button>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(122,101,85,.55)',marginTop:6,lineHeight:1.5}}>Vous pourrez modifier ce taux à tout moment depuis votre espace partenaire.</div>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Informations complémentaires <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>— optionnel</span></div>
