@@ -1066,6 +1066,28 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
   })();
   const [selCat,setSelCat]=useState(initCat);
   const [selTags,setSelTags]=useState([]);
+  const [googleRatings,setGoogleRatings]=useState({});
+
+  useEffect(()=>{
+    const secret=import.meta.env.VITE_LOCALLY_SECRET;
+    if(!secret)return;
+    const toFetch=all.filter(p=>p.google_review_url);
+    if(!toFetch.length)return;
+    Promise.all(toFetch.map(p=>
+      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/google-rating',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-locally-secret':secret},
+        body:JSON.stringify({review_url:p.google_review_url,nom:p.nom,adresse:p.google_maps||null}),
+      })
+        .then(r=>r.json())
+        .then(d=>d.rating!=null?{id:p.id,rating:d.rating,total:d.total||0}:null)
+        .catch(()=>null)
+    )).then(results=>{
+      const map={};
+      results.forEach(r=>{if(r)map[r.id]={rating:r.rating,total:r.total};});
+      setGoogleRatings(map);
+    });
+  },[]);
 
   const cats=FILTER_CATS;
   const byCat=selCat==='Tous'?all:all.filter(p=>p.categorie===selCat);
@@ -1130,6 +1152,13 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
                 <div className="pcard-body">
                   <div className="pcard-cat fb">{p.categorie}</div>
                   <div className="pcard-name fd">{p.nom}</div>
+                  {googleRatings[p.id]&&(
+                    <div style={{display:'flex',alignItems:'center',gap:4,marginTop:3,marginBottom:2}}>
+                      <span style={{color:'#C9A84C',fontSize:11,lineHeight:1,letterSpacing:'.5px'}}>{'★'.repeat(Math.round(googleRatings[p.id].rating))}{'☆'.repeat(5-Math.round(googleRatings[p.id].rating))}</span>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#4A3F35',lineHeight:1}}>{googleRatings[p.id].rating.toFixed(1)}</span>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:300,color:'#9B8B7A',lineHeight:1}}>({googleRatings[p.id].total.toLocaleString('fr-FR')})</span>
+                    </div>
+                  )}
                   <div className="pcard-desc fb">{p.description||p.google_maps}</div>
                   {(p.tags||[]).length>0&&(
                     <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:8}}>
