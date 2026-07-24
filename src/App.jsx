@@ -1694,6 +1694,9 @@ function AdminView(){
   const [partnerMessages,setPartnerMessages]=useState([]);
   const [loadingPM,setLoadingPM]=useState(false);
   const [adminPwdForm,setAdminPwdForm]=useState({code1:'',code2:''});
+  const [adminReplyText,setAdminReplyText]=useState('');
+  const [adminHotelReplyText,setAdminHotelReplyText]=useState('');
+  const [adminReplySending,setAdminReplySending]=useState(false);
   const [adminPwdErr,setAdminPwdErr]=useState('');
   const [adminPwdSaved,setAdminPwdSaved]=useState(false);
   const [badgePending,setBadgePending]=useState(0);
@@ -1882,6 +1885,20 @@ function AdminView(){
     setHotelMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadHotelMessages(u=>{const n={...u};n[hotelSlug]=Math.max(0,(n[hotelSlug]||1)-1);if(!n[hotelSlug])delete n[hotelSlug];return n;});
     setBadgeHotelMsgs(b=>Math.max(0,b-1));
+  }
+  async function sendAdminReply(type){
+    const text=(type==='partner'?adminReplyText:adminHotelReplyText).trim();
+    if(!text)return;
+    setAdminReplySending(true);
+    const payload=type==='partner'
+      ?{partner_id:selPartner.id,partner_name:selPartner.nom,message:text,sender:'admin',status:'lu'}
+      :{hotel_slug:selHotel.slug,hotel_name:selHotel.nom,message:text,sender:'admin',status:'lu'};
+    const{data,error}=await supabase.from('messages').insert(payload).select().single();
+    if(!error&&data){
+      if(type==='partner'){setPartnerMessages(ms=>[...ms,data]);setAdminReplyText('');}
+      else{setHotelMessages(ms=>[...ms,data]);setAdminHotelReplyText('');}
+    }
+    setAdminReplySending(false);
   }
 
   useEffect(()=>{
@@ -2418,26 +2435,43 @@ function AdminView(){
                     </div>
                   )}
                 </div>
-                {partnerMessages.length>0&&(
-                  <div style={{marginTop:16}}>
-                    <div className="adm-section-label">Messages</div>
-                    {loadingPM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
-                      <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
-                        {partnerMessages.map(m=>(
-                          <div key={m.id} style={{background:m.status==='non_lu'?'rgba(239,68,68,.06)':'rgba(247,243,238,.03)',border:`1px solid ${m.status==='non_lu'?'rgba(239,68,68,.18)':'rgba(247,243,238,.07)'}`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:6}}>
-                            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.8)',lineHeight:1.55}}>{m.message}</div>
-                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>{admFmt(m.created_at)}</span>
-                              {m.status==='non_lu'&&(
-                                <button onClick={()=>markAsRead(m.id,selPartner.id)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,background:'none',border:'1px solid rgba(247,243,238,.15)',borderRadius:6,color:'rgba(247,243,238,.5)',cursor:'pointer',padding:'3px 10px'}}>Marquer comme lu</button>
-                              )}
+                <div style={{marginTop:16}}>
+                  <div className="adm-section-label">Messages</div>
+                  {loadingPM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
+                    <>
+                      {partnerMessages.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'rgba(247,243,238,.28)',padding:'8px 0'}}>Aucun message.</div>}
+                      <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8,maxHeight:260,overflowY:'auto'}}>
+                        {partnerMessages.map(m=>{
+                          const isAdmin=m.sender==='admin';
+                          return(
+                            <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-end':'flex-start'}}>
+                              <div style={{maxWidth:'80%',borderRadius:12,padding:'10px 14px',
+                                background:isAdmin?'#6B1D1D':'rgba(247,243,238,.08)',
+                                border:isAdmin?'none':`1px solid ${m.status==='non_lu'?'rgba(239,68,68,.25)':'rgba(247,243,238,.1)'}`,
+                                display:'flex',flexDirection:'column',gap:4}}>
+                                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:isAdmin?'#F7F3EE':'rgba(247,243,238,.85)',lineHeight:1.5}}>{m.message}</div>
+                                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:isAdmin?'rgba(247,243,238,.45)':'rgba(247,243,238,.28)',alignSelf:isAdmin?'flex-end':'flex-start'}}>{admFmt(m.created_at)}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div style={{display:'flex',gap:8,marginTop:12}}>
+                        <input
+                          className="adm-input fb"
+                          value={adminReplyText}
+                          onChange={e=>setAdminReplyText(e.target.value)}
+                          onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAdminReply('partner');}}}
+                          placeholder="Répondre au partenaire…"
+                          style={{flex:1,marginBottom:0,padding:'9px 12px'}}
+                        />
+                        <button className="adm-btn fb" onClick={()=>sendAdminReply('partner')} disabled={adminReplySending||!adminReplyText.trim()} style={{width:'auto',padding:'9px 16px',flexShrink:0}}>
+                          {adminReplySending?'…':'Répondre'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               {!confirmPDisable?(
                 <div className="adm-modal-actions">
@@ -2528,26 +2562,43 @@ function AdminView(){
                   {hotelAccessErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444',marginTop:2}}>{hotelAccessErr}</div>}
                 </div>
               )}
-              {hotelMessages.length>0&&(
-                <div style={{marginTop:16}}>
-                  <div className="adm-section-label">Messages hôtel</div>
-                  {loadingHM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
-                    <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
-                      {hotelMessages.map(m=>(
-                        <div key={m.id} style={{background:m.status==='non_lu'?'rgba(239,68,68,.06)':'rgba(247,243,238,.03)',border:`1px solid ${m.status==='non_lu'?'rgba(239,68,68,.18)':'rgba(247,243,238,.07)'}`,borderRadius:10,padding:'12px 14px',display:'flex',flexDirection:'column',gap:6}}>
-                          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.8)',lineHeight:1.55}}>{m.message}</div>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-                            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(247,243,238,.28)'}}>{admFmt(m.created_at)}</span>
-                            {m.status==='non_lu'&&(
-                              <button onClick={()=>markHotelMsgAsRead(m.id,selHotel.slug)} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,background:'none',border:'1px solid rgba(247,243,238,.15)',borderRadius:6,color:'rgba(247,243,238,.5)',cursor:'pointer',padding:'3px 10px'}}>Marquer comme lu</button>
-                            )}
+              <div style={{marginTop:16}}>
+                <div className="adm-section-label">Messages hôtel</div>
+                {loadingHM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
+                  <>
+                    {hotelMessages.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'rgba(247,243,238,.28)',padding:'8px 0'}}>Aucun message.</div>}
+                    <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8,maxHeight:260,overflowY:'auto'}}>
+                      {hotelMessages.map(m=>{
+                        const isAdmin=m.sender==='admin';
+                        return(
+                          <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-end':'flex-start'}}>
+                            <div style={{maxWidth:'80%',borderRadius:12,padding:'10px 14px',
+                              background:isAdmin?'#6B1D1D':'rgba(247,243,238,.08)',
+                              border:isAdmin?'none':`1px solid ${m.status==='non_lu'?'rgba(239,68,68,.25)':'rgba(247,243,238,.1)'}`,
+                              display:'flex',flexDirection:'column',gap:4}}>
+                              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:isAdmin?'#F7F3EE':'rgba(247,243,238,.85)',lineHeight:1.5}}>{m.message}</div>
+                              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:isAdmin?'rgba(247,243,238,.45)':'rgba(247,243,238,.28)',alignSelf:isAdmin?'flex-end':'flex-start'}}>{admFmt(m.created_at)}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
-              )}
+                    <div style={{display:'flex',gap:8,marginTop:12}}>
+                      <input
+                        className="adm-input fb"
+                        value={adminHotelReplyText}
+                        onChange={e=>setAdminHotelReplyText(e.target.value)}
+                        onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendAdminReply('hotel');}}}
+                        placeholder="Répondre à l'hôtel…"
+                        style={{flex:1,marginBottom:0,padding:'9px 12px'}}
+                      />
+                      <button className="adm-btn fb" onClick={()=>sendAdminReply('hotel')} disabled={adminReplySending||!adminHotelReplyText.trim()} style={{width:'auto',padding:'9px 16px',flexShrink:0}}>
+                        {adminReplySending?'…':'Répondre'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             {!confirmHotelReject?(
               <div className="adm-modal-actions">
@@ -2673,6 +2724,9 @@ function PartnerView({onLogout}){
   const [sendingMsg,setSendingMsg]=useState(false);
   const [msgSent,setMsgSent]=useState(false);
   const [msgErr,setMsgErr]=useState('');
+  const [myMessages,setMyMessages]=useState([]);
+  const [loadingMyMsgs,setLoadingMyMsgs]=useState(false);
+  const [unreadAdmin,setUnreadAdmin]=useState(0);
   const [txnStep,setTxnStep]=useState('scan');
   const [txnScanMode,setTxnScanMode]=useState('camera');
   const [txnManualId,setTxnManualId]=useState('');
@@ -2703,10 +2757,22 @@ function PartnerView({onLogout}){
         setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux'});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
+        const lastRead=localStorage.getItem(`msg_read_${data.id}`)||'1970-01-01';
+        const{count}=await supabase.from('messages').select('*',{count:'exact',head:true}).eq('partner_id',data.id).eq('sender','admin').gt('created_at',lastRead);
+        setUnreadAdmin(count||0);
       }
     }catch(e){console.error('loadPartner:',e);}
   }
+  async function loadMyMessages(partnerId){
+    setLoadingMyMsgs(true);
+    const{data}=await supabase.from('messages').select('*').eq('partner_id',partnerId).order('created_at',{ascending:true});
+    setMyMessages(data||[]);
+    localStorage.setItem(`msg_read_${partnerId}`,new Date().toISOString());
+    setUnreadAdmin(0);
+    setLoadingMyMsgs(false);
+  }
   useEffect(()=>{if(authed)loadPartner();},[]);
+  useEffect(()=>{if(tab==='messages'&&partner)loadMyMessages(partner.id);},[tab,partner?.id]);
 
   async function saveSettingsInfo(){
     setSavingInfo(true);setInfoErr('');setReductionErr('');
@@ -2915,9 +2981,10 @@ function PartnerView({onLogout}){
     if(!msgText.trim())return;
     setSendingMsg(true);setMsgErr('');
     try{
-      const{error}=await supabase.from('messages').insert({partner_id:partner.id,partner_name:partner.nom,message:msgText.trim()});
+      const{data,error}=await supabase.from('messages').insert({partner_id:partner.id,partner_name:partner.nom,message:msgText.trim(),sender:'partner'}).select().single();
       if(error)throw error;
       setMsgText('');setMsgSent(true);setTimeout(()=>setMsgSent(false),3000);
+      if(data)setMyMessages(ms=>[...ms,data]);
     }catch(e){setMsgErr('Erreur lors de l\'envoi. Réessayez.');}
     setSendingMsg(false);
   }
@@ -3067,7 +3134,10 @@ function PartnerView({onLogout}){
       </div>
       <div className="prt-tabs-bar">
         {[['profil','Mon profil'],['menu',getMetierLabels(partner?.categorie).ongletLabel],['messages','Messages'],['stats','Mes stats'],['valider','Valider'],['parametres','Paramètres']].map(([v,l])=>(
-          <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
+          <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)} style={{position:'relative'}}>
+            {l}
+            {v==='messages'&&unreadAdmin>0&&<span style={{position:'absolute',top:2,right:2,background:'#EF4444',color:'#fff',fontSize:9,fontWeight:700,borderRadius:100,padding:'1px 5px',lineHeight:1.4}}>{unreadAdmin}</span>}
+          </button>
         ))}
       </div>
       <div className="prt-content">
@@ -3385,20 +3455,33 @@ function PartnerView({onLogout}){
 
         {tab==='messages'&&(
           <div style={{maxWidth:560,display:'flex',flexDirection:'column',gap:16}}>
-            <div className="prt-section-label fb">Envoyer un message à Locally</div>
-            <textarea
-              className="prt-textarea fb"
-              value={msgText}
-              onChange={e=>setMsgText(e.target.value)}
-              placeholder="Votre message…"
-              rows={5}
-              style={{resize:'vertical'}}
-            />
-            {msgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981'}}>✓ Message envoyé à l'équipe Locally.</div>}
-            {msgErr&&<div className="prt-err fb">{msgErr}</div>}
-            <div>
-              <button className="prt-btn-primary fb" onClick={sendMessage} disabled={sendingMsg||!msgText.trim()}>
-                {sendingMsg?'Envoi…':'Envoyer à Locally'}
+            <div className="prt-section-label fb">Ma conversation avec Locally</div>
+            {loadingMyMsgs?<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#9B8B7A'}}>Chargement…</div>:(
+              <div style={{display:'flex',flexDirection:'column',gap:8,minHeight:60,maxHeight:340,overflowY:'auto',padding:'4px 0'}}>
+                {myMessages.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A'}}>Aucun message pour l'instant.</div>}
+                {myMessages.map(m=>{
+                  const isAdmin=m.sender==='admin';
+                  return(
+                    <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-start':'flex-end'}}>
+                      <div style={{maxWidth:'80%',borderRadius:14,padding:'10px 14px',
+                        background:isAdmin?'#F0EBE3':'var(--lp,#6B1D1D)',
+                        display:'flex',flexDirection:'column',gap:3}}>
+                        {isAdmin&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,color:'#9B8B7A',letterSpacing:'.04em',marginBottom:2}}>Locally</div>}
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:isAdmin?'#3A2E27':'#FAF4EC',lineHeight:1.55}}>{m.message}</div>
+                        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:isAdmin?'rgba(58,46,39,.4)':'rgba(250,244,236,.5)',alignSelf:'flex-end',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:16}}>
+              <div className="prt-section-label fb" style={{marginBottom:8}}>Nouveau message</div>
+              <textarea className="prt-textarea fb" value={msgText} onChange={e=>setMsgText(e.target.value)} placeholder="Votre message à l'équipe Locally…" rows={3} style={{resize:'vertical'}}/>
+              {msgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981',marginTop:6}}>✓ Message envoyé.</div>}
+              {msgErr&&<div className="prt-err fb">{msgErr}</div>}
+              <button className="prt-btn-primary fb" onClick={sendMessage} disabled={sendingMsg||!msgText.trim()} style={{marginTop:10}}>
+                {sendingMsg?'Envoi…':'Envoyer'}
               </button>
             </div>
           </div>
@@ -4057,6 +4140,9 @@ function HotelView({onLogout}){
   const [sendingHtlMsg,setSendingHtlMsg]=useState(false);
   const [htlMsgSent,setHtlMsgSent]=useState(false);
   const [htlMsgErr,setHtlMsgErr]=useState('');
+  const [myHtlMessages,setMyHtlMessages]=useState([]);
+  const [loadingHtlMsgs,setLoadingHtlMsgs]=useState(false);
+  const [unreadAdminHtl,setUnreadAdminHtl]=useState(0);
   const qrCardRef=useRef(null);
 
   async function loadHotel(){
@@ -4064,9 +4150,22 @@ function HotelView({onLogout}){
       const{data,error}=await supabase.from('hotels').select('*').eq('slug',slug).eq('status','approuve').maybeSingle();
       if(error)throw error;
       setHotel(data);
-      if(data)setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||'',ville:data.ville||'Bordeaux'});
+      if(data){
+        setHtlProfileForm({nom:data.nom||'',type:data.type||'',type_etablissement:data.type_etablissement||'',email:data.email||'',telephone:data.telephone||'',ville:data.ville||'Bordeaux'});
+        const lastRead=localStorage.getItem(`htl_msg_read_${data.slug}`)||'1970-01-01';
+        const{count}=await supabase.from('messages').select('*',{count:'exact',head:true}).eq('hotel_slug',data.slug).eq('sender','admin').gt('created_at',lastRead);
+        setUnreadAdminHtl(count||0);
+      }
     }catch(e){setHtlLoadErr('Impossible de charger vos données. Vérifiez votre connexion.');}
     setLoading(false);
+  }
+  async function loadHtlMessages(hotelSlug){
+    setLoadingHtlMsgs(true);
+    const{data}=await supabase.from('messages').select('*').eq('hotel_slug',hotelSlug).order('created_at',{ascending:true});
+    setMyHtlMessages(data||[]);
+    localStorage.setItem(`htl_msg_read_${hotelSlug}`,new Date().toISOString());
+    setUnreadAdminHtl(0);
+    setLoadingHtlMsgs(false);
   }
 
   function htlGetPeriodFrom(period){
@@ -4107,6 +4206,7 @@ function HotelView({onLogout}){
   }
 
   useEffect(()=>{if(authed){loadHotel();loadStats(htlStatPeriod);}},[authed]);
+  useEffect(()=>{if(tab==='messages'&&hotel)loadHtlMessages(hotel.slug);},[tab,hotel?.slug]);
   useEffect(()=>{if(authed)loadStats(htlStatPeriod);},[htlStatPeriod]);
 
   async function downloadQrCard(){
@@ -4150,8 +4250,9 @@ function HotelView({onLogout}){
     if(!htlMsgText.trim()||!hotel)return;
     setSendingHtlMsg(true);setHtlMsgErr('');
     try{
-      const{error}=await supabase.from('messages').insert({hotel_slug:slug,hotel_name:hotel.nom,message:htlMsgText.trim()});
+      const{data,error}=await supabase.from('messages').insert({hotel_slug:slug,hotel_name:hotel.nom,message:htlMsgText.trim(),sender:'hotel'}).select().single();
       if(error)throw error;
+      setMyHtlMessages(ms=>[...ms,data]);
       setHtlMsgText('');setHtlMsgSent(true);setTimeout(()=>setHtlMsgSent(false),3000);
     }catch(e){setHtlMsgErr('Erreur lors de l\'envoi. Réessayez.');}
     setSendingHtlMsg(false);
@@ -4219,7 +4320,10 @@ function HotelView({onLogout}){
           </div>
           <div className="prt-tabs-bar" style={{marginTop:16}}>
             {[['stats','Mes stats'],['qrcode','QR Code'],['messages','Messages'],['parametres','Paramètres']].map(([v,l])=>(
-              <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
+              <button key={v} className={'prt-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)} style={{position:'relative'}}>
+                {l}
+                {v==='messages'&&unreadAdminHtl>0&&<span style={{position:'absolute',top:2,right:2,background:'#EF4444',color:'#fff',fontSize:9,fontWeight:700,borderRadius:100,padding:'1px 5px',lineHeight:1.4}}>{unreadAdminHtl}</span>}
+              </button>
             ))}
           </div>
           <div className="htl-content">
@@ -4290,20 +4394,33 @@ function HotelView({onLogout}){
 
             {tab==='messages'&&(
               <div style={{maxWidth:560,display:'flex',flexDirection:'column',gap:16}}>
-                <div className="prt-section-label fb">Envoyer un message à Locally</div>
-                <textarea
-                  className="prt-textarea fb"
-                  value={htlMsgText}
-                  onChange={e=>setHtlMsgText(e.target.value)}
-                  placeholder="Votre message…"
-                  rows={5}
-                  style={{resize:'vertical'}}
-                />
-                {htlMsgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981'}}>✓ Message envoyé à l'équipe Locally.</div>}
-                {htlMsgErr&&<div className="prt-err fb">{htlMsgErr}</div>}
-                <div>
-                  <button className="prt-btn-primary fb" onClick={sendHtlMessage} disabled={sendingHtlMsg||!htlMsgText.trim()}>
-                    {sendingHtlMsg?'Envoi…':'Envoyer à Locally'}
+                <div className="prt-section-label fb">Ma conversation avec Locally</div>
+                {loadingHtlMsgs?<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#9B8B7A'}}>Chargement…</div>:(
+                  <div style={{display:'flex',flexDirection:'column',gap:8,minHeight:60,maxHeight:340,overflowY:'auto',padding:'4px 0'}}>
+                    {myHtlMessages.length===0&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#9B8B7A'}}>Aucun message pour l'instant.</div>}
+                    {myHtlMessages.map(m=>{
+                      const isAdmin=m.sender==='admin';
+                      return(
+                        <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-start':'flex-end'}}>
+                          <div style={{maxWidth:'80%',borderRadius:14,padding:'10px 14px',
+                            background:isAdmin?'#F0EBE3':'#6B1D1D',
+                            display:'flex',flexDirection:'column',gap:3}}>
+                            {isAdmin&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:500,color:'#9B8B7A',letterSpacing:'.04em',marginBottom:2}}>Locally</div>}
+                            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:isAdmin?'#3A2E27':'#FAF4EC',lineHeight:1.55}}>{m.message}</div>
+                            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:isAdmin?'rgba(58,46,39,.4)':'rgba(250,244,236,.5)',alignSelf:'flex-end',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:16}}>
+                  <div className="prt-section-label fb" style={{marginBottom:8}}>Nouveau message</div>
+                  <textarea className="prt-textarea fb" value={htlMsgText} onChange={e=>setHtlMsgText(e.target.value)} placeholder="Votre message à l'équipe Locally…" rows={3} style={{resize:'vertical'}}/>
+                  {htlMsgSent&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#10B981',marginTop:6}}>✓ Message envoyé.</div>}
+                  {htlMsgErr&&<div className="prt-err fb">{htlMsgErr}</div>}
+                  <button className="prt-btn-primary fb" onClick={sendHtlMessage} disabled={sendingHtlMsg||!htlMsgText.trim()} style={{marginTop:10}}>
+                    {sendingHtlMsg?'Envoi…':'Envoyer'}
                   </button>
                 </div>
               </div>
