@@ -4768,13 +4768,14 @@ function SessionBar({profile,onRenew,renewed}){
   },[profile?.session_expires_at]);
   if(rem===null)return null;
   const expired=rem<=0;
-  const warn=!expired&&rem<2*3600000;
-  const pct=expired?0:Math.min(100,rem/864e5*100);
+  const warn=!expired&&rem<24*3600000;
+  const pct=expired?0:Math.min(100,rem/(7*864e5)*100);
   const fillColor=expired?'#B91C1C':warn?'#B45309':'#15803D';
-  const h=expired?0:Math.floor(rem/3600000);
+  const d=expired?0:Math.floor(rem/86400000);
+  const h=expired?0:Math.floor((rem%86400000)/3600000);
   const m=expired?0:Math.floor((rem%3600000)/60000);
-  const timeStr=h>0?`${h}h ${m}m`:`${m}m`;
-  const labelText=expired?'Session expirée · Renouveler':warn?`${timeStr} · Renouveler`:`${timeStr} restantes`;
+  const timeStr=d>0?`${d}j ${h}h`:`${h}h ${m}m`;
+  const labelText=expired?'Session expirée · Renouveler':warn?`${timeStr} · Renouveler`:`${timeStr} restants`;
   const labelColor=expired?'#B91C1C':warn?'#B45309':'#9B8B7A';
   return(
     <div onClick={onRenew} title="Cliquez pour renouveler votre session" style={{cursor:'pointer',userSelect:'none',width:'100%',display:'block'}}>
@@ -4782,7 +4783,7 @@ function SessionBar({profile,onRenew,renewed}){
         <div style={{height:'100%',width:`${pct}%`,background:fillColor,transition:'width 1s linear'}}/>
       </div>
       <div style={{paddingRight:16,paddingTop:3,textAlign:'right',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:renewed?'#10B981':labelColor,letterSpacing:'.01em',lineHeight:1}}>
-        {renewed?'✓ Session renouvelée — 24h actives':labelText}
+        {renewed?'✓ Session renouvelée — 7 jours actifs':labelText}
       </div>
     </div>
   );
@@ -4843,8 +4844,8 @@ function ResetPasswordPage({onDone}){
 function RenouvellerPage({onBack,profile}){
   const active=profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date();
   const msg=active
-    ?'Votre session est active. Pour renouveler vos 24h, scannez le QR code affiché dans votre chambre.'
-    :'Votre session a expiré. Scannez le QR code affiché dans votre chambre pour obtenir 24h de réductions chez nos partenaires.';
+    ?'Votre session est active. Pour renouveler vos 7 jours, scannez le QR code affiché dans votre chambre.'
+    :'Votre session a expiré. Scannez le QR code affiché dans votre chambre pour obtenir 7 jours de réductions chez nos partenaires.';
   return(
     <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'32px 24px',textAlign:'center'}}>
       <style>{CSS}</style>
@@ -4863,7 +4864,7 @@ function RenouvellerPage({onBack,profile}){
 function CommentCaMarchePage({onHome}){
   const [openFaq,setOpenFaq]=useState(null);
   const faqs=[
-    ["Combien de fois puis-je utiliser Locally ?","Autant de fois que vous voulez pendant votre séjour. Rescannez le QR code de votre chambre toutes les 24h pour renouveler votre accès."],
+    ["Combien de fois puis-je utiliser Locally ?","Autant de fois que vous voulez pendant votre séjour. Rescannez le QR code de votre chambre tous les 7 jours pour renouveler votre accès."],
     ["Est-ce que je dois payer quelque chose ?","Non, Locally est totalement gratuit pour vous. Les réductions sont offertes par les partenaires locaux."],
     ["Que se passe-t-il si mon QR code expire ?","Générez-en simplement un nouveau depuis la page du partenaire."],
     ["Les partenaires sont-ils vérifiés ?","Oui, chaque commerce est sélectionné et approuvé manuellement par notre équipe avant d'apparaître sur Locally."],
@@ -4886,7 +4887,7 @@ function CommentCaMarchePage({onHome}){
           {[
             "Vous arrivez dans votre hôtel et scannez le QR code Locally affiché dans votre chambre.",
             "Vous créez votre compte gratuit en 30 secondes.",
-            "Vous avez 24h pour profiter des réductions — rescannez le QR de votre chambre pour renouveler.",
+            "Vous avez 7 jours pour profiter des réductions — rescannez le QR de votre chambre pour renouveler.",
             "Vous choisissez un partenaire et générez votre QR code personnalisé.",
             "Vous présentez votre QR à l'accueil du commerce et profitez de votre réduction immédiatement.",
           ].map((step,i)=>(
@@ -5009,7 +5010,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
       setTab('login');
       return;
     }
-    const session_expires_at=new Date(Date.now()+24*60*60*1000).toISOString();
+    const session_expires_at=new Date(Date.now()+7*24*60*60*1000).toISOString();
     await supabase.from('profiles').insert({id:data.user.id,prenom:regPrenom.trim(),session_expires_at,rgpd_consent_at:new Date().toISOString()});
     const{data:prof}=await supabase.from('profiles').select('*').eq('id',data.user.id).maybeSingle();
     setLoading(false);
@@ -5755,7 +5756,7 @@ export default function App() {
   },[]);
   useEffect(()=>{
     if(!user||!pendingHotelSlug)return;
-    const newExpiry=new Date(Date.now()+24*60*60*1000).toISOString();
+    const newExpiry=new Date(Date.now()+7*24*60*60*1000).toISOString();
     supabase.from('profiles').update({session_expires_at:newExpiry}).eq('id',user.id).then(()=>{
       setAuthProfile(p=>({...p,session_expires_at:newExpiry}));
       setSessionRenewed(true);
