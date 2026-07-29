@@ -756,6 +756,25 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .paris-catcard:active{transform:scale(.97);}
 .paris-catcard img{transition:filter .25s ease-out;}
 .paris-catcard:hover img{filter:brightness(1.1);}
+.adm-stab-wrap{overflow-x:auto;border-radius:10px;border:1px solid rgba(247,243,238,.06);margin-bottom:8px;}
+.adm-stab{width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;}
+.adm-stab thead{position:sticky;top:0;z-index:2;}
+.adm-stab th{font-size:9px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:rgba(247,243,238,.35);padding:11px 14px;background:#1C1208;border-bottom:1px solid rgba(247,243,238,.06);white-space:nowrap;cursor:pointer;user-select:none;text-align:left;}
+.adm-stab th:hover{color:rgba(247,243,238,.65);}
+.adm-stab th.s-act{color:var(--lp);}
+.adm-stab td{font-size:12px;font-weight:300;color:rgba(247,243,238,.72);padding:10px 14px;border-bottom:1px solid rgba(247,243,238,.04);white-space:nowrap;}
+.adm-stab tr:last-child td{border-bottom:none;}
+.adm-stab tr:nth-child(even) td{background:rgba(247,243,238,.012);}
+.adm-stab tbody tr:hover td{background:rgba(247,243,238,.045);cursor:pointer;}
+.adm-stab .td-name{color:#F7F3EE;font-weight:400;}
+.adm-stab .td-num{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:#F7F3EE;}
+.adm-stab .td-pct{font-weight:500;}
+.adm-stab .td-pct-hi{color:#10B981;}
+.adm-stab .td-pct-mid{color:#D97706;}
+.adm-stab .td-pct-lo{color:rgba(247,243,238,.28);}
+.adm-stab-tag{display:inline-block;font-size:10px;font-weight:500;background:rgba(107,29,29,.2);color:rgba(247,243,238,.65);border-radius:4px;padding:2px 7px;letter-spacing:.02em;}
+.adm-stab-sort{display:inline-block;margin-left:4px;opacity:.35;font-size:9px;}
+.adm-stab th.s-act .adm-stab-sort{opacity:1;}
 `;
 
 function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
@@ -1712,6 +1731,10 @@ function AdminView(){
   const [hotelStats,setHotelStats]=useState(null);
   const [loadingHotelStats,setLoadingHotelStats]=useState(false);
   const [hotelRecentVisits,setHotelRecentVisits]=useState([]);
+  const [fullStats,setFullStats]=useState(null);
+  const [loadingFullStats,setLoadingFullStats]=useState(false);
+  const [statsHSort,setStatsHSort]=useState({col:'qr_total',dir:'desc'});
+  const [statsPSort,setStatsPSort]=useState({col:'ca_total',dir:'desc'});
 
   function login(e){
     e.preventDefault();
@@ -1800,6 +1823,14 @@ function AdminView(){
     setUnreadHotelMessages(counts);
     setBadgeHotelMsgs((json.msgs||[]).length);
   }
+  async function fetchFullStats(){
+    setLoadingFullStats(true);
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_full_stats'})}).then(r=>r.json());
+    setFullStats(json);setLoadingFullStats(false);
+  }
+  function srtH(col){setStatsHSort(s=>s.col===col?{...s,dir:s.dir==='desc'?'asc':'desc'}:{col,dir:'desc'});}
+  function srtP(col){setStatsPSort(s=>s.col===col?{...s,dir:s.dir==='desc'?'asc':'desc'}:{col,dir:'desc'});}
+  function stSort(arr,{col,dir}){return[...arr].sort((a,b)=>{const av=a[col]??'',bv=b[col]??'';if(typeof av==='number'||typeof bv==='number')return dir==='desc'?(Number(bv)||0)-(Number(av)||0):(Number(av)||0)-(Number(bv)||0);return dir==='desc'?String(bv).localeCompare(String(av),'fr'):String(av).localeCompare(String(bv),'fr');});}
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
     const{error}=await supabase.from('hotels').update({slug:hotelAccess.slug.trim()}).eq('id',selHotel.id);
@@ -1906,7 +1937,7 @@ function AdminView(){
     if(tab==='candidatures'||tab==='rejetes'){fetchCands();fetchHotels();}
     else if(tab==='partenaires')fetchPartners();
     else if(tab==='hotels')fetchHotels();
-    else if(tab==='stats')fetchAdminStats();
+    else if(tab==='stats')fetchFullStats();
     else fetchVisits();
   },[authed,tab]);
 
@@ -2158,75 +2189,105 @@ function AdminView(){
 
         {tab==='stats'&&(
           <>
-            {loadingAdminStats&&!adminStats?<div className="adm-empty fb">Chargement des statistiques…</div>:(
+            {loadingFullStats&&!fullStats?<div className="adm-empty fb">Chargement des statistiques…</div>:(
               <>
-                {/* ── CHIFFRES GLOBAUX ── */}
-                <div className="adm-section-label">Chiffres globaux</div>
-                <div className="adm-global-grid" style={{marginBottom:8}}>
-                  <div className="adm-global-card accent">
-                    <div className="adm-global-num fd">{adminStats?(adminStats.caTotal).toFixed(0)+'€':'—'}</div>
-                    <div className="adm-global-label">CA total généré</div>
-                  </div>
-                  <div className="adm-global-card">
-                    <div className="adm-global-num fd">{adminStats?adminStats.clientCount:'—'}</div>
-                    <div className="adm-global-label">Clients inscrits</div>
-                  </div>
-                  <div className="adm-global-card">
-                    <div className="adm-global-num fd">{adminStats?adminStats.partnerActiveCount:'—'}</div>
-                    <div className="adm-global-label">Partenaires actifs</div>
-                  </div>
-                </div>
-                <div className="adm-global-grid">
-                  <div className="adm-global-card">
-                    <div className="adm-global-num fd">{adminStats?adminStats.qrTotal:'—'}</div>
-                    <div className="adm-global-label">QR générés</div>
-                  </div>
-                  <div className="adm-global-card">
-                    <div className="adm-global-num fd">{adminStats?adminStats.qrScanned:'—'}</div>
-                    <div className="adm-global-label">QR scannés</div>
-                  </div>
-                  <div className="adm-global-card accent">
-                    <div className="adm-global-num fd">{adminStats?adminStats.conversionRate+'%':'—'}</div>
-                    <div className="adm-global-label">Taux de conversion</div>
-                  </div>
+                {/* ── VUE GLOBALE HÔTELS ── */}
+                <div className="adm-section-label">Vue globale — Hôtels</div>
+                {(()=>{
+                  const hs=fullStats?.hotels||[];
+                  const qrTot=hs.reduce((s,h)=>s+(h.qr_total||0),0);
+                  const qrSc=hs.reduce((s,h)=>s+(h.qr_scanned||0),0);
+                  const taux=qrTot>0?Math.round(qrSc/qrTot*100):0;
+                  const comm=hs.reduce((s,h)=>s+(h.commission_total||0),0);
+                  return(<>
+                    <div className="adm-global-grid" style={{marginBottom:8}}>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{hs.length}</div><div className="adm-global-label">Hôtels approuvés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{qrTot}</div><div className="adm-global-label">QR générés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{qrSc}</div><div className="adm-global-label">QR scannés</div></div>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
+                      <div className="adm-global-card accent"><div className="adm-global-num fd">{qrTot>0?taux+'%':'—'}</div><div className="adm-global-label">Taux de conversion</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{comm.toFixed(0)}€</div><div className="adm-global-label">Commissions hôtels générées</div></div>
+                    </div>
+                  </>);
+                })()}
+
+                {/* ── VUE GLOBALE PARTENAIRES ── */}
+                <div className="adm-section-label">Vue globale — Partenaires</div>
+                {(()=>{
+                  const ps=fullStats?.partners||[];
+                  const vis=ps.reduce((s,p)=>s+(p.visites||0),0);
+                  const ca=ps.reduce((s,p)=>s+(p.ca_total||0),0);
+                  const comm=ps.reduce((s,p)=>s+(p.commission_locally||0),0);
+                  return(
+                    <div className="adm-global-grid" style={{marginBottom:24,gridTemplateColumns:'repeat(4,1fr)'}}>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{ps.length}</div><div className="adm-global-label">Partenaires approuvés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{vis}</div><div className="adm-global-label">Total visites</div></div>
+                      <div className="adm-global-card accent"><div className="adm-global-num fd">{ca.toFixed(0)}€</div><div className="adm-global-label">CA total généré</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{comm.toFixed(0)}€</div><div className="adm-global-label">Commissions Locally</div></div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── TABLEAU HÔTELS ── */}
+                <div className="adm-section-label" style={{marginTop:4}}>Détail par hôtel</div>
+                <div className="adm-stab-wrap">
+                  <table className="adm-stab">
+                    <thead><tr>
+                      {[['nom','Nom'],['ville','Ville'],['qr_total','QR générés'],['qr_scanned','QR scannés'],['taux_conversion','Taux conv.'],['last_activity','Dernière activité']].map(([col,lbl])=>(
+                        <th key={col} className={statsHSort.col===col?'s-act':''} onClick={()=>srtH(col)}>
+                          {lbl}<span className="adm-stab-sort">{statsHSort.col===col?(statsHSort.dir==='desc'?'↓':'↑'):'↕'}</span>
+                        </th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {(fullStats?.hotels||[]).length===0
+                        ?<tr><td colSpan={6} className="adm-empty">Aucun hôtel approuvé</td></tr>
+                        :stSort(fullStats?.hotels||[],statsHSort).map(h=>{
+                          const rate=h.taux_conversion||0;
+                          return(
+                            <tr key={h.id} onClick={()=>openHotel(h)}>
+                              <td className="td-name">{h.nom}</td>
+                              <td>{h.ville||'—'}</td>
+                              <td className="td-num">{h.qr_total||0}</td>
+                              <td className="td-num">{h.qr_scanned||0}</td>
+                              <td className={'td-pct '+(rate>=50?'td-pct-hi':rate>=20?'td-pct-mid':'td-pct-lo')}>{h.qr_total>0?rate+'%':'—'}</td>
+                              <td>{h.last_activity?admFmt(h.last_activity):'Jamais'}</td>
+                            </tr>
+                          );
+                        })
+                      }
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* ── CA 30 JOURS ── */}
-                <div className="adm-section-label" style={{marginTop:20}}>Évolution CA — 30 derniers jours</div>
-                <div className="adm-chart-wrap">
-                  {adminChartData.length>0
-                    ?<BarChart data={adminChartData}/>
-                    :<div style={{height:140,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'rgba(247,243,238,.2)'}}>Aucune donnée</div>
-                  }
-                </div>
-
-                {/* ── TOP PARTENAIRES ── */}
-                <div className="adm-section-label" style={{marginTop:20}}>Top partenaires par CA</div>
-                <div style={{background:'rgba(247,243,238,.03)',border:'1px solid rgba(247,243,238,.06)',borderRadius:10,padding:'4px 16px',marginBottom:8}}>
-                  {adminTopPartners.length===0
-                    ?<div className="adm-empty fb" style={{padding:'16px 0'}}>Aucune transaction enregistrée.</div>
-                    :adminTopPartners.map((p,i)=>(
-                      <div className="adm-top-row" key={p.id}>
-                        <span className="adm-top-rank">{i+1}</span>
-                        <span className="adm-top-nom fb">{p.nom}</span>
-                        <span className="adm-top-ca fd">{p.ca.toFixed(0)}€</span>
-                        <span className="adm-top-txn fb">{p.txns} txn{p.txns>1?'s':''}</span>
-                      </div>
-                    ))
-                  }
-                </div>
-
-                {/* ── CHIFFRES HÔTELS ── */}
-                <div className="adm-section-label" style={{marginTop:20}}>Chiffres clés pour les hôtels</div>
-                <div className="adm-hotel-grid">
-                  <div className="adm-hotel-card">
-                    <div className="adm-hotel-num fd">{adminStats?(adminStats.economiesTotal).toFixed(0)+'€':'—'}</div>
-                    <div className="adm-hotel-label">Économies réalisées par les clients</div>
-                  </div>
-                  <div className="adm-hotel-card">
-                    <div className="adm-hotel-num fd">{adminStats?adminStats.avgTxn:'—'}</div>
-                    <div className="adm-hotel-label">Transactions moyennes par client</div>
-                  </div>
+                {/* ── TABLEAU PARTENAIRES ── */}
+                <div className="adm-section-label" style={{marginTop:20}}>Détail par partenaire</div>
+                <div className="adm-stab-wrap">
+                  <table className="adm-stab">
+                    <thead><tr>
+                      {[['nom','Nom'],['categorie','Catégorie'],['ville','Ville'],['visites','Visites'],['ca_total','CA généré'],['commission_locally','Commission']].map(([col,lbl])=>(
+                        <th key={col} className={statsPSort.col===col?'s-act':''} onClick={()=>srtP(col)}>
+                          {lbl}<span className="adm-stab-sort">{statsPSort.col===col?(statsPSort.dir==='desc'?'↓':'↑'):'↕'}</span>
+                        </th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {(fullStats?.partners||[]).length===0
+                        ?<tr><td colSpan={6} className="adm-empty">Aucun partenaire approuvé</td></tr>
+                        :stSort(fullStats?.partners||[],statsPSort).map(p=>(
+                          <tr key={p.id} onClick={()=>openPartner(p)}>
+                            <td className="td-name">{p.nom}</td>
+                            <td><span className="adm-stab-tag">{p.categorie||'—'}</span></td>
+                            <td>{p.ville||'—'}</td>
+                            <td className="td-num">{p.visites||0}</td>
+                            <td className="td-num">{(p.ca_total||0).toFixed(0)}€</td>
+                            <td className="td-num">{(p.commission_locally||0).toFixed(0)}€</td>
+                          </tr>
+                        ))
+                      }
+                    </tbody>
+                  </table>
                 </div>
               </>
             )}

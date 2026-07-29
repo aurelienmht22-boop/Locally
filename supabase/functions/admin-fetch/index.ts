@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -147,6 +147,64 @@ Deno.serve(async (req) => {
       ])
       const lastVisit = (lastVisitArr as Array<{created_at: string}>)[0]?.created_at ?? null
       result = { qrTotal, qrScanned, lastVisit, recentVisits }
+    }
+
+    else if (action === 'fetch_full_stats') {
+      const [hotelsRaw, partnersRaw, visitsRaw, txnsRaw] = await Promise.all([
+        sbGet(url, key, 'hotels?select=*&status=eq.approuve&order=nom.asc'),
+        sbGet(url, key, 'candidates?select=*&status=eq.approuve&order=nom.asc'),
+        sbGet(url, key, 'visits?select=id,partner_id,hotel_slug,scanned,created_at&limit=5000'),
+        sbGet(url, key, 'transactions?select=partner_id,hotel_slug,montant_client,commission_locally,commission_hotel&limit=5000'),
+      ])
+
+      type HotelAgg = { qr_total: number; qr_scanned: number; last_activity: string | null; commission_total: number }
+      type PartnerAgg = { visites: number; ca_total: number; commission_locally: number }
+
+      const hotelAgg: Record<string, HotelAgg> = {}
+      for (const h of hotelsRaw as Array<{ slug?: string }>) {
+        if (h.slug) hotelAgg[h.slug] = { qr_total: 0, qr_scanned: 0, last_activity: null, commission_total: 0 }
+      }
+      for (const v of visitsRaw as Array<{ hotel_slug?: string; scanned: boolean; created_at: string }>) {
+        const s = v.hotel_slug
+        if (s && hotelAgg[s]) {
+          hotelAgg[s].qr_total++
+          if (v.scanned) hotelAgg[s].qr_scanned++
+          if (!hotelAgg[s].last_activity || v.created_at > hotelAgg[s].last_activity!) hotelAgg[s].last_activity = v.created_at
+        }
+      }
+      for (const t of txnsRaw as Array<{ hotel_slug?: string; commission_hotel?: number }>) {
+        const s = t.hotel_slug
+        if (s && hotelAgg[s]) hotelAgg[s].commission_total += Number(t.commission_hotel || 0)
+      }
+
+      const partnerAgg: Record<string, PartnerAgg> = {}
+      for (const p of partnersRaw as Array<{ id: string }>) {
+        partnerAgg[p.id] = { visites: 0, ca_total: 0, commission_locally: 0 }
+      }
+      for (const v of visitsRaw as Array<{ partner_id?: string }>) {
+        const pid = v.partner_id
+        if (pid && partnerAgg[pid]) partnerAgg[pid].visites++
+      }
+      for (const t of txnsRaw as Array<{ partner_id?: string; montant_client?: number; commission_locally?: number }>) {
+        const pid = t.partner_id
+        if (pid && partnerAgg[pid]) {
+          partnerAgg[pid].ca_total += Number(t.montant_client || 0)
+          partnerAgg[pid].commission_locally += Number(t.commission_locally || 0)
+        }
+      }
+
+      const hotels = stripCode(hotelsRaw).map((h) => {
+        const rh = h as Record<string, unknown>
+        const agg = (rh.slug ? hotelAgg[rh.slug as string] : null) ?? { qr_total: 0, qr_scanned: 0, last_activity: null, commission_total: 0 }
+        const taux_conversion = agg.qr_total > 0 ? Math.round(agg.qr_scanned / agg.qr_total * 100) : 0
+        return { ...rh, ...agg, taux_conversion }
+      })
+      const partners = stripCode(partnersRaw).map((p) => {
+        const rp = p as Record<string, unknown>
+        return { ...rp, ...(partnerAgg[rp.id as string] ?? { visites: 0, ca_total: 0, commission_locally: 0 }) }
+      })
+
+      result = { hotels, partners }
     }
 
     return new Response(JSON.stringify(result), {
