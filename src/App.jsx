@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { supabase } from "./lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
 import html2canvas from "html2canvas";
@@ -1735,6 +1735,11 @@ function AdminView(){
   const [loadingFullStats,setLoadingFullStats]=useState(false);
   const [statsHSort,setStatsHSort]=useState({col:'qr_total',dir:'desc'});
   const [statsPSort,setStatsPSort]=useState({col:'ca_total',dir:'desc'});
+  const [qrCodes,setQrCodes]=useState([]);
+  const [qrHotels,setQrHotels]=useState([]);
+  const [loadingQr,setLoadingQr]=useState(false);
+  const [creatingQr,setCreatingQr]=useState(false);
+  const [assigningQr,setAssigningQr]=useState({});
 
   function login(e){
     e.preventDefault();
@@ -1831,6 +1836,44 @@ function AdminView(){
   function srtH(col){setStatsHSort(s=>s.col===col?{...s,dir:s.dir==='desc'?'asc':'desc'}:{col,dir:'desc'});}
   function srtP(col){setStatsPSort(s=>s.col===col?{...s,dir:s.dir==='desc'?'asc':'desc'}:{col,dir:'desc'});}
   function stSort(arr,{col,dir}){return[...arr].sort((a,b)=>{const av=a[col]??'',bv=b[col]??'';if(typeof av==='number'||typeof bv==='number')return dir==='desc'?(Number(bv)||0)-(Number(av)||0):(Number(av)||0)-(Number(bv)||0);return dir==='desc'?String(bv).localeCompare(String(av),'fr'):String(av).localeCompare(String(bv),'fr');});}
+  const AF_URL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch';
+  const AS_URL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status';
+  const ADMIN_HDRS={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+  async function fetchQrCodes(){
+    setLoadingQr(true);
+    const json=await fetch(AF_URL,{method:'POST',headers:ADMIN_HDRS,body:JSON.stringify({action:'fetch_qr_codes'})}).then(r=>r.json());
+    setQrCodes(json.data||[]);setQrHotels(json.hotels||[]);setLoadingQr(false);
+  }
+  async function createQrCode(){
+    setCreatingQr(true);
+    const json=await fetch(AS_URL,{method:'POST',headers:ADMIN_HDRS,body:JSON.stringify({action:'create_qr_code'})}).then(r=>r.json());
+    if(json.qr_code)setQrCodes(prev=>[json.qr_code,...prev]);
+    setCreatingQr(false);
+  }
+  async function assignQrCode(id,hotel_slug){
+    setAssigningQr(a=>({...a,[id]:true}));
+    await fetch(AS_URL,{method:'POST',headers:ADMIN_HDRS,body:JSON.stringify({action:'assign_qr_code',id,hotel_slug:hotel_slug||null})}).then(r=>r.json());
+    setQrCodes(qr=>qr.map(q=>q.id===id?{...q,hotel_slug:hotel_slug||null}:q));
+    setAssigningQr(a=>({...a,[id]:false}));
+  }
+  async function downloadQrPng(qr){
+    const src=document.getElementById(`qr-cnv-${qr.id}`);
+    if(!src)return;
+    const out=document.createElement('canvas');
+    out.width=480;out.height=560;
+    const ctx=out.getContext('2d');
+    ctx.fillStyle='#FDFAF6';ctx.fillRect(0,0,480,560);
+    const img=new Image();
+    await new Promise(res=>{img.onload=res;img.src=src.toDataURL('image/png');});
+    ctx.drawImage(img,40,88,400,400);
+    ctx.fillStyle='#6B1D1D';ctx.font='italic bold 30px Georgia,"Times New Roman",serif';ctx.textAlign='center';
+    ctx.fillText('locally',240,52);
+    ctx.fillStyle='#7A6555';ctx.font='12px Arial,sans-serif';
+    ctx.fillText(`www.mylocally.fr/qr/${qr.code}`,240,514);
+    ctx.fillStyle='#9B8B7A';ctx.font='11px Arial,sans-serif';
+    ctx.fillText('Scannez pour découvrir vos avantages exclusifs',240,536);
+    const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download=`locally-qr-${qr.code}.png`;a.click();
+  }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
     const{error}=await supabase.from('hotels').update({slug:hotelAccess.slug.trim()}).eq('id',selHotel.id);
@@ -1938,6 +1981,7 @@ function AdminView(){
     else if(tab==='partenaires')fetchPartners();
     else if(tab==='hotels')fetchHotels();
     else if(tab==='stats')fetchFullStats();
+    else if(tab==='qrcodes')fetchQrCodes();
     else fetchVisits();
   },[authed,tab]);
 
@@ -2018,6 +2062,7 @@ function AdminView(){
             ['hotels',<>Hôtels{countHotels>0&&<span style={{opacity:.65,fontSize:10,marginLeft:3}}>({countHotels})</span>}{badgeHotelMsgs>0&&<span style={{width:6,height:6,borderRadius:'50%',background:'#B91C1C',display:'inline-block',marginLeft:5,verticalAlign:'middle',flexShrink:0}}/>}</>],
             ['rejetes','Rejetés'],
             ['stats','Statistiques'],
+            ['qrcodes','QR Codes'],
             ['parametres','Paramètres'],
           ].map(([v,l])=>(
             <button key={v} className={'adm-tab fb'+(tab===v?' act':'')} onClick={()=>setTab(v)}>{l}</button>
@@ -2290,6 +2335,68 @@ function AdminView(){
                   </table>
                 </div>
               </>
+            )}
+          </>
+        )}
+
+        {tab==='qrcodes'&&(
+          <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:10}}>
+              <div className="adm-section-label" style={{margin:0}}>QR Codes dynamiques</div>
+              <button className="adm-btn fb" style={{width:'auto',padding:'10px 18px',fontSize:12}} onClick={createQrCode} disabled={creatingQr}>
+                {creatingQr?'Création…':'+ Générer un QR code'}
+              </button>
+            </div>
+            {loadingQr?<div className="adm-empty fb">Chargement…</div>:(
+              qrCodes.length===0
+                ?<div className="adm-empty fb">Aucun QR code généré. Cliquez sur "Générer" pour commencer.</div>
+                :<div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {qrCodes.map(qr=>{
+                    const qrUrl=`https://www.mylocally.fr/qr/${qr.code}`;
+                    const hotelNom=qr.hotel_slug?(qrHotels.find(h=>h.slug===qr.hotel_slug)?.nom||qr.hotel_slug):null;
+                    return(
+                      <div key={qr.id} style={{display:'flex',alignItems:'center',gap:14,padding:'14px 18px',background:'rgba(247,243,238,.025)',border:'1px solid rgba(247,243,238,.055)',borderRadius:10,flexWrap:'wrap'}}>
+                        {/* Canvas caché pour export PNG */}
+                        <div style={{position:'absolute',opacity:0,pointerEvents:'none',left:'-9999px'}}>
+                          <QRCodeCanvas id={`qr-cnv-${qr.id}`} value={qrUrl} size={400} fgColor="#1C1208" bgColor="#ffffff" includeMargin/>
+                        </div>
+                        {/* Miniature QR */}
+                        <div style={{background:'#fff',borderRadius:6,padding:5,flexShrink:0,lineHeight:0}}>
+                          <QRCodeSVG value={qrUrl} size={48} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                        </div>
+                        {/* Infos */}
+                        <div style={{flex:'1 1 140px',minWidth:0}}>
+                          <div className="fb" style={{fontSize:14,fontWeight:500,color:'#F7F3EE',letterSpacing:'.08em',marginBottom:2}}>{qr.code}</div>
+                          <div className="fb" style={{fontSize:11,fontWeight:300,color:'rgba(247,243,238,.38)'}}>Créé le {admFmt(qr.created_at)}</div>
+                        </div>
+                        {/* Badge hôtel ou "Non assigné" */}
+                        <div style={{flexShrink:0}}>
+                          {hotelNom
+                            ?<span style={{background:'rgba(16,185,129,.12)',color:'#10B981',border:'1px solid rgba(16,185,129,.25)',borderRadius:6,padding:'3px 10px',fontSize:11,fontFamily:"'DM Sans',sans-serif",fontWeight:500}}>{hotelNom}</span>
+                            :<span style={{background:'rgba(247,243,238,.06)',color:'rgba(247,243,238,.3)',border:'1px solid rgba(247,243,238,.08)',borderRadius:6,padding:'3px 10px',fontSize:11,fontFamily:"'DM Sans',sans-serif"}}>Non assigné</span>
+                          }
+                        </div>
+                        {/* Select hôtel */}
+                        <select
+                          value={qr.hotel_slug||''}
+                          onChange={e=>assignQrCode(qr.id,e.target.value||null)}
+                          disabled={!!assigningQr[qr.id]}
+                          style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,border:'1px solid rgba(247,243,238,.15)',borderRadius:8,padding:'7px 10px',background:'rgba(247,243,238,.06)',color:'rgba(247,243,238,.75)',cursor:'pointer',flexShrink:0,minWidth:150}}
+                        >
+                          <option value="">— Choisir un hôtel</option>
+                          {qrHotels.map(h=><option key={h.slug} value={h.slug}>{h.nom}</option>)}
+                        </select>
+                        {/* Télécharger PNG */}
+                        <button
+                          onClick={()=>downloadQrPng(qr)}
+                          style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,padding:'7px 13px',borderRadius:7,border:'1px solid rgba(247,243,238,.12)',background:'transparent',color:'rgba(247,243,238,.5)',cursor:'pointer',flexShrink:0,transition:'all .2s',whiteSpace:'nowrap'}}
+                          onMouseOver={e=>{e.currentTarget.style.color='#F7F3EE';e.currentTarget.style.borderColor='rgba(247,243,238,.3)';}}
+                          onMouseOut={e=>{e.currentTarget.style.color='rgba(247,243,238,.5)';e.currentTarget.style.borderColor='rgba(247,243,238,.12)';}}
+                        >↓ PNG</button>
+                      </div>
+                    );
+                  })}
+                </div>
             )}
           </>
         )}
@@ -5435,6 +5542,42 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
   );
 }
 
+function QrCodePage(){
+  const code=window.location.pathname.replace(/^\/qr\//,'').split('/')[0].toUpperCase();
+  const[status,setStatus]=useState('loading');
+  useEffect(()=>{
+    (async()=>{
+      const{data}=await supabase.from('qr_codes').select('hotel_slug').eq('code',code).maybeSingle();
+      if(!data){window.location.replace('/');return;}
+      if(data.hotel_slug){window.location.replace(`/?hotel=${data.hotel_slug}`);return;}
+      setStatus('inactive');
+    })();
+  },[]);
+  if(status==='loading')return(
+    <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <style>{CSS}</style>
+      <span className="fb" style={{color:'rgba(122,101,85,.35)',fontSize:13}}>Redirection…</span>
+    </div>
+  );
+  return(
+    <div style={{minHeight:'100dvh',background:'#F7F3EE',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:22,padding:24}}>
+      <style>{CSS}</style>
+      <a href="/" style={{textDecoration:'none'}}><div className="fd" style={{fontSize:32,fontWeight:700,color:'#1C1208'}}>local<em style={{color:'var(--lp)'}}>ly</em></div></a>
+      <div style={{width:60,height:60,border:'1.5px solid rgba(107,29,29,.2)',borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(107,29,29,.04)'}}>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(107,29,29,.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="3" height="3" rx=".5"/><rect x="18" y="14" width="3" height="3" rx=".5"/><rect x="14" y="18" width="3" height="3" rx=".5"/><rect x="18" y="18" width="3" height="3" rx=".5"/>
+        </svg>
+      </div>
+      <div style={{textAlign:'center',maxWidth:320}}>
+        <div className="fd" style={{fontSize:24,fontWeight:600,color:'#1C1208',marginBottom:10}}>QR code non actif</div>
+        <div className="fb" style={{fontSize:14,fontWeight:300,color:'#7A6555',lineHeight:1.7}}>Ce QR code n'est pas encore associé à un hôtel partenaire. Contactez votre établissement pour plus d'informations.</div>
+      </div>
+      <a href="/" className="fb" style={{fontSize:12,color:'var(--lp)',textDecoration:'underline',textDecorationColor:'rgba(107,29,29,.3)',marginTop:4}}>Retour à l'accueil →</a>
+    </div>
+  );
+}
+
 export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
@@ -5463,6 +5606,7 @@ export default function App() {
     if(path==="/admin")return "admin";
     if(path.startsWith("/partner/"))return "partner";
     if(path.startsWith("/hotel/"))return "hotel";
+    if(path.startsWith("/qr/"))return "qr";
     if(path==="/carte")return "carte";
     return "home";
   });
@@ -5508,6 +5652,7 @@ export default function App() {
       if(path==="/admin"){setPage("admin");return;}
       if(path.startsWith("/partner/")){setPage("partner");return;}
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
+      if(path.startsWith("/qr/")){setPage("qr");return;}
       if(path==="/carte"){setPage("carte");return;}
       if(path==="/"||path==="")setPage("home");
     }
@@ -5530,6 +5675,7 @@ export default function App() {
     return <MonCompteView user={user} profile={profile} setProfile={setAuthProfile} signOut={signOut} onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   }
   if(page==="admin")return <AdminView/>;
+  if(page==="qr")return <QrCodePage/>;
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/login');setPage("login");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
   const isParis = selVille === 'Paris';

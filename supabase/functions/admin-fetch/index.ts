@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats', 'fetch_qr_codes']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -147,6 +147,14 @@ Deno.serve(async (req) => {
       ])
       const lastVisit = (lastVisitArr as Array<{created_at: string}>)[0]?.created_at ?? null
       result = { qrTotal, qrScanned, lastVisit, recentVisits }
+    }
+
+    else if (action === 'fetch_qr_codes') {
+      const [qrCodesRaw, hotelsRaw] = await Promise.all([
+        sbGet(url, key, 'qr_codes?select=*&order=created_at.desc'),
+        sbGet(url, key, 'hotels?select=id,nom,slug&status=eq.approuve&order=nom.asc'),
+      ])
+      result = { data: qrCodesRaw, hotels: hotelsRaw }
     }
 
     else if (action === 'fetch_full_stats') {

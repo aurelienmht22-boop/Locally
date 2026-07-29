@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to } = await req.json()
+    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to, hotel_slug } = await req.json()
 
-    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis'].includes(action)) {
+    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis', 'create_qr_code', 'assign_qr_code'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -156,6 +156,54 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: patchHeaders,
         body: JSON.stringify({ content, orders_count, date_from, date_to }),
+      })
+      if (!res.ok) {
+        const err = await res.text()
+        return new Response(JSON.stringify({ error: 'Supabase error', detail: err }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    else if (action === 'create_qr_code') {
+      const qrCharset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+      const qrBytes = new Uint8Array(8)
+      crypto.getRandomValues(qrBytes)
+      const code = Array.from(qrBytes, (b: number) => qrCharset[b % qrCharset.length]).join('')
+      const postHeaders = {
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      }
+      const res = await fetch(`${supabaseUrl}/rest/v1/qr_codes`, {
+        method: 'POST', headers: postHeaders, body: JSON.stringify({ code }),
+      })
+      if (!res.ok) {
+        const err = await res.text()
+        return new Response(JSON.stringify({ error: 'Supabase error', detail: err }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const rows = await res.json()
+      const qr_code = Array.isArray(rows) ? rows[0] : rows
+      return new Response(JSON.stringify({ success: true, qr_code }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    else if (action === 'assign_qr_code') {
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'id requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const res = await fetch(`${supabaseUrl}/rest/v1/qr_codes?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', headers: patchHeaders,
+        body: JSON.stringify({ hotel_slug: hotel_slug ?? null }),
       })
       if (!res.ok) {
         const err = await res.text()
