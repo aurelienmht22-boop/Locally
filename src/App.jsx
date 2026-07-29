@@ -775,11 +775,35 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .adm-stab-tag{display:inline-block;font-size:10px;font-weight:500;background:rgba(107,29,29,.2);color:rgba(247,243,238,.65);border-radius:4px;padding:2px 7px;letter-spacing:.02em;}
 .adm-stab-sort{display:inline-block;margin-left:4px;opacity:.35;font-size:9px;}
 .adm-stab th.s-act .adm-stab-sort{opacity:1;}
+.bp-wrap{padding:100px 52px 60px;}
+.bp-title{font-family:'Cormorant Garamond',serif;font-size:clamp(36px,5vw,56px);font-weight:600;color:#1C1208;margin-bottom:8px;line-height:1.05;}
+.bp-title em{font-style:italic;color:var(--lp);}
+.bp-sub{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:#7A6555;margin-bottom:40px;line-height:1.7;}
+.bp-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:40px;}
+.bp-filter-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:.08em;padding:8px 18px;border-radius:100px;border:1.5px solid rgba(107,29,29,.18);background:transparent;color:#7A6555;cursor:pointer;transition:all .2s;}
+.bp-filter-btn.active,.bp-filter-btn:hover{background:var(--lp);color:#fff;border-color:var(--lp);}
+.bp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;}
+.bp-card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid rgba(28,18,8,.06);transition:transform .2s,box-shadow .2s;}
+.bp-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,18,8,.1);}
+.bp-card-img{width:100%;height:200px;object-fit:cover;display:block;}
+.bp-card-body{padding:20px 22px 22px;}
+.bp-card-cat{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--lp);margin-bottom:8px;}
+.bp-card-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1C1208;margin-bottom:6px;line-height:1.2;}
+.bp-card-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.7;margin-bottom:14px;}
+.bp-card-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.bp-card-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.06em;padding:4px 10px;border-radius:100px;background:rgba(107,29,29,.07);color:var(--lp);}
+.bp-badge-gratuit{display:inline-flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#2D6A4F;background:rgba(45,106,79,.1);border:1px solid rgba(45,106,79,.2);border-radius:100px;padding:3px 10px;flex-shrink:0;}
+.bp-preview-wrap{padding:72px 52px;background:#F7F3EE;}
+.bp-preview-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;gap:16px;}
+.bp-preview-see-all{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--lp);background:none;border:none;cursor:pointer;letter-spacing:.06em;transition:opacity .2s;white-space:nowrap;padding:0;}
+.bp-preview-see-all:hover{opacity:.65;}
+@media(max-width:640px){.bp-wrap{padding:90px 20px 40px;}.bp-preview-wrap{padding:48px 20px;}.bp-preview-head{flex-direction:column;align-items:flex-start;}}
 `;
 
 function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
   const [loaded,setLoaded]=useState(false);
   const [partnerCount,setPartnerCount]=useState(null);
+  const [bonsPlansPreview,setBonsPlansPreview]=useState([]);
   const [catsVisible,setCatsVisible]=useState(false);
   const catGridRef=useRef(null);
   useEffect(()=>{setTimeout(()=>setLoaded(true),80);},[]);
@@ -799,6 +823,10 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
       return()=>obs.disconnect();
     };
     return attach()||undefined;
+  },[selVille]);
+  useEffect(()=>{
+    const v=selVille||'Bordeaux';
+    supabase.from('lieux_gratuits').select('*').eq('ville',v).eq('actif',true).order('nom').limit(3).then(({data})=>setBonsPlansPreview(data||[]));
   },[selVille]);
   const ville = VILLE_CONFIG[selVille||'Bordeaux'] ?? VILLE_CONFIG['Bordeaux'];
   const TICKER = ville.bandeau;
@@ -1056,6 +1084,43 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
           </FadeUp>
         )}
       </section>
+
+      {/* ── BONS PLANS PREVIEW ─────────────────────────── */}
+      {bonsPlansPreview.length>0&&(
+        <div className="bp-preview-wrap">
+          <div className="bp-preview-head">
+            <div>
+              <div className="sec-tag fb">{selVille||'Bordeaux'} · Entrée libre</div>
+              <div className="sec-title fd">Bons plans <em>gratuits</em></div>
+            </div>
+            <button className="bp-preview-see-all fb" onClick={()=>siteNav('/bons-plans')}>Voir tous les bons plans →</button>
+          </div>
+          <div className="bp-grid">
+            {bonsPlansPreview.map(l=>(
+              <div key={l.id} className="bp-card">
+                {l.image_url&&<img src={l.image_url} alt={l.nom} className="bp-card-img" loading="lazy"/>}
+                <div className="bp-card-body">
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                    <div className="bp-card-cat fb">{l.categorie}</div>
+                    <span className="bp-badge-gratuit fb">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Gratuit
+                    </span>
+                  </div>
+                  <div className="bp-card-name fd">{l.nom}</div>
+                  <div className="bp-card-desc fb">{l.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:'center',marginTop:36}}>
+            <button className="btn-primary fb" onClick={()=>siteNav('/bons-plans')} style={{display:'inline-flex',alignItems:'center',gap:8}}>
+              Voir tous les bons plans
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── FOOTER ─────────────────────────────────────── */}
       <SiteFooter ville={selVille||'Bordeaux'}/>
@@ -5578,6 +5643,71 @@ function QrCodePage(){
   );
 }
 
+function BonsPlansPage({ selVille, onBack }) {
+  const ville=selVille||'Bordeaux';
+  const isParis=ville==='Paris';
+  const [lieux,setLieux]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [catFilter,setCatFilter]=useState('Tous');
+  useEffect(()=>{
+    supabase.from('lieux_gratuits').select('*').eq('ville',ville).eq('actif',true).order('nom').then(({data})=>{setLieux(data||[]);setLoading(false);});
+  },[ville]);
+  const cats=['Tous',...Array.from(new Set(lieux.map(l=>l.categorie).filter(Boolean)))];
+  const filtered=catFilter==='Tous'?lieux:lieux.filter(l=>l.categorie===catFilter);
+  return(
+    <div style={{background:'#F7F3EE',minHeight:'100dvh','--lp':isParis?'#1B2A4A':'#6B1D1D','--lp-rgb':isParis?'27,42,74':'107,29,29'}}>
+      <style>{CSS}</style>
+      <nav className="nav">
+        <div className="logo fd" onClick={onBack}>local<em>ly</em></div>
+        <ul className="nav-links">
+          <li><a onClick={onBack}>Accueil</a></li>
+        </ul>
+        <button className="nav-cta fb" onClick={onBack}>Accueil</button>
+      </nav>
+      <div className="bp-wrap">
+        <div className="sec-tag fb">{ville} · Entrée libre</div>
+        <h1 className="bp-title fd">Bons plans <em>gratuits</em></h1>
+        <p className="bp-sub fb">Les meilleurs endroits à découvrir à {ville}, sans dépenser un euro.</p>
+        <div className="bp-filters">
+          {cats.map(c=>(
+            <button key={c} className={`bp-filter-btn fb${catFilter===c?' active':''}`} onClick={()=>setCatFilter(c)}>{c}</button>
+          ))}
+        </div>
+        {loading?(
+          <div style={{textAlign:'center',padding:'60px 0',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'rgba(122,101,85,.35)'}}>Chargement…</div>
+        ):filtered.length===0?(
+          <div style={{textAlign:'center',padding:'60px 0',fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'rgba(122,101,85,.35)'}}>Aucun lieu pour le moment.</div>
+        ):(
+          <div className="bp-grid">
+            {filtered.map(l=>(
+              <div key={l.id} className="bp-card">
+                {l.image_url&&<img src={l.image_url} alt={l.nom} className="bp-card-img" loading="lazy"/>}
+                <div className="bp-card-body">
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                    <div className="bp-card-cat fb">{l.categorie}</div>
+                    <span className="bp-badge-gratuit fb">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Gratuit
+                    </span>
+                  </div>
+                  <div className="bp-card-name fd">{l.nom}</div>
+                  <div className="bp-card-desc fb">{l.description}</div>
+                  {l.tags&&l.tags.length>0&&(
+                    <div className="bp-card-tags">
+                      {l.tags.map((tag,i)=><span key={i} className="bp-card-tag fb">#{tag}</span>)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <SiteFooter ville={ville}/>
+    </div>
+  );
+}
+
 export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
@@ -5608,6 +5738,7 @@ export default function App() {
     if(path.startsWith("/hotel/"))return "hotel";
     if(path.startsWith("/qr/"))return "qr";
     if(path==="/carte")return "carte";
+    if(path==="/bons-plans")return "bons-plans";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -5654,6 +5785,7 @@ export default function App() {
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
       if(path.startsWith("/qr/")){setPage("qr");return;}
       if(path==="/carte"){setPage("carte");return;}
+      if(path==="/bons-plans"){setPage("bons-plans");return;}
       if(path==="/"||path==="")setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -5676,6 +5808,7 @@ export default function App() {
   }
   if(page==="admin")return <AdminView/>;
   if(page==="qr")return <QrCodePage/>;
+  if(page==="bons-plans")return <BonsPlansPage selVille={selVille} onBack={()=>siteNav('/')}/>;
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/login');setPage("login");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
   const isParis = selVille === 'Paris';
@@ -5690,6 +5823,7 @@ export default function App() {
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
+          <button className="nav-auth-name fb" onClick={()=>siteNav('/bons-plans')}>Bons plans</button>
           {!authLoading&&(user&&profile
             ?<>
               <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
