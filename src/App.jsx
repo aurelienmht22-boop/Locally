@@ -5505,13 +5505,16 @@ function JoindreView({onHome}){
   );
 }
 
-function CartePage({partners,user,profile,onNavigatePartner,onBack}){
+function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack}){
   const mapRef=useRef(null);
   const mapInstanceRef=useRef(null);
   const markersRef=useRef([]);
+  const lieuxMarkersRef=useRef([]);
   const partnersRef=useRef(partners);
+  const lieuxRef=useRef(lieuxGratuits);
   const onNavRef=useRef(onNavigatePartner);
   partnersRef.current=partners;
+  lieuxRef.current=lieuxGratuits;
   onNavRef.current=onNavigatePartner;
   const sessionActive=!!(profile?.session_expires_at&&new Date(profile.session_expires_at)>new Date());
 
@@ -5543,6 +5546,28 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
     });
   }
 
+  function placeLieuxMarkers(map,L,lieux){
+    lieuxMarkersRef.current.forEach(m=>m.remove());
+    lieuxMarkersRef.current=[];
+    const checkSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    (lieux||[]).filter(l=>l.latitude&&l.longitude).forEach(l=>{
+      const icon=L.divIcon({
+        html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#2D6A4F;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(45,106,79,.4)">${checkSvg}</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #2D6A4F;margin-top:-1px"></div></div>`,
+        iconSize:[36,44],iconAnchor:[18,44],popupAnchor:[0,-48],className:'',
+      });
+      const desc=l.description?l.description.slice(0,100)+(l.description.length>100?'…':''):'';
+      const m=L.marker([parseFloat(l.latitude),parseFloat(l.longitude)],{icon}).addTo(map).bindPopup(
+        `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
+          <div style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#2D6A4F;background:rgba(45,106,79,.1);border:1px solid rgba(45,106,79,.2);border-radius:100px;padding:3px 10px;margin-bottom:8px">✓ Gratuit</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1;margin-bottom:4px">${escapeHtml(l.nom)}</div>
+          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${desc?'8px':'0'}">${escapeHtml(l.categorie)}</div>
+          ${desc?`<div style="font-size:12px;font-weight:300;color:#7A6555;line-height:1.6">${escapeHtml(desc)}</div>`:''}
+        </div>`,{maxWidth:240}
+      );
+      lieuxMarkersRef.current.push(m);
+    });
+  }
+
   useEffect(()=>{
     function initMap(){
       if(mapInstanceRef.current||!mapRef.current)return;
@@ -5554,6 +5579,7 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
         maxZoom:19,
       }).addTo(map);
       placePartnerMarkers(map,L,partnersRef.current);
+      placeLieuxMarkers(map,L,lieuxRef.current);
       navigator.geolocation?.getCurrentPosition(pos=>{
         const{latitude,longitude}=pos.coords;
         map.setView([latitude,longitude],15);
@@ -5589,20 +5615,26 @@ function CartePage({partners,user,profile,onNavigatePartner,onBack}){
     placePartnerMarkers(mapInstanceRef.current,window.L,partners);
   },[partners]);
 
+  useEffect(()=>{
+    if(!mapInstanceRef.current||!window.L)return;
+    placeLieuxMarkers(mapInstanceRef.current,window.L,lieuxGratuits);
+  },[lieuxGratuits]);
+
   const placedCount=(partners||[]).filter(p=>p.latitude&&p.longitude).length;
+  const lieuxCount=(lieuxGratuits||[]).filter(l=>l.latitude&&l.longitude).length;
   return(
     <div style={{position:'relative',height:'calc(100dvh - 64px)'}}>
       <div ref={mapRef} style={{width:'100%',height:'100%'}}/>
-      {placedCount===0&&(
+      {placedCount+lieuxCount===0&&(
         <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',background:'rgba(253,250,246,.95)',border:'1px solid rgba(107,29,29,.12)',borderRadius:14,padding:'24px 28px',textAlign:'center',zIndex:999,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',maxWidth:280,pointerEvents:'none'}}>
-          Aucun partenaire géolocalisé pour l'instant.
+          Aucun lieu géolocalisé pour l'instant.
         </div>
       )}
       <div style={{position:'absolute',top:12,right:12,zIndex:1000}}>
         <button onClick={onBack} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,background:'rgba(253,250,246,.95)',color:'#1C1208',border:'none',borderRadius:8,padding:'8px 14px',cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,.12)'}}>← Retour</button>
       </div>
       <div style={{position:'absolute',bottom:28,right:12,zIndex:999,background:'rgba(253,250,246,.92)',borderRadius:10,padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:400,color:'#7A6555',boxShadow:'0 2px 8px rgba(0,0,0,.1)'}}>
-        {placedCount} partenaire{placedCount!==1?'s':''} sur la carte
+        {placedCount} partenaire{placedCount!==1?'s':''} · <span style={{color:'#2D6A4F'}}>{lieuxCount} bon{lieuxCount!==1?'s':''} plan{lieuxCount!==1?'s':''}</span>
       </div>
     </div>
   );
@@ -5745,10 +5777,12 @@ export default function App() {
   const [activeCat,setActiveCat]=useState(null);
   const [activePartner,setActivePartner]=useState(null);
   const [supabasePartners,setSupabasePartners]=useState([]);
+  const [lieuxGratuits,setLieuxGratuits]=useState([]);
   const [selVille,setSelVille]=useState(null);
   useEffect(()=>{
     if(pendingHotelSlug){localStorage.setItem('source_hotel',pendingHotelSlug);sessionStorage.setItem('source_hotel',pendingHotelSlug);}
     supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
+    supabase.from('lieux_gratuits').select('*').eq('actif',true).then(({data})=>setLieuxGratuits(data||[]));
     const hotelSlug=localStorage.getItem('source_hotel')||sessionStorage.getItem('source_hotel');
     if(hotelSlug){
       supabase.from('hotels').select('ville').eq('slug',hotelSlug).maybeSingle().then(({data})=>{if(data?.ville)setSelVille(data.ville);});
@@ -5850,7 +5884,7 @@ export default function App() {
       {page==="generic"&&activePartner&&<GenericPartnerPage partner={activePartner} onBack={()=>setPage("category")} user={user} profile={profile} onAuthRequired={(cb)=>openAuth('login',cb)}/>}
       {page==="reset-password"&&<ResetPasswordPage onDone={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
       {page==="renouveler"&&<RenouvellerPage profile={profile} onBack={()=>{window.history.pushState({},'','/');setPage("home");}}/>}
-      {page==='carte'&&<CartePage partners={supabasePartners} user={user} profile={profile} onNavigatePartner={navPartner} onBack={()=>siteNav('/')}/>}
+      {page==='carte'&&<CartePage partners={supabasePartners} lieuxGratuits={lieuxGratuits} user={user} profile={profile} onNavigatePartner={navPartner} onBack={()=>siteNav('/')}/>}
       {authModal.open&&<AuthModal defaultTab={authModal.tab} canRegister={!!pendingHotelSlug||!!localStorage.getItem('source_hotel')} onClose={()=>setAuthModal(m=>({...m,open:false}))} onSuccess={handleAuthSuccess}/>}
     </div>
   );
