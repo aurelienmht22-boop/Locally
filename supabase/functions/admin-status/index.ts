@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to, hotel_slug } = await req.json()
+    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to, hotel_slug, commission_active, commission_pct } = await req.json()
 
-    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis', 'create_qr_code', 'assign_qr_code'].includes(action)) {
+    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis', 'create_qr_code', 'assign_qr_code', 'update_hotel_commission'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -204,6 +204,27 @@ Deno.serve(async (req) => {
       const res = await fetch(`${supabaseUrl}/rest/v1/qr_codes?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH', headers: patchHeaders,
         body: JSON.stringify({ hotel_slug: hotel_slug ?? null }),
+      })
+      if (!res.ok) {
+        const err = await res.text()
+        return new Response(JSON.stringify({ error: 'Supabase error', detail: err }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    else if (action === 'update_hotel_commission') {
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'id requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const res = await fetch(`${supabaseUrl}/rest/v1/hotels?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', headers: patchHeaders,
+        body: JSON.stringify({ commission_active: commission_active ?? true, commission_pct: commission_pct ?? 1 }),
       })
       if (!res.ok) {
         const err = await res.text()

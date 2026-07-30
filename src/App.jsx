@@ -1775,6 +1775,11 @@ function AdminView(){
   const [hotelAccessErr,setHotelAccessErr]=useState('');
   const [regenLoading,setRegenLoading]=useState(false);
   const [regenDone,setRegenDone]=useState(false);
+  const [hotelCommActive,setHotelCommActive]=useState(true);
+  const [hotelCommPct,setHotelCommPct]=useState(1);
+  const [savingHotelComm,setSavingHotelComm]=useState(false);
+  const [hotelCommSaved,setHotelCommSaved]=useState(false);
+  const [hotelCommErr,setHotelCommErr]=useState('');
   const [refreshing,setRefreshing]=useState(false);
   const [unreadMessages,setUnreadMessages]=useState({});
   const [partnerMessages,setPartnerMessages]=useState([]);
@@ -1949,6 +1954,16 @@ function AdminView(){
     setSelHotel(s=>({...s,slug:hotelAccess.slug.trim()}));
     setHotelAccessSaved(true);setTimeout(()=>setHotelAccessSaved(false),2500);
   }
+  async function saveHotelCommission(){
+    setSavingHotelComm(true);setHotelCommErr('');setHotelCommSaved(false);
+    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+    const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:hdrs,body:JSON.stringify({action:'update_hotel_commission',id:selHotel.id,commission_active:hotelCommActive,commission_pct:hotelCommPct})});
+    const json=await res.json();
+    setSavingHotelComm(false);
+    if(!res.ok||json.error){setHotelCommErr('Erreur : '+(json.error||res.status));return;}
+    setSelHotel(s=>({...s,commission_active:hotelCommActive,commission_pct:hotelCommPct}));
+    setHotelCommSaved(true);setTimeout(()=>setHotelCommSaved(false),2500);
+  }
   async function sendSms(telephone,nom,status,access_code){
     let message;
     if(status==='approuve') message=`Bonjour ${nom}, votre candidature Locally a été acceptée ! Votre code d'accès : ${access_code}. Connectez-vous sur : www.mylocally.fr/login`;
@@ -2003,6 +2018,7 @@ function AdminView(){
   async function openHotel(h){
     setSelHotel(h);setConfirmHotelReject(false);
     setHotelAccess({slug:h.slug||''});setHotelAccessSaved(false);setHotelAccessErr('');
+    setHotelCommActive(h.commission_active!==false);setHotelCommPct(h.commission_pct??1);setHotelCommSaved(false);setHotelCommErr('');
     setHotelMessages([]);setLoadingHM(true);
     setHotelStats(null);setLoadingHotelStats(true);setHotelRecentVisits([]);
     const AFURL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch';
@@ -2797,6 +2813,28 @@ function AdminView(){
                   {hotelAccessErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444',marginTop:2}}>{hotelAccessErr}</div>}
                 </div>
               )}
+              {selHotel.status==='approuve'&&(
+                <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Commission</div>
+                  <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.07)',borderRadius:10,padding:'12px 14px',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:hotelCommActive?'rgba(247,243,238,.7)':'rgba(247,243,238,.38)'}}>
+                    {hotelCommActive?`Cet hôtel touche ${hotelCommPct}% des commissions générées.`:'Locally garde 100% des commissions (désactivé).'}
+                  </div>
+                  <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+                    <input type="checkbox" checked={hotelCommActive} onChange={e=>{setHotelCommActive(e.target.checked);setHotelCommSaved(false);}} style={{width:15,height:15,accentColor:'var(--lp)',cursor:'pointer'}}/>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.75)'}}>Commission activée (l'hôtel reçoit sa part)</span>
+                  </label>
+                  {hotelCommActive&&(
+                    <div className="adm-field">
+                      <div className="adm-field-label">% reversé à l'hôtel (0–5)</div>
+                      <input className="adm-input fb" type="number" min={0} max={5} step={1} value={hotelCommPct} onChange={e=>{setHotelCommPct(Math.min(5,Math.max(0,parseInt(e.target.value)||0)));setHotelCommSaved(false);}} style={{marginBottom:0,width:80}}/>
+                    </div>
+                  )}
+                  <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12}} onClick={saveHotelCommission} disabled={savingHotelComm}>
+                    {savingHotelComm?'Sauvegarde…':hotelCommSaved?'✓ Sauvegardé':'Sauvegarder la commission'}
+                  </button>
+                  {hotelCommErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444'}}>{hotelCommErr}</div>}
+                </div>
+              )}
               <div style={{marginTop:16}}>
                 <div className="adm-section-label">Messages hôtel</div>
                 {loadingHM?<div className="adm-empty fb" style={{padding:'12px 0'}}>Chargement…</div>:(
@@ -3140,9 +3178,14 @@ function PartnerView({onLogout}){
     setTxnSaving(true);setTxnErr('');
     try{
       const commActive=partner.commission_active===true;
+      let hotelCommPct=1;
+      if(commActive&&txnVisit.hotel_slug){
+        const{data:hd}=await supabase.from('hotels').select('commission_active,commission_pct').eq('slug',txnVisit.hotel_slug).maybeSingle();
+        if(hd)hotelCommPct=hd.commission_active!==false&&hd.commission_pct!=null?hd.commission_pct:0;
+      }
       const montant_reduction=+(m*t/100).toFixed(2);
       const commission_locally=commActive ? +(m*0.04).toFixed(2) : 0;
-      const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*0.01).toFixed(2) : 0;
+      const commission_hotel=commActive&&txnVisit.hotel_slug ? +(m*hotelCommPct/100).toFixed(2) : 0;
       const montant_client=commActive ? +(m-m*(t-5)/100).toFixed(2) : +(m-montant_reduction).toFixed(2);
       const{error}=await supabase.from('transactions').insert([{
         visit_id:txnVisit.id,
