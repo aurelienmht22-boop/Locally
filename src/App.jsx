@@ -5549,7 +5549,7 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
   function placeLieuxMarkers(map,L,lieux){
     lieuxMarkersRef.current.forEach(m=>m.remove());
     lieuxMarkersRef.current=[];
-    const checkSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const checkSvg=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`;
     (lieux||[]).filter(l=>l.latitude&&l.longitude).forEach(l=>{
       const icon=L.divIcon({
         html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#2D6A4F;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(45,106,79,.4)">${checkSvg}</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #2D6A4F;margin-top:-1px"></div></div>`,
