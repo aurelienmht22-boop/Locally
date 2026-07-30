@@ -792,6 +792,8 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .bp-card-desc{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;color:#7A6555;line-height:1.7;margin-bottom:14px;}
 .bp-card-tags{display:flex;gap:6px;flex-wrap:wrap;}
 .bp-card-tag{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.06em;padding:4px 10px;border-radius:100px;background:rgba(107,29,29,.07);color:var(--lp);}
+.bp-card-addr{display:inline-flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:var(--lp);text-decoration:underline;text-underline-offset:2px;cursor:pointer;margin-bottom:12px;transition:opacity .2s;line-height:1.4;}
+.bp-card-addr:hover{opacity:.65;}
 .bp-badge-gratuit{display:inline-flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#2D6A4F;background:rgba(45,106,79,.1);border:1px solid rgba(45,106,79,.2);border-radius:100px;padding:3px 10px;flex-shrink:0;}
 .bp-preview-wrap{padding:72px 52px;background:#F7F3EE;}
 .bp-preview-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;gap:16px;}
@@ -5556,12 +5558,15 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
         iconSize:[36,44],iconAnchor:[18,44],popupAnchor:[0,-48],className:'',
       });
       const desc=l.description?l.description.slice(0,100)+(l.description.length>100?'…':''):'';
+      const mapsUrl=`https://www.google.com/maps/search/?api=1&query=${l.latitude},${l.longitude}`;
+      const pinSvg=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
       const m=L.marker([parseFloat(l.latitude),parseFloat(l.longitude)],{icon}).addTo(map).bindPopup(
         `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
           <div style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#2D6A4F;background:rgba(45,106,79,.1);border:1px solid rgba(45,106,79,.2);border-radius:100px;padding:3px 10px;margin-bottom:8px">✓ Gratuit</div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1;margin-bottom:4px">${escapeHtml(l.nom)}</div>
-          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${desc?'8px':'0'}">${escapeHtml(l.categorie)}</div>
-          ${desc?`<div style="font-size:12px;font-weight:300;color:#7A6555;line-height:1.6">${escapeHtml(desc)}</div>`:''}
+          <div style="font-size:11px;color:#9B8B7A;margin-bottom:${desc?'6px':'8px'}">${escapeHtml(l.categorie)}</div>
+          ${desc?`<div style="font-size:12px;font-weight:300;color:#7A6555;line-height:1.6;margin-bottom:8px">${escapeHtml(desc)}</div>`:''}
+          ${l.adresse?`<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:#6B1D1D;text-decoration:underline;text-underline-offset:2px;line-height:1.4;">${pinSvg}${escapeHtml(l.adresse)}</a>`:''}
         </div>`,{maxWidth:240}
       );
       lieuxMarkersRef.current.push(m);
@@ -5725,6 +5730,12 @@ function BonsPlansPage({ selVille, onBack }) {
                   </div>
                   <div className="bp-card-name fd">{l.nom}</div>
                   <div className="bp-card-desc fb">{l.description}</div>
+                  {l.adresse&&l.latitude&&l.longitude&&(
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${l.latitude},${l.longitude}`} target="_blank" rel="noopener noreferrer" className="bp-card-addr fb">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {l.adresse}
+                    </a>
+                  )}
                   {l.tags&&l.tags.length>0&&(
                     <div className="bp-card-tags">
                       {l.tags.map((tag,i)=><span key={i} className="bp-card-tag fb">#{tag}</span>)}
