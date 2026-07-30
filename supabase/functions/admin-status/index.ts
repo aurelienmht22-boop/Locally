@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to, hotel_slug, commission_active, commission_pct } = await req.json()
+    const { action, table, id, status, slug, new_code, content, orders_count, date_from, date_to, hotel_slug, commission_active, commission_pct, type } = await req.json()
 
-    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis', 'create_qr_code', 'assign_qr_code', 'update_hotel_commission'].includes(action)) {
+    if (!['update_status', 'mark_read', 'change_code', 'insert_analysis', 'create_qr_code', 'assign_qr_code', 'update_hotel_commission', 'admin_impersonate'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -247,6 +247,29 @@ Deno.serve(async (req) => {
         })
       }
       return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    else if (action === 'admin_impersonate') {
+      if (!id || !type) {
+        return new Response(JSON.stringify({ error: 'id et type requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const entityTable = type === 'hotel' ? 'hotels' : 'candidates'
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/${entityTable}?id=eq.${encodeURIComponent(id)}&select=slug,status`,
+        { headers: getHeaders }
+      )
+      const rows = await res.json()
+      const entity = Array.isArray(rows) && rows.length > 0 ? rows[0] : null
+      if (!entity || entity.status !== 'approuve') {
+        return new Response(JSON.stringify({ error: 'Entité non approuvée' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ slug: entity.slug }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }

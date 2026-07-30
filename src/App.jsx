@@ -1924,6 +1924,16 @@ function AdminView(){
     setQrCodes(qr=>qr.map(q=>q.id===id?{...q,hotel_slug:hotel_slug||null}:q));
     setAssigningQr(a=>({...a,[id]:false}));
   }
+  async function impersonate(id,type){
+    const res=await fetch(AS_URL,{method:'POST',headers:ADMIN_HDRS,body:JSON.stringify({action:'admin_impersonate',id,type})});
+    const json=await res.json();
+    if(!res.ok||!json.slug){alert('Erreur : impossible d\'accéder à cet espace.');return;}
+    const sk=type==='hotel'?'hotel_slug':'partner_slug';
+    const path=type==='hotel'?'hotel':'partner';
+    sessionStorage.setItem(sk,json.slug);
+    sessionStorage.setItem('impersonating','1');
+    window.open(`/${path}/${json.slug}`,'_blank');
+  }
   async function downloadQrPng(qr){
     const src=document.getElementById(`qr-cnv-${qr.id}`);
     if(!src)return;
@@ -2718,6 +2728,9 @@ function AdminView(){
               </div>
               {!confirmPDisable?(
                 <div className="adm-modal-actions">
+                  {selPartner.status==='approuve'&&selPartner.slug&&(
+                    <button className="adm-sbtn fb" style={{background:'rgba(107,29,29,.18)',border:'1px solid rgba(107,29,29,.35)',color:'#FAF4EC'}} onClick={()=>impersonate(selPartner.id,'partner')}>Accéder à l'espace partenaire →</button>
+                  )}
                   <button className="adm-sbtn adm-s-reject fb" style={{marginLeft:'auto'}} onClick={()=>setConfirmPDisable(true)}>Désactiver</button>
                 </div>
               ):(
@@ -2867,6 +2880,9 @@ function AdminView(){
             </div>
             {!confirmHotelReject?(
               <div className="adm-modal-actions">
+                {selHotel.status==='approuve'&&selHotel.slug&&(
+                  <button className="adm-sbtn fb" style={{background:'rgba(107,29,29,.18)',border:'1px solid rgba(107,29,29,.35)',color:'#FAF4EC'}} onClick={()=>impersonate(selHotel.id,'hotel')}>Accéder à l'espace hôtel →</button>
+                )}
                 <button className="adm-sbtn adm-s-pending fb" onClick={()=>updateHotelStatus(selHotel.id,'pending')}>Pending</button>
                 <button className="adm-sbtn adm-s-waiting fb" onClick={()=>updateHotelStatus(selHotel.id,'en_attente')}>En attente</button>
                 <button className="adm-sbtn adm-s-ok fb" onClick={async()=>{
@@ -3395,6 +3411,7 @@ function PartnerView({onLogout}){
   return(
     <div className="prt-wrap">
       <style>{CSS}</style>
+      {sessionStorage.getItem('impersonating')==='1'&&<div style={{background:'#6B1D1D',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,letterSpacing:'.04em',padding:'8px 20px',textAlign:'center',flexShrink:0}}>🔧 Mode admin — vue partenaire en lecture</div>}
       <div className="prt-header">
         <div className="prt-logo-sm fd">local<em>ly</em></div>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
@@ -4569,6 +4586,7 @@ function HotelView({onLogout}){
   return(
     <div className="htl-wrap">
       <style>{CSS}</style>
+      {sessionStorage.getItem('impersonating')==='1'&&<div style={{background:'#6B1D1D',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,letterSpacing:'.04em',padding:'8px 20px',textAlign:'center'}}>🔧 Mode admin — vue hôtel en lecture</div>}
       <div className="htl-header">
         <div className="htl-logo fd">local<em>ly</em></div>
         <button className="htl-logout fb" onClick={logout}>Déconnexion</button>
