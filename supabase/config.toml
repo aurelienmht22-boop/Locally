@@ -1,3 +1,6 @@
+[functions.admin-auth]
+verify_jwt = false
+
 [functions.admin-fetch]
 verify_jwt = false
 

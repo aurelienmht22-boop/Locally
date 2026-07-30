@@ -1318,10 +1318,8 @@ function renderMarkdown(text) {
   return html;
 }
 
-const DASH_PASSWORD = import.meta.env.VITE_DASHBOARD_PASSWORD;
-
 function DashboardPage() {
-  const [auth, setAuth] = useState(false);
+  const [auth, setAuth] = useState(()=>!!sessionStorage.getItem('admin_token'));
   const [input, setInput] = useState("");
   const [tab, setTab] = useState("commandes");
 
@@ -1338,7 +1336,7 @@ function DashboardPage() {
 
   async function fetchOrders() {
     setLoadingOrders(true);
-    const json = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_orders'})}).then(r=>r.json());
+    const json = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_orders'})}).then(r=>r.json());
     if (json.error) console.error("admin-fetch error:", json.error);
     setOrders(json.data || []);
     setLoadingOrders(false);
@@ -1346,7 +1344,7 @@ function DashboardPage() {
 
   async function fetchAnalyses() {
     setLoadingAnalyses(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_analyses'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_analyses'})}).then(r=>r.json());
     setAnalyses(json.data||[]);
     setLoadingAnalyses(false);
   }
@@ -1355,10 +1353,10 @@ function DashboardPage() {
     setGenerating(true);
     setFreshAnalysis(null);
     try {
-      const lastJson=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_analyses',limit:1})}).then(r=>r.json());
+      const lastJson=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_analyses',limit:1})}).then(r=>r.json());
       const lastAnalysis = lastJson.data?.[0] || null;
 
-      const ordersJson = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_orders',...(lastAnalysis?.date_to?{date_from:lastAnalysis.date_to}:{})})}).then(r=>r.json());
+      const ordersJson = await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_orders',...(lastAnalysis?.date_to?{date_from:lastAnalysis.date_to}:{})})}).then(r=>r.json());
       const ordersToAnalyze = ordersJson.data || [];
 
       const dateFrom = ordersToAnalyze[0]?.created_at || new Date().toISOString();
@@ -1377,7 +1375,7 @@ function DashboardPage() {
       const json = await res.json();
       const content = json.content || "";
 
-      await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'insert_analysis',content,orders_count:ordersToAnalyze.length,date_from:dateFrom,date_to:dateTo})});
+      await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'insert_analysis',content,orders_count:ordersToAnalyze.length,date_from:dateFrom,date_to:dateTo})});
 
       setFreshAnalysis(content);
       await fetchAnalyses();
@@ -1387,11 +1385,16 @@ function DashboardPage() {
     setGenerating(false);
   }
 
-  function handleLogin(e) {
+  useEffect(()=>{if(auth){fetchOrders();fetchAnalyses();}},[]);
+
+  async function handleLogin(e) {
     e.preventDefault();
-    if (!DASH_PASSWORD) { alert("Configuration manquante. Accès impossible."); return; }
-    if (input === DASH_PASSWORD) { setAuth(true); fetchOrders(); fetchAnalyses(); }
-    else alert("Mot de passe incorrect");
+    try{
+      const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-auth',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({password:input})});
+      const j=await r.json();
+      if(j.ok&&j.token){sessionStorage.setItem('admin_token',j.token);setAuth(true);fetchOrders();fetchAnalyses();}
+      else alert("Mot de passe incorrect");
+    }catch{alert("Erreur de connexion.");}
   }
 
   if (!auth) return (
@@ -1498,7 +1501,6 @@ function DashboardPage() {
 }
 
 
-let ADMIN_PWD=import.meta.env.VITE_DASHBOARD_PASSWORD||"";
 const STATUS_BADGES={
   pending:   {label:'Pending',    bg:'rgba(217,119,6,.15)',  color:'#D97706'},
   en_attente:{label:'En attente', bg:'rgba(59,130,246,.15)', color:'#3B82F6'},
@@ -1527,9 +1529,8 @@ function LoginView({onLogin}){
   async function handleLogin(e){
     e.preventDefault();setErr('');setLoading(true);
     try{
-      if(ADMIN_PWD&&code.trim()===ADMIN_PWD){sessionStorage.setItem('adm','1');window.history.pushState({},'','/admin');onLogin('admin');return;}
       if(!loginEmail.trim()){setErr('Email requis.');setLoading(false);return;}
-      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({email:loginEmail.trim(),code:code.trim()})});
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({email:loginEmail.trim(),code:code.trim()})});
       const json=await res.json();
       if(json.valid&&json.type==='partner'&&json.data?.slug){sessionStorage.setItem('partner_slug',json.data.slug);window.history.pushState({},'',`/partner/${json.data.slug}`);onLogin('partner');return;}
       if(json.valid&&json.type==='hotel'&&json.data?.slug){sessionStorage.setItem('hotel_slug',json.data.slug);window.history.pushState({},'',`/hotel/${json.data.slug}`);onLogin('hotel');return;}
@@ -1567,7 +1568,7 @@ function LoginView({onLogin}){
     try{
       await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/send-access-code',{
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},
         body:JSON.stringify({email:forgotEmail.trim()}),
       });
     }catch{}
@@ -1734,7 +1735,7 @@ function getMetierLabels(categorie){
 }
 
 function AdminView(){
-  const [authed,setAuthed]=useState(()=>sessionStorage.getItem('adm')==='1');
+  const [authed,setAuthed]=useState(()=>!!sessionStorage.getItem('admin_token'));
   const [pwd,setPwd]=useState('');
   const [loginErr,setLoginErr]=useState('');
   const [tab,setTab]=useState('candidatures');
@@ -1784,12 +1785,9 @@ function AdminView(){
   const [unreadMessages,setUnreadMessages]=useState({});
   const [partnerMessages,setPartnerMessages]=useState([]);
   const [loadingPM,setLoadingPM]=useState(false);
-  const [adminPwdForm,setAdminPwdForm]=useState({code1:'',code2:''});
   const [adminReplyText,setAdminReplyText]=useState('');
   const [adminHotelReplyText,setAdminHotelReplyText]=useState('');
   const [adminReplySending,setAdminReplySending]=useState(false);
-  const [adminPwdErr,setAdminPwdErr]=useState('');
-  const [adminPwdSaved,setAdminPwdSaved]=useState(false);
   const [badgePending,setBadgePending]=useState(0);
   const [countPartners,setCountPartners]=useState(0);
   const [countHotels,setCountHotels]=useState(0);
@@ -1813,12 +1811,16 @@ function AdminView(){
   const [creatingQr,setCreatingQr]=useState(false);
   const [assigningQr,setAssigningQr]=useState({});
 
-  function login(e){
-    e.preventDefault();
-    if(pwd===ADMIN_PWD){sessionStorage.setItem('adm','1');setAuthed(true);}
-    else setLoginErr('Mot de passe incorrect.');
+  async function login(e){
+    e.preventDefault();setLoginErr('');
+    try{
+      const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-auth',{method:'POST',headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({password:pwd})});
+      const j=await r.json();
+      if(j.ok&&j.token){sessionStorage.setItem('admin_token',j.token);setAuthed(true);}
+      else setLoginErr('Mot de passe incorrect.');
+    }catch{setLoginErr('Erreur de connexion.');}
   }
-  function logout(){sessionStorage.removeItem('adm');setAuthed(false);setPwd('');}
+  function logout(){sessionStorage.removeItem('admin_token');setAuthed(false);setPwd('');}
   async function fetchBadges(){
     const[[{count:pc},{count:hc},{count:pa},{count:ha}],badges]=await Promise.all([
       Promise.all([
@@ -1827,7 +1829,7 @@ function AdminView(){
         supabase.from('candidates').select('*',{count:'exact',head:true}).eq('status','approuve'),
         supabase.from('hotels').select('*',{count:'exact',head:true}).eq('status','approuve'),
       ]),
-      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_badges'})}).then(r=>r.json()),
+      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_badges'})}).then(r=>r.json()),
     ]);
     setBadgePending((pc||0)+(hc||0));
     setCountPartners(pa||0);
@@ -1836,15 +1838,9 @@ function AdminView(){
     setBadgeHotelMsgs(badges.hotelMsgCount||0);
   }
   useEffect(()=>{if(authed)fetchBadges();},[authed]);
-  function saveAdminPwd(){
-    if(!adminPwdForm.code1.trim()){setAdminPwdErr('Le code ne peut pas être vide.');return;}
-    if(adminPwdForm.code1!==adminPwdForm.code2){setAdminPwdErr('Les codes ne correspondent pas.');return;}
-    ADMIN_PWD=adminPwdForm.code1.trim();
-    setAdminPwdErr('');setAdminPwdSaved(true);setAdminPwdForm({code1:'',code2:''});
-  }
   async function fetchAdminStats(){
     setLoadingAdminStats(true);
-    const{txnsAll,clientCount,qrTotal,qrScanned,partnerActiveCount,txns30,allCands}=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_stats'})}).then(r=>r.json());
+    const{txnsAll,clientCount,qrTotal,qrScanned,partnerActiveCount,txns30,allCands}=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_stats'})}).then(r=>r.json());
     const txns=txnsAll||[];
     const caTotal=txns.reduce((s,t)=>s+(t.montant_client||0),0);
     const economiesTotal=txns.reduce((s,t)=>s+(t.montant_reduction||0),0);
@@ -1876,12 +1872,12 @@ function AdminView(){
 
   async function fetchCands(){
     setLoadingCand(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_cands'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_cands'})}).then(r=>r.json());
     setCands(json.data||[]);setLoadingCand(false);
   }
   async function fetchPartners(){
     setLoadingPartners(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_partners'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_partners'})}).then(r=>r.json());
     setPartners(json.data||[]);setLoadingPartners(false);
     const counts={};(json.msgs||[]).forEach(m=>{counts[m.partner_id]=(counts[m.partner_id]||0)+1;});
     setUnreadMessages(counts);
@@ -1889,12 +1885,12 @@ function AdminView(){
   }
   async function fetchVisits(){
     setLoadingVisits(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_visits'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_visits'})}).then(r=>r.json());
     setVisits(json.data||[]);setLoadingVisits(false);
   }
   async function fetchHotels(){
     setLoadingHotels(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_hotels'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_hotels'})}).then(r=>r.json());
     setHotels(json.data||[]);setLoadingHotels(false);
     const counts={};(json.msgs||[]).forEach(m=>{counts[m.hotel_slug]=(counts[m.hotel_slug]||0)+1;});
     setUnreadHotelMessages(counts);
@@ -1902,7 +1898,7 @@ function AdminView(){
   }
   async function fetchFullStats(){
     setLoadingFullStats(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'fetch_full_stats'})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'fetch_full_stats'})}).then(r=>r.json());
     setFullStats(json);setLoadingFullStats(false);
   }
   function srtH(col){setStatsHSort(s=>s.col===col?{...s,dir:s.dir==='desc'?'asc':'desc'}:{col,dir:'desc'});}
@@ -1910,7 +1906,7 @@ function AdminView(){
   function stSort(arr,{col,dir}){return[...arr].sort((a,b)=>{const av=a[col]??'',bv=b[col]??'';if(typeof av==='number'||typeof bv==='number')return dir==='desc'?(Number(bv)||0)-(Number(av)||0):(Number(av)||0)-(Number(bv)||0);return dir==='desc'?String(bv).localeCompare(String(av),'fr'):String(av).localeCompare(String(bv),'fr');});}
   const AF_URL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch';
   const AS_URL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status';
-  const ADMIN_HDRS={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+  const ADMIN_HDRS={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''};
   async function fetchQrCodes(){
     setLoadingQr(true);
     const json=await fetch(AF_URL,{method:'POST',headers:ADMIN_HDRS,body:JSON.stringify({action:'fetch_qr_codes'})}).then(r=>r.json());
@@ -1956,7 +1952,7 @@ function AdminView(){
   }
   async function saveHotelCommission(){
     setSavingHotelComm(true);setHotelCommErr('');setHotelCommSaved(false);
-    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''};
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:hdrs,body:JSON.stringify({action:'update_hotel_commission',id:selHotel.id,commission_active:hotelCommActive,commission_pct:hotelCommPct})});
     const json=await res.json();
     setSavingHotelComm(false);
@@ -1981,7 +1977,7 @@ function AdminView(){
   async function updateHotelStatus(id,status,slug){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},
       body:JSON.stringify({action:'update_status',table:'hotels',id,status,...(slug?{slug}:{})}),
     });
     const json=await res.json();
@@ -1998,19 +1994,19 @@ function AdminView(){
   async function openPartner(p){
     setSelPartner(p);setConfirmPDisable(false);setPartnerVisits([]);setPartnerMessages([]);
     setLoadingPV(true);setLoadingPM(true);
-    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'open_partner',id:p.id})}).then(r=>r.json());
+    const json=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'open_partner',id:p.id})}).then(r=>r.json());
     setPartnerVisits(json.visits||[]);setLoadingPV(false);
     const msgs=json.msgs||[];
     const unread=msgs.filter(m=>m.status==='non_lu');
     if(unread.length>0){
-      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:m.id})})));
+      await Promise.all(unread.map(m=>fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'mark_read',id:m.id})})));
       setBadgePartnerMsgs(b=>Math.max(0,b-unread.length));
       setUnreadMessages(u=>{const n={...u};delete n[p.id];return n;});
     }
     setPartnerMessages(msgs.map(m=>({...m,status:'lu'})));setLoadingPM(false);
   }
   async function markAsRead(msgId,partnerId){
-    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:msgId})});
+    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'mark_read',id:msgId})});
     setPartnerMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadMessages(u=>{const n={...u};n[partnerId]=Math.max(0,(n[partnerId]||1)-1);if(!n[partnerId])delete n[partnerId];return n;});
     setBadgePartnerMsgs(b=>Math.max(0,b-1));
@@ -2022,7 +2018,7 @@ function AdminView(){
     setHotelMessages([]);setLoadingHM(true);
     setHotelStats(null);setLoadingHotelStats(true);setHotelRecentVisits([]);
     const AFURL='https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch';
-    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET};
+    const hdrs={'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''};
     const [json,statsJson]=await Promise.all([
       fetch(AFURL,{method:'POST',headers:hdrs,body:JSON.stringify({action:'open_hotel',id:h.slug||''})}).then(r=>r.json()),
       h.slug?fetch(AFURL,{method:'POST',headers:hdrs,body:JSON.stringify({action:'open_hotel_stats',slug:h.slug})}).then(r=>r.json()):Promise.resolve({}),
@@ -2038,7 +2034,7 @@ function AdminView(){
     setHotelStats(statsJson||{});setHotelRecentVisits(statsJson?.recentVisits||[]);setLoadingHotelStats(false);
   }
   async function markHotelMsgAsRead(msgId,hotelSlug){
-    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'mark_read',id:msgId})});
+    await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'mark_read',id:msgId})});
     setHotelMessages(ms=>ms.map(m=>m.id===msgId?{...m,status:'lu'}:m));
     setUnreadHotelMessages(u=>{const n={...u};n[hotelSlug]=Math.max(0,(n[hotelSlug]||1)-1);if(!n[hotelSlug])delete n[hotelSlug];return n;});
     setBadgeHotelMsgs(b=>Math.max(0,b-1));
@@ -2095,7 +2091,7 @@ function AdminView(){
   async function updateStatus(id,status,slug){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},
       body:JSON.stringify({action:'update_status',table:'candidates',id,status,...(slug?{slug}:{})}),
     });
     const json=await res.json();
@@ -2486,13 +2482,9 @@ function AdminView(){
 
         {tab==='parametres'&&(
           <div style={{maxWidth:480,display:'flex',flexDirection:'column',gap:16}}>
-            <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.08)',borderRadius:14,padding:'24px 20px',display:'flex',flexDirection:'column',gap:14}}>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(247,243,238,.35)'}}>Changer le mot de passe admin</div>
-              <input className="adm-input fb" type="password" placeholder="Nouveau code" value={adminPwdForm.code1} onChange={e=>{setAdminPwdForm(f=>({...f,code1:e.target.value}));setAdminPwdErr('');setAdminPwdSaved(false);}}/>
-              <input className="adm-input fb" type="password" placeholder="Confirmer le code" value={adminPwdForm.code2} onChange={e=>{setAdminPwdForm(f=>({...f,code2:e.target.value}));setAdminPwdErr('');setAdminPwdSaved(false);}}/>
-              {adminPwdErr&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#EF4444'}}>{adminPwdErr}</div>}
-              <button className="adm-btn fb" onClick={saveAdminPwd} disabled={!adminPwdForm.code1||!adminPwdForm.code2}>Enregistrer</button>
-              {adminPwdSaved&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'#10B981',lineHeight:1.5}}>✓ Code mis à jour — pensez à mettre à jour <span style={{fontFamily:'monospace'}}>VITE_DASHBOARD_PASSWORD</span> sur Vercel pour que le changement soit permanent.</div>}
+            <div style={{background:'rgba(247,243,238,.04)',border:'1px solid rgba(247,243,238,.08)',borderRadius:14,padding:'24px 20px',display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'rgba(247,243,238,.35)'}}>Mot de passe admin</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'rgba(247,243,238,.5)',lineHeight:1.6}}>Le mot de passe admin est géré via la variable d'environnement <span style={{fontFamily:'monospace',color:'rgba(247,243,238,.7)'}}>ADMIN_PASSWORD</span> sur Vercel. La session expire automatiquement après 8 heures.</div>
             </div>
           </div>
         )}
@@ -2553,7 +2545,7 @@ function AdminView(){
                   </div>
                   <div className="adm-field">
                     <div className="adm-field-label">Code d'accès</div>
-                    <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({table:'candidates',id:sel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button>
+                    <button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({table:'candidates',id:sel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button>
                   </div>
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveAccess} disabled={savingAccess}>
@@ -2799,7 +2791,7 @@ function AdminView(){
                 <div style={{borderTop:'1px solid rgba(247,243,238,.07)',paddingTop:16,marginTop:4,display:'flex',flexDirection:'column',gap:12}}>
                   <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:500,letterSpacing:'.18em',textTransform:'uppercase',color:'#6B1D1D'}}>Accès hôtel</div>
                   <div className="adm-field"><div className="adm-field-label">Identifiant URL (slug)</div><input className="adm-input fb" value={hotelAccess.slug} onChange={e=>setHotelAccess(a=>({...a,slug:e.target.value}))} placeholder="ex: hotel-des-quais" style={{marginBottom:0}}/></div>
-                  <div className="adm-field"><div className="adm-field-label">Code d'accès</div><button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setHotelAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({table:'hotels',id:selHotel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setHotelAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button></div>
+                  <div className="adm-field"><div className="adm-field-label">Code d'accès</div><button className="adm-btn fb" style={{padding:'9px 14px',fontSize:12,background:'rgba(107,29,29,.15)',border:'1px solid rgba(107,29,29,.3)',color:'#FAF4EC',cursor:'pointer',borderRadius:8,width:'100%',textAlign:'center',transition:'all .2s'}} onClick={async()=>{setRegenLoading(true);setRegenDone(false);setHotelAccessErr('');const r=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-regenerate-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({table:'hotels',id:selHotel.id})});const j=await r.json();setRegenLoading(false);if(!r.ok||j.error){setHotelAccessErr('Erreur régénération : '+(j.error||r.status));return;}setRegenDone(true);setTimeout(()=>setRegenDone(false),3000);}} disabled={regenLoading}>{regenLoading?'Envoi…':regenDone?'✓ Code envoyé par email':'Régénérer le code →'}</button></div>
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <button className="adm-btn fb" style={{flex:1,padding:'9px 14px',fontSize:12}} onClick={saveHotelAccess} disabled={savingHotelAccess}>
                       {savingHotelAccess?'Sauvegarde…':hotelAccessSaved?'✓ Sauvegardé':'Sauvegarder les accès'}
@@ -3092,7 +3084,7 @@ function PartnerView({onLogout}){
     if(settingsCodeForm.code1!==settingsCodeForm.code2){setSettingsCodeErr('Les codes ne correspondent pas.');return;}
     setSavingSettingsCode(true);
     try{
-      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'change_code',table:'candidates',id:partner.id,new_code:settingsCodeForm.code1})});
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'change_code',table:'candidates',id:partner.id,new_code:settingsCodeForm.code1})});
       const json=await res.json();
       if(!res.ok||json.error)throw new Error(json.error||res.status);
       setSettingsCodeSaved(true);setTimeout(()=>setSettingsCodeSaved(false),3000);
@@ -3218,7 +3210,7 @@ function PartnerView({onLogout}){
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
     try{
-      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({slug,code:code.trim(),type:'partner'})});
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({slug,code:code.trim(),type:'partner'})});
       const json=await res.json();
       if(json.valid&&json.data){
         const data=json.data;
@@ -4504,7 +4496,7 @@ function HotelView({onLogout}){
     if(htlCodeForm.code1!==htlCodeForm.code2){setHtlCodeErr('Les codes ne correspondent pas.');return;}
     setHtlCodeErr('');setSavingHtlCode(true);
     try{
-      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({action:'change_code',table:'hotels',slug,new_code:htlCodeForm.code1.trim()})});
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({action:'change_code',table:'hotels',slug,new_code:htlCodeForm.code1.trim()})});
       const json=await res.json();
       if(!res.ok||json.error)throw new Error(json.error||res.status);
       setHtlCodeSaved(true);setHtlCodeForm({code1:'',code2:''});
@@ -4539,7 +4531,7 @@ function HotelView({onLogout}){
   async function handleLogin(e){
     e.preventDefault();setLoginLoading(true);setLoginErr('');
     try{
-      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},body:JSON.stringify({slug,code:loginCode.trim(),type:'hotel'})});
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/verify-code',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':sessionStorage.getItem('admin_token')||''},body:JSON.stringify({slug,code:loginCode.trim(),type:'hotel'})});
       const json=await res.json();
       if(json.valid&&json.data){
         const data=json.data;

@@ -3,7 +3,7 @@ import bcrypt from "npm:bcryptjs"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret, x-admin-token',
 }
 
 const CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -36,6 +36,20 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    if (action !== 'change_code') {
+      const adminToken = req.headers.get('x-admin-token') ?? ''
+      const tokenRes = await fetch(
+        `${supabaseUrl}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(adminToken)}&expires_at=gt.${new Date().toISOString()}&select=token&limit=1`,
+        { headers: { 'apikey': serviceRoleKey, 'Authorization': `Bearer ${serviceRoleKey}` } }
+      )
+      const tokenRows = await tokenRes.json()
+      if (!Array.isArray(tokenRows) || tokenRows.length === 0) {
+        return new Response(JSON.stringify({ error: 'Session admin expirée ou invalide' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
     const patchHeaders = {
       'apikey': serviceRoleKey,
       'Authorization': `Bearer ${serviceRoleKey}`,

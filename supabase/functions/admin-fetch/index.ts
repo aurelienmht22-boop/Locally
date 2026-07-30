@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret, x-admin-token',
 }
 
 const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats', 'fetch_qr_codes']
@@ -46,6 +46,18 @@ Deno.serve(async (req) => {
 
     const url = Deno.env.get('SUPABASE_URL') ?? ''
     const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    const adminToken = req.headers.get('x-admin-token') ?? ''
+    const tokenRes = await fetch(
+      `${url}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(adminToken)}&expires_at=gt.${new Date().toISOString()}&select=token&limit=1`,
+      { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } }
+    )
+    const tokenRows = await tokenRes.json()
+    if (!Array.isArray(tokenRows) || tokenRows.length === 0) {
+      return new Response(JSON.stringify({ error: 'Session admin expirée ou invalide' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     let result: unknown
 
