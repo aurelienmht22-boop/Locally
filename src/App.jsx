@@ -1091,9 +1091,9 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
           <div className="bp-preview-head">
             <div>
               <div className="sec-tag fb">{selVille||'Bordeaux'} · Entrée libre</div>
-              <div className="sec-title fd">Bons plans <em>gratuits</em></div>
+              <div className="sec-title fd">Endroits à <em>visiter</em></div>
             </div>
-            <button className="bp-preview-see-all fb" onClick={()=>siteNav('/bons-plans')}>Voir tous les bons plans →</button>
+            <button className="bp-preview-see-all fb" onClick={()=>siteNav('/bons-plans')}>Voir tous les endroits →</button>
           </div>
           <div className="bp-grid">
             {bonsPlansPreview.map(l=>(
@@ -1115,7 +1115,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
           </div>
           <div style={{textAlign:'center',marginTop:36}}>
             <button className="btn-primary fb" onClick={()=>siteNav('/bons-plans')} style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              Voir tous les bons plans
+              Voir tous les endroits
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
@@ -5699,7 +5699,7 @@ function BonsPlansPage({ selVille, onBack }) {
       </nav>
       <div className="bp-wrap">
         <div className="sec-tag fb">{ville} · Entrée libre</div>
-        <h1 className="bp-title fd">Bons plans <em>gratuits</em></h1>
+        <h1 className="bp-title fd">Endroits à <em>visiter</em></h1>
         <p className="bp-sub fb">Les meilleurs endroits à découvrir à {ville}, sans dépenser un euro.</p>
         <div className="bp-filters">
           {cats.map(c=>(
@@ -5858,7 +5858,7 @@ export default function App() {
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
-          <button className="nav-auth-name fb" onClick={()=>siteNav('/bons-plans')}>Bons plans</button>
+          <button className="nav-auth-name fb" onClick={()=>siteNav('/bons-plans')}>Endroits à visiter</button>
           {!authLoading&&(user&&profile
             ?<>
               <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
