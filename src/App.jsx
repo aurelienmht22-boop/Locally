@@ -8,6 +8,15 @@ import html2canvas from "html2canvas";
 
 const BOURSE_IMG = "/bordeaux.jpg";
 
+function EyeBtn({show,onClick}){
+  return <button type="button" tabIndex={-1} onClick={onClick} style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',padding:4,cursor:'pointer',color:'#7A6555',display:'flex',alignItems:'center',lineHeight:0}}>
+    {show
+      ?<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+      :<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+    }
+  </button>
+}
+
 function isOpen() {
   const now = new Date();
   const day = now.getDay();
@@ -1321,6 +1330,7 @@ function renderMarkdown(text) {
 function DashboardPage() {
   const [auth, setAuth] = useState(()=>!!sessionStorage.getItem('admin_token'));
   const [input, setInput] = useState("");
+  const [showInput,setShowInput]=useState(false);
   const [tab, setTab] = useState("commandes");
 
   // Commandes
@@ -1401,7 +1411,7 @@ function DashboardPage() {
     <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"80vh"}}>
       <form onSubmit={handleLogin} style={{background:"#fff",padding:40,borderRadius:12,boxShadow:"0 4px 24px rgba(0,0,0,.08)",display:"flex",flexDirection:"column",gap:16,minWidth:300}}>
         <div className="fd" style={{fontSize:22,marginBottom:4}}>Dashboard</div>
-        <input className="input fb" type="password" placeholder="Mot de passe" value={input} onChange={e=>setInput(e.target.value)} autoFocus/>
+        <div style={{position:'relative'}}><input className="input fb" type={showInput?'text':'password'} placeholder="Mot de passe" value={input} onChange={e=>setInput(e.target.value)} autoFocus style={{paddingRight:36}}/><EyeBtn show={showInput} onClick={()=>setShowInput(s=>!s)}/></div>
         <button className="btn-primary fb" type="submit">Accéder →</button>
       </form>
     </div>
@@ -1525,6 +1535,7 @@ function LoginView({onLogin}){
   const [forgotEmail,setForgotEmail]=useState('');
   const [forgotLoading,setForgotLoading]=useState(false);
   const [forgotDone,setForgotDone]=useState(false);
+  const [showCode,setShowCode]=useState(false);
 
   async function handleLogin(e){
     e.preventDefault();setErr('');setLoading(true);
@@ -1588,7 +1599,7 @@ function LoginView({onLogin}){
             <div className="lgn-section-label fb">Se connecter</div>
             <form onSubmit={handleLogin}>
               <input className="lgn-input fb" type="email" autoComplete="username" placeholder="Email" value={loginEmail} onChange={e=>{setLoginEmail(e.target.value);setErr('');}}/>
-              <input className="lgn-input fb" type="password" autoComplete="current-password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setErr('');}} required/>
+              <div style={{position:'relative'}}><input className="lgn-input fb" type={showCode?'text':'password'} autoComplete="current-password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setErr('');}} required style={{paddingRight:36}}/><EyeBtn show={showCode} onClick={()=>setShowCode(s=>!s)}/></div>
               {err&&<div className="lgn-err fb">{err}</div>}
               <button type="submit" className="lgn-btn fb" disabled={loading}>{loading?'Vérification…':'Se connecter →'}</button>
             </form>
@@ -1737,6 +1748,7 @@ function getMetierLabels(categorie){
 function AdminView(){
   const [authed,setAuthed]=useState(()=>!!sessionStorage.getItem('admin_token'));
   const [pwd,setPwd]=useState('');
+  const [showPwd,setShowPwd]=useState(false);
   const [loginErr,setLoginErr]=useState('');
   const [tab,setTab]=useState('candidatures');
   const [cands,setCands]=useState([]);
@@ -2131,7 +2143,7 @@ function AdminView(){
       <div className="adm-login">
         <div className="adm-logo fd">local<em>ly</em><span className="fb"> admin</span></div>
         <form onSubmit={login}>
-          <input className="adm-input fb" type="password" placeholder="Mot de passe" value={pwd} onChange={e=>{setPwd(e.target.value);setLoginErr('');}} autoFocus/>
+          <div style={{position:'relative'}}><input className="adm-input fb" type={showPwd?'text':'password'} placeholder="Mot de passe" value={pwd} onChange={e=>{setPwd(e.target.value);setLoginErr('');}} autoFocus style={{paddingRight:36}}/><EyeBtn show={showPwd} onClick={()=>setShowPwd(s=>!s)}/></div>
           {loginErr&&<div className="adm-err fb">{loginErr}</div>}
           <button type="submit" className="adm-btn fb">Accéder →</button>
         </form>
@@ -2971,6 +2983,9 @@ function PartnerView({onLogout}){
   const [code,setCode]=useState('');
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
+  const [showCode,setShowCode]=useState(false);
+  const [showSCode1,setShowSCode1]=useState(false);
+  const [showSCode2,setShowSCode2]=useState(false);
   const [tab,setTab]=useState('profil');
   const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:'',ville:'Bordeaux'});
   const [savingProfile,setSavingProfile]=useState(false);
@@ -3378,7 +3393,7 @@ function PartnerView({onLogout}){
         <div className="prt-login-title fd">Espace partenaire</div>
         <div className="prt-login-sub fb">Entrez votre code d'accès pour accéder à votre espace.</div>
         <form onSubmit={handleLogin}>
-          <input className="prt-input fb" type="password" placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setLoginErr('');}} autoFocus style={{marginBottom:10}}/>
+          <div style={{position:'relative',marginBottom:10}}><input className="prt-input fb" type={showCode?'text':'password'} placeholder="Code d'accès" value={code} onChange={e=>{setCode(e.target.value);setLoginErr('');}} autoFocus style={{paddingRight:36}}/><EyeBtn show={showCode} onClick={()=>setShowCode(s=>!s)}/></div>
           {loginErr&&<div className="prt-err fb">{loginErr}</div>}
           <button type="submit" className="prt-btn-primary fb" style={{width:'100%'}} disabled={loginLoading}>
             {loginLoading?'Vérification…':'Accéder →'}
@@ -3968,11 +3983,11 @@ function PartnerView({onLogout}){
                 {settingsCodeErr&&<div className="auth-err fb">{settingsCodeErr}</div>}
                 <div>
                   <label className="prt-label fb">Nouveau code d'accès</label>
-                  <input className="prt-input" type="password" value={settingsCodeForm.code1} onChange={e=>setSettingsCodeForm(f=>({...f,code1:e.target.value}))} placeholder="6 caractères minimum"/>
+                  <div style={{position:'relative'}}><input className="prt-input" type={showSCode1?'text':'password'} value={settingsCodeForm.code1} onChange={e=>setSettingsCodeForm(f=>({...f,code1:e.target.value}))} placeholder="6 caractères minimum" style={{paddingRight:36}}/><EyeBtn show={showSCode1} onClick={()=>setShowSCode1(s=>!s)}/></div>
                 </div>
                 <div>
                   <label className="prt-label fb">Confirmer le code</label>
-                  <input className="prt-input" type="password" value={settingsCodeForm.code2} onChange={e=>setSettingsCodeForm(f=>({...f,code2:e.target.value}))} placeholder="••••••"/>
+                  <div style={{position:'relative'}}><input className="prt-input" type={showSCode2?'text':'password'} value={settingsCodeForm.code2} onChange={e=>setSettingsCodeForm(f=>({...f,code2:e.target.value}))} placeholder="••••••" style={{paddingRight:36}}/><EyeBtn show={showSCode2} onClick={()=>setShowSCode2(s=>!s)}/></div>
                 </div>
                 <button className="prt-btn-primary fb" onClick={saveSettingsCode} disabled={savingSettingsCode||!settingsCodeForm.code1||!settingsCodeForm.code2}>
                   {settingsCodeSaved?'✓ Code d\'accès mis à jour':savingSettingsCode?'Enregistrement…':'Changer le code'}
@@ -4407,6 +4422,9 @@ function HotelView({onLogout}){
   const [loginCode,setLoginCode]=useState('');
   const [loginErr,setLoginErr]=useState('');
   const [loginLoading,setLoginLoading]=useState(false);
+  const [showLoginCode,setShowLoginCode]=useState(false);
+  const [showHCode1,setShowHCode1]=useState(false);
+  const [showHCode2,setShowHCode2]=useState(false);
   const [hotel,setHotel]=useState(null);
   const [loading,setLoading]=useState(true);
   const [htlLoadErr,setHtlLoadErr]=useState('');
@@ -4573,7 +4591,7 @@ function HotelView({onLogout}){
         <div className="prt-login-title fd">Espace hôtel</div>
         <div className="prt-login-sub fb">Entrez votre code d'accès pour accéder à votre espace.</div>
         <form onSubmit={handleLogin}>
-          <input className="prt-input fb" type="password" placeholder="Code d'accès" value={loginCode} onChange={e=>{setLoginCode(e.target.value);setLoginErr('');}} autoFocus style={{marginBottom:10}}/>
+          <div style={{position:'relative',marginBottom:10}}><input className="prt-input fb" type={showLoginCode?'text':'password'} placeholder="Code d'accès" value={loginCode} onChange={e=>{setLoginCode(e.target.value);setLoginErr('');}} autoFocus style={{paddingRight:36}}/><EyeBtn show={showLoginCode} onClick={()=>setShowLoginCode(s=>!s)}/></div>
           {loginErr&&<div className="prt-err fb">{loginErr}</div>}
           <button type="submit" className="prt-btn-primary fb" style={{width:'100%'}} disabled={loginLoading}>
             {loginLoading?'Vérification…':'Accéder →'}
@@ -4748,8 +4766,8 @@ function HotelView({onLogout}){
                 <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
                   <div className="prt-section-label fb">Changer mon code d'accès</div>
                   <div style={{display:'flex',flexDirection:'column',gap:14,marginTop:4}}>
-                    <input className="prt-input" type="password" value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès (min. 6 car.)"/>
-                    <input className="prt-input" type="password" value={htlCodeForm.code2} onChange={e=>{setHtlCodeForm(f=>({...f,code2:e.target.value}));setHtlCodeErr('');}} placeholder="Confirmer le code"/>
+                    <div style={{position:'relative'}}><input className="prt-input" type={showHCode1?'text':'password'} value={htlCodeForm.code1} onChange={e=>{setHtlCodeForm(f=>({...f,code1:e.target.value}));setHtlCodeErr('');}} placeholder="Nouveau code d'accès (min. 6 car.)" style={{paddingRight:36}}/><EyeBtn show={showHCode1} onClick={()=>setShowHCode1(s=>!s)}/></div>
+                    <div style={{position:'relative'}}><input className="prt-input" type={showHCode2?'text':'password'} value={htlCodeForm.code2} onChange={e=>{setHtlCodeForm(f=>({...f,code2:e.target.value}));setHtlCodeErr('');}} placeholder="Confirmer le code" style={{paddingRight:36}}/><EyeBtn show={showHCode2} onClick={()=>setShowHCode2(s=>!s)}/></div>
                     {htlCodeErr&&<div className="prt-err fb">{htlCodeErr}</div>}
                     <button className="prt-btn-primary fb" onClick={saveHtlAccessCode} disabled={savingHtlCode||!htlCodeForm.code1||!htlCodeForm.code2}>
                       {htlCodeSaved?'✓ Code mis à jour':savingHtlCode?'Enregistrement…':'Changer le code'}
@@ -4848,6 +4866,8 @@ function ResetPasswordPage({onDone}){
   const[ready,setReady]=useState(false);
   const[newPwd,setNewPwd]=useState('');
   const[confirmPwd,setConfirmPwd]=useState('');
+  const[showNewPwd,setShowNewPwd]=useState(false);
+  const[showConfirmPwd,setShowConfirmPwd]=useState(false);
   const[loading,setLoading]=useState(false);
   const[err,setErr]=useState('');
   const[done,setDone]=useState(false);
@@ -4883,9 +4903,9 @@ function ResetPasswordPage({onDone}){
           <form onSubmit={handleSubmit} noValidate style={{textAlign:'left'}}>
             {err&&<div className="auth-err fb">{err}</div>}
             <label className="auth-label fb">Nouveau mot de passe</label>
-            <input className="auth-input fb" type="password" value={newPwd} onChange={e=>setNewPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password" autoFocus/>
+            <div style={{position:'relative'}}><input className="auth-input fb" type={showNewPwd?'text':'password'} value={newPwd} onChange={e=>setNewPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password" autoFocus style={{paddingRight:36}}/><EyeBtn show={showNewPwd} onClick={()=>setShowNewPwd(s=>!s)}/></div>
             <label className="auth-label fb">Confirmer le mot de passe</label>
-            <input className="auth-input fb" type="password" value={confirmPwd} onChange={e=>setConfirmPwd(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
+            <div style={{position:'relative'}}><input className="auth-input fb" type={showConfirmPwd?'text':'password'} value={confirmPwd} onChange={e=>setConfirmPwd(e.target.value)} placeholder="••••••••" required autoComplete="new-password" style={{paddingRight:36}}/><EyeBtn show={showConfirmPwd} onClick={()=>setShowConfirmPwd(s=>!s)}/></div>
             <button className="auth-btn fb" type="submit" disabled={loading||!newPwd||!confirmPwd}>
               {loading?'Enregistrement…':'Modifier le mot de passe →'}
             </button>
@@ -5003,6 +5023,9 @@ function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
   const[forgotMode,setForgotMode]=useState(false);
   const[resetEmail,setResetEmail]=useState('');
   const[resetSent,setResetSent]=useState(false);
+  const[showLoginPwd,setShowLoginPwd]=useState(false);
+  const[showRegPwd,setShowRegPwd]=useState(false);
+  const[showRegPwd2,setShowRegPwd2]=useState(false);
 
   function xlErr(msg){
     if(!msg)return'Une erreur est survenue.';
@@ -5125,7 +5148,7 @@ function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
                 <label className="auth-label fb">Email</label>
                 <input className="auth-input fb" type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email" autoFocus/>
                 <label className="auth-label fb">Mot de passe</label>
-                <input className="auth-input fb" type="password" value={loginPwd} onChange={e=>setLoginPwd(e.target.value)} placeholder="••••••••" required autoComplete="current-password"/>
+                <div style={{position:'relative'}}><input className="auth-input fb" type={showLoginPwd?'text':'password'} value={loginPwd} onChange={e=>setLoginPwd(e.target.value)} placeholder="••••••••" required autoComplete="current-password" style={{paddingRight:36}}/><EyeBtn show={showLoginPwd} onClick={()=>setShowLoginPwd(s=>!s)}/></div>
                 <div style={{textAlign:'right',marginTop:-8,marginBottom:12}}>
                   <button type="button" className="auth-rgpd-link" onClick={()=>{setForgotMode(true);setResetEmail(loginEmail);setErr('');setResetSent(false);}}>Mot de passe oublié ?</button>
                 </div>
@@ -5140,9 +5163,9 @@ function AuthModal({onClose,onSuccess,defaultTab='login',canRegister=false}){
                 <label className="auth-label fb">Email</label>
                 <input className="auth-input fb" type="email" value={regEmail} onChange={e=>setRegEmail(e.target.value)} placeholder="votre@email.fr" required autoComplete="email"/>
                 <label className="auth-label fb">Mot de passe</label>
-                <input className="auth-input fb" type="password" value={regPwd} onChange={e=>setRegPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password"/>
+                <div style={{position:'relative'}}><input className="auth-input fb" type={showRegPwd?'text':'password'} value={regPwd} onChange={e=>setRegPwd(e.target.value)} placeholder="8 caractères minimum" required autoComplete="new-password" style={{paddingRight:36}}/><EyeBtn show={showRegPwd} onClick={()=>setShowRegPwd(s=>!s)}/></div>
                 <label className="auth-label fb">Confirmer le mot de passe</label>
-                <input className="auth-input fb" type="password" value={regPwd2} onChange={e=>setRegPwd2(e.target.value)} placeholder="••••••••" required autoComplete="new-password"/>
+                <div style={{position:'relative'}}><input className="auth-input fb" type={showRegPwd2?'text':'password'} value={regPwd2} onChange={e=>setRegPwd2(e.target.value)} placeholder="••••••••" required autoComplete="new-password" style={{paddingRight:36}}/><EyeBtn show={showRegPwd2} onClick={()=>setShowRegPwd2(s=>!s)}/></div>
                 <div className="auth-rgpd">
                   <input className="auth-rgpd-check" type="checkbox" id="auth-rgpd" checked={rgpd} onChange={e=>setRgpd(e.target.checked)}/>
                   <label htmlFor="auth-rgpd" className="auth-rgpd-text fb">
