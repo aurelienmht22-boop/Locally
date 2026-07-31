@@ -45,24 +45,38 @@ Deno.serve(async (req) => {
         foundType = type === 'hotel' ? 'hotel' : 'partner'
       }
     } else if (email) {
-      // Email-based lookup (LoginView — searches candidates then hotels)
+      // Email-based lookup (LoginView) — multiple partners/hotels may share the same email,
+      // so we test the code against every matching row and return the first bcrypt match.
       const candRes = await fetch(
         `${url}/rest/v1/candidates?email=eq.${encodeURIComponent(email)}&status=eq.approuve&select=*`,
         { headers }
       )
       const cands = await candRes.json()
-      if (Array.isArray(cands) && cands.length > 0) {
-        found = cands[0] as Record<string, unknown>
-        foundType = 'partner'
-      } else {
+      if (Array.isArray(cands)) {
+        for (const cand of cands) {
+          const h = (cand as Record<string, unknown>).access_code as string
+          if (h && await bcrypt.compare(code as string, h)) {
+            found = cand as Record<string, unknown>
+            foundType = 'partner'
+            break
+          }
+        }
+      }
+      if (!found) {
         const hotelRes = await fetch(
           `${url}/rest/v1/hotels?email=eq.${encodeURIComponent(email)}&status=eq.approuve&select=*`,
           { headers }
         )
         const hotels = await hotelRes.json()
-        if (Array.isArray(hotels) && hotels.length > 0) {
-          found = hotels[0] as Record<string, unknown>
-          foundType = 'hotel'
+        if (Array.isArray(hotels)) {
+          for (const hotel of hotels) {
+            const h = (hotel as Record<string, unknown>).access_code as string
+            if (h && await bcrypt.compare(code as string, h)) {
+              found = hotel as Record<string, unknown>
+              foundType = 'hotel'
+              break
+            }
+          }
         }
       }
     }
@@ -73,13 +87,15 @@ Deno.serve(async (req) => {
       })
     }
 
-    const hash = found.access_code as string
-    const valid = hash ? await bcrypt.compare(code as string, hash) : false
-
-    if (!valid) {
-      return new Response(JSON.stringify({ valid: false }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    // Slug-based path: still needs the hash comparison (found but not yet verified)
+    if (slug) {
+      const hash = found.access_code as string
+      const valid = hash ? await bcrypt.compare(code as string, hash) : false
+      if (!valid) {
+        return new Response(JSON.stringify({ valid: false }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     // Never return the hash to the client
