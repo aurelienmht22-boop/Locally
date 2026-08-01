@@ -28,16 +28,22 @@ function isOpen() {
   return false;
 }
 
-const CATEGORIES = [
-  { id:"restauration", label:"Restauration", icon:"🍽", desc:"Restaurants, snacks et saveurs locales" },
-  { id:"boulangerie",  label:"Boulangerie",  icon:"🥐", desc:"Pains artisanaux, viennoiseries et pâtisseries" },
-  { id:"sport",        label:"Sport",        icon:"⚡", desc:"Salles, cours et activités sportives" },
-  { id:"bienetre",     label:"Bien-être",    icon:"🌿", desc:"Spa, massage, soins et relaxation" },
-  { id:"activite",     label:"Activité",     icon:"🎯", desc:"Sorties, visites et loisirs à Bordeaux" },
-  { id:"autre",        label:"Autre",        icon:"🏪", desc:"Commerces et services de proximité" },
+// Source unique de vérité — ajouter une catégorie ici suffit pour la propager partout
+const CATEGORIES_META={
+  'Restauration':    {id:'restauration',icon:'🍽',desc:'Restaurants, snacks et saveurs locales',         photo:'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80'},
+  'Boulangerie':     {id:'boulangerie', icon:'🥐',desc:'Pains artisanaux, viennoiseries et pâtisseries', photo:'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80'},
+  'Sport':           {id:'sport',       icon:'⚡',desc:'Salles, cours et activités sportives',           photo:'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80'},
+  'Bien-être':       {id:'bienetre',    icon:'🌿',desc:'Spa, massage, soins et relaxation',              photo:'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80'},
+  'Activité':        {id:'activite',    icon:'🎯',desc:'Sorties, visites et loisirs à Bordeaux',         photo:'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80'},
+  'Coiffure & Soins':{id:'coiffure',   icon:'✂️',desc:'Coiffure, barbier, soins et esthétique',         photo:'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80'},
+  'Mobilité':        {id:'mobilite',    icon:'🚗',desc:'VTC, taxi, navette et transport privé',          photo:'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80'},
+};
+const CATEGORIE_MAP=Object.fromEntries(Object.entries(CATEGORIES_META).map(([k,v])=>[k,v.id]));
+const CATEGORIES=[
+  ...Object.entries(CATEGORIES_META).map(([label,m])=>({id:m.id,label,icon:m.icon,desc:m.desc})),
+  {id:'autre',label:'Autre',icon:'🏪',desc:'Commerces et services de proximité'},
 ];
-
-const CATEGORIE_MAP={'Restauration':'restauration','Boulangerie':'boulangerie','Sport':'sport','Bien-être':'bienetre','Activité':'activite','Coiffure & Soins':'coiffure','Mobilité':'mobilite'};
+const CATEGORY_PHOTOS={...Object.fromEntries(Object.entries(CATEGORIES_META).map(([,m])=>[m.id,m.photo])),autre:'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80'};
 const VILLES=['Bordeaux','Paris'];
 const VILLE_CONFIG={
   'Bordeaux':{
@@ -882,14 +888,7 @@ function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activ
     ),
   };
 
-  const photos={
-    restauration:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80",
-    boulangerie:"https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=80",
-    sport:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
-    bienetre:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80",
-    activite:"https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
-    autre:"https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800&q=80",
-  };
+  const photos=CATEGORY_PHOTOS;
   const idToLabel=Object.fromEntries(Object.entries(CATEGORIE_MAP).map(([k,v])=>[v,k]));
   const activeCats=new Set((supabasePartners||[]).map(p=>p.categorie));
   const standardCats=new Set(Object.keys(CATEGORIE_MAP));
