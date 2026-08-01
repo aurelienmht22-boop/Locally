@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
       if (status === 'approuve') {
         plainCode = generateCode()
         updates.access_code = await bcrypt.hash(plainCode, 10)
+        updates.visible = false
 
         // Fetch email + nom for approval email
         const infoRes = await fetch(

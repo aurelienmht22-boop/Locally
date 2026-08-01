@@ -3081,7 +3081,14 @@ function PartnerView({onLogout}){
       const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null,ville:partnerForm.ville||'Bordeaux'};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
-      setPartner(p=>({...p,...payload}));
+      const prevCanPublish=cpHasPhoto&&(partner.description||'').trim().length>=20;
+      const nextCanPublish=cpHasPhoto&&(payload.description||'').trim().length>=20;
+      if(!prevCanPublish&&nextCanPublish&&partner.visible===false){
+        await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        setPartner(p=>({...p,...payload,visible:true}));
+      }else{
+        setPartner(p=>({...p,...payload}));
+      }
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
       if(newAdresse&&newAdresse!==partner.google_maps)geocodePartner(partner.id,newAdresse).catch(()=>{});
     }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
@@ -3274,7 +3281,12 @@ function PartnerView({onLogout}){
     const file=e.target.files[0];if(!file)return;
     const b64=await toBase64(file);
     await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
-    setPartner(p=>({...p,photo_url:b64}));
+    if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
+      await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+      setPartner(p=>({...p,photo_url:b64,visible:true}));
+    }else{
+      setPartner(p=>({...p,photo_url:b64}));
+    }
   }
 
   async function sendMessage(){
@@ -3996,31 +4008,23 @@ function PartnerView({onLogout}){
 
             <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
               <div className="prt-section-label fb">Publier mon profil</div>
-              {partner.visible!==false?(
-                <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#2D6A4F',background:'rgba(45,106,79,.07)',border:'1px solid rgba(45,106,79,.2)',borderRadius:10,padding:'12px 16px'}}>
-                    <span style={{fontSize:16}}>✓</span> Votre profil est en ligne sur Locally
-                  </div>
-                  <button className="prt-btn-danger fb" onClick={toggleVisible} disabled={savingVisible}>
-                    {savingVisible?'Mise à jour…':'Mettre en pause'}
-                  </button>
-                </div>
-              ):canPublish?(
-                <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#7A6555',lineHeight:1.6}}>
-                    Votre profil est prêt. Publiez-le pour apparaître sur Locally et attirer vos premiers clients.
-                  </div>
-                  <button className="prt-btn-primary fb" onClick={toggleVisible} disabled={savingVisible}>
-                    {savingVisible?'Publication…':'Publier mon profil sur Locally'}
-                  </button>
+              {!canPublish?(
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#9B8B7A',background:'#F5F0EA',border:'1px solid #E8DDD0',borderRadius:10,padding:'12px 16px',lineHeight:1.6}}>
+                  Votre profil sera visible dès que vous aurez ajouté une <strong style={{color:'#1C1208'}}>photo</strong> et une <strong style={{color:'#1C1208'}}>description</strong> (min. 20 caractères).
                 </div>
               ):(
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#9B8B7A',background:'#F5F0EA',border:'1px solid #E8DDD0',borderRadius:10,padding:'12px 16px',lineHeight:1.6}}>
-                    Ajoutez une <strong style={{color:'#1C1208'}}>photo</strong> et une <strong style={{color:'#1C1208'}}>description</strong> (min. 20 caractères) pour pouvoir publier votre profil.
-                  </div>
-                  <button className="prt-btn-primary fb" disabled style={{opacity:.45,cursor:'not-allowed'}}>
-                    Publier mon profil sur Locally
+                  {partner.visible!==false?(
+                    <div style={{display:'flex',alignItems:'center',gap:10,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:'#2D6A4F',background:'rgba(45,106,79,.07)',border:'1px solid rgba(45,106,79,.2)',borderRadius:10,padding:'12px 16px'}}>
+                      <span style={{fontSize:16}}>✓</span> Votre profil est en ligne sur Locally
+                    </div>
+                  ):(
+                    <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#7A6555',lineHeight:1.6}}>
+                      Votre profil est actuellement en pause.
+                    </div>
+                  )}
+                  <button className={partner.visible!==false?'prt-btn-danger fb':'prt-btn-primary fb'} onClick={toggleVisible} disabled={savingVisible}>
+                    {savingVisible?'Mise à jour…':partner.visible!==false?'Mettre en pause':'Republier mon profil'}
                   </button>
                 </div>
               )}
