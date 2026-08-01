@@ -1160,28 +1160,6 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
   })();
   const [selCat,setSelCat]=useState(initCat);
   const [selTags,setSelTags]=useState([]);
-  const [googleRatings,setGoogleRatings]=useState({});
-
-  useEffect(()=>{
-    const secret=import.meta.env.VITE_LOCALLY_SECRET;
-    if(!secret)return;
-    const toFetch=all.filter(p=>p.google_review_url);
-    if(!toFetch.length)return;
-    Promise.all(toFetch.map(p=>
-      fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/google-rating',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-locally-secret':secret},
-        body:JSON.stringify({review_url:p.google_review_url,nom:p.nom,adresse:p.google_maps||null}),
-      })
-        .then(r=>r.json())
-        .then(d=>d.rating!=null?{id:p.id,rating:d.rating,total:d.total||0}:null)
-        .catch(()=>null)
-    )).then(results=>{
-      const map={};
-      results.forEach(r=>{if(r)map[r.id]={rating:r.rating,total:r.total};});
-      setGoogleRatings(map);
-    });
-  },[]);
 
   const cats=FILTER_CATS;
   const byCat=selCat==='Tous'?all:all.filter(p=>p.categorie===selCat);
@@ -1246,11 +1224,11 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
                 <div className="pcard-body">
                   <div className="pcard-cat fb">{p.categorie}</div>
                   <div className="pcard-name fd">{p.nom}</div>
-                  {googleRatings[p.id]&&(
+                  {p.google_rating!=null&&(
                     <div style={{display:'flex',alignItems:'center',gap:4,marginTop:3,marginBottom:2}}>
-                      <span style={{color:'#C9A84C',fontSize:11,lineHeight:1,letterSpacing:'.5px'}}>{'★'.repeat(Math.round(googleRatings[p.id].rating))}{'☆'.repeat(5-Math.round(googleRatings[p.id].rating))}</span>
-                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#4A3F35',lineHeight:1}}>{googleRatings[p.id].rating.toFixed(1)}</span>
-                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:300,color:'#9B8B7A',lineHeight:1}}>({googleRatings[p.id].total.toLocaleString('fr-FR')})</span>
+                      <span style={{color:'#C9A84C',fontSize:11,lineHeight:1,letterSpacing:'.5px'}}>{'★'.repeat(Math.round(p.google_rating))}{'☆'.repeat(5-Math.round(p.google_rating))}</span>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:'#4A3F35',lineHeight:1}}>{p.google_rating.toFixed(1)}</span>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:300,color:'#9B8B7A',lineHeight:1}}>({(p.google_rating_total||0).toLocaleString('fr-FR')})</span>
                     </div>
                   )}
                   <div className="pcard-desc fb">{p.description||p.google_maps}</div>
@@ -4074,12 +4052,18 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   },[partner.id]);
 
   useEffect(()=>{
+    const updatedAt=partner.google_rating_updated_at;
+    const cacheValid=updatedAt&&(Date.now()-new Date(updatedAt).getTime())<7*24*60*60*1000;
+    if(cacheValid&&partner.google_rating!=null){
+      setGoogleRating({rating:partner.google_rating,total:partner.google_rating_total||0});
+      return;
+    }
     const secret=import.meta.env.VITE_LOCALLY_SECRET;
     if(!secret)return;
     fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/google-rating',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-locally-secret':secret},
-      body:JSON.stringify({review_url:partner.google_review_url||null,nom:partner.nom,adresse:partner.google_maps||null}),
+      body:JSON.stringify({review_url:partner.google_review_url||null,nom:partner.nom,adresse:partner.google_maps||null,id:partner.id}),
     })
       .then(r=>r.json())
       .then(d=>{if(d.rating!=null)setGoogleRating({rating:d.rating,total:d.total||0});})

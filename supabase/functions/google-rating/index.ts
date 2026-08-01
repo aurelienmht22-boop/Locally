@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { review_url, nom, adresse } = await req.json()
+    const { review_url, nom, adresse, id } = await req.json()
     const googleKey = Deno.env.get('GOOGLE_MAPS_API_KEY') ?? ''
     if (!googleKey) {
       return new Response(JSON.stringify({ error: 'GOOGLE_MAPS_API_KEY non configurée' }), {
@@ -63,10 +63,25 @@ Deno.serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({
-      rating: detailsData.result.rating,
-      total: detailsData.result.user_ratings_total ?? 0,
-    }), {
+    const rating = detailsData.result.rating
+    const total = detailsData.result.user_ratings_total ?? 0
+
+    if (id) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      fetch(`${supabaseUrl}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({ google_rating: rating, google_rating_total: total, google_rating_updated_at: new Date().toISOString() }),
+      }).catch(() => {})
+    }
+
+    return new Response(JSON.stringify({ rating, total }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
