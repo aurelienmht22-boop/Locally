@@ -4296,17 +4296,11 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
         {/* Flow Je me déplace */}
         <div className="gpp-section">
           {visitMode===null&&(
-            <>
-              <div className="gpp-section-title fd">Préparer <em>ma visite</em></div>
-              <div className="visit-mode-card" style={{maxWidth:420}} onClick={()=>setVisitMode('visit')}>
-                <div className="visit-mode-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                </div>
-                <div className="visit-mode-title fd">Je me déplace</div>
-                <div className="visit-mode-desc fb">Obtenez un QR code et profitez de votre réduction sur place.</div>
-                <div className="visit-mode-foot"><span className="visit-mode-cta fb">Générer mon QR code</span><div className="visit-mode-arrow">→</div></div>
-              </div>
-            </>
+            <div style={{maxWidth:420}}>
+              <div className="gpp-section-title fd">Générer <em>mon QR code</em></div>
+              <div className="op-label fb" style={{color:'#7A6555',marginBottom:20}}>Scannez, présentez, profitez de votre réduction.</div>
+              <button className="btn-call fb" onClick={()=>setVisitMode('visit')}>Générer →</button>
+            </div>
           )}
           {visitMode==='visit'&&(
             <>
