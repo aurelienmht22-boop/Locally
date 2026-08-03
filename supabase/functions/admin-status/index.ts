@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
         plainCode = generateCode()
         updates.access_code = await bcrypt.hash(plainCode, 10)
         updates.visible = false
+        const empBytes = new Uint8Array(16)
+        crypto.getRandomValues(empBytes)
+        updates.employee_token = Array.from(empBytes, (b: number) => b.toString(16).padStart(2, '0')).join('')
 
         // Fetch email + nom for approval email
         const infoRes = await fetch(

@@ -3,7 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-locally-secret, x-admin-token',
 }
 
-const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats', 'fetch_qr_codes']
+const VALID_ACTIONS = ['fetch_cands', 'fetch_partners', 'fetch_hotels', 'fetch_visits', 'fetch_stats', 'fetch_orders', 'fetch_badges', 'fetch_analyses', 'open_partner', 'open_hotel', 'open_hotel_stats', 'fetch_full_stats', 'fetch_qr_codes', 'get_by_employee_token']
 
 async function sbGet(url: string, key: string, path: string): Promise<unknown[]> {
   const res = await fetch(`${url}/rest/v1/${path}`, {
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { action, id, slug, date_from, limit: limitCount } = await req.json()
+    const { action, id, slug, date_from, limit: limitCount, token: employeeToken } = await req.json()
 
     if (!VALID_ACTIONS.includes(action)) {
       return new Response(JSON.stringify({ error: 'Action inconnue' }), {
@@ -47,16 +47,19 @@ Deno.serve(async (req) => {
     const url = Deno.env.get('SUPABASE_URL') ?? ''
     const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-    const adminToken = req.headers.get('x-admin-token') ?? ''
-    const tokenRes = await fetch(
-      `${url}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(adminToken)}&expires_at=gt.${new Date().toISOString()}&select=token&limit=1`,
-      { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } }
-    )
-    const tokenRows = await tokenRes.json()
-    if (!Array.isArray(tokenRows) || tokenRows.length === 0) {
-      return new Response(JSON.stringify({ error: 'Session admin expirée ou invalide' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    // get_by_employee_token is public (employee access) — no admin auth required
+    if (action !== 'get_by_employee_token') {
+      const adminToken = req.headers.get('x-admin-token') ?? ''
+      const tokenRes = await fetch(
+        `${url}/rest/v1/admin_sessions?token=eq.${encodeURIComponent(adminToken)}&expires_at=gt.${new Date().toISOString()}&select=token&limit=1`,
+        { headers: { 'apikey': key, 'Authorization': `Bearer ${key}` } }
+      )
+      const tokenRows = await tokenRes.json()
+      if (!Array.isArray(tokenRows) || tokenRows.length === 0) {
+        return new Response(JSON.stringify({ error: 'Session admin expirée ou invalide' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     let result: unknown
@@ -225,6 +228,22 @@ Deno.serve(async (req) => {
       })
 
       result = { hotels, partners }
+    }
+
+    else if (action === 'get_by_employee_token') {
+      if (!employeeToken) {
+        return new Response(JSON.stringify({ error: 'token requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const rows = await sbGet(url, key, `candidates?employee_token=eq.${encodeURIComponent(employeeToken)}&status=eq.approuve&select=*&limit=1`)
+      if (!rows.length) {
+        return new Response(JSON.stringify({ error: 'not_found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const { access_code: _ac, employee_token: _et, ...safe } = rows[0] as Record<string, unknown>
+      result = { data: safe }
     }
 
     return new Response(JSON.stringify(result), {

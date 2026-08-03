@@ -2716,9 +2716,29 @@ function AdminView(){
                 </div>
               </div>
               {!confirmPDisable?(
-                <div className="adm-modal-actions">
+                <div className="adm-modal-actions" style={{flexDirection:'column',gap:10}}>
                   {selPartner.status==='approuve'&&selPartner.slug&&(
                     <button className="adm-sbtn fb" style={{background:'rgba(107,29,29,.18)',border:'1px solid rgba(107,29,29,.35)',color:'#FAF4EC'}} onClick={()=>impersonate(selPartner.id,'partner')}>Accéder à l'espace partenaire →</button>
+                  )}
+                  {selPartner.status==='approuve'&&selPartner.employee_token&&(
+                    <div style={{display:'flex',flexDirection:'column',gap:8,background:'rgba(255,255,255,.04)',border:'1px solid rgba(247,243,238,.1)',borderRadius:10,padding:'12px 14px'}}>
+                      <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,color:'rgba(247,243,238,.5)',letterSpacing:'.5px',textTransform:'uppercase',marginBottom:2}}>Accès employé (sans mot de passe)</div>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:'rgba(247,243,238,.7)',flex:1,wordBreak:'break-all'}}>mylocally.fr/valider/{selPartner.employee_token}</div>
+                        <button className="adm-sbtn fb" style={{padding:'6px 12px',fontSize:11,flexShrink:0}} onClick={()=>navigator.clipboard.writeText(`https://www.mylocally.fr/valider/${selPartner.employee_token}`)}>Copier</button>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'center',background:'#fff',borderRadius:8,padding:10,marginTop:4}}>
+                        <QRCodeCanvas value={`https://www.mylocally.fr/valider/${selPartner.employee_token}`} size={130} fgColor="#1C1208" bgColor="#ffffff" level="M" id={`emp-qr-${selPartner.id}`}/>
+                      </div>
+                      <button className="adm-sbtn fb" style={{fontSize:11,padding:'6px 12px'}} onClick={()=>{
+                        const canvas=document.getElementById(`emp-qr-${selPartner.id}`);
+                        if(!canvas)return;
+                        const link=document.createElement('a');
+                        link.download=`qr-employe-${selPartner.slug||selPartner.id}.png`;
+                        link.href=canvas.toDataURL('image/png');
+                        link.click();
+                      }}>Télécharger le QR</button>
+                    </div>
                   )}
                   <button className="adm-sbtn adm-s-reject fb" style={{marginLeft:'auto'}} onClick={()=>setConfirmPDisable(true)}>Désactiver</button>
                 </div>
@@ -5809,6 +5829,147 @@ function BonsPlansPage({ selVille, onBack }) {
   );
 }
 
+function EmployeeView(){
+  const token=window.location.pathname.replace(/^\/valider\//,'').split('/')[0];
+  const [partner,setPartner]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [notFound,setNotFound]=useState(false);
+  const [step,setStep]=useState('scan');
+  const [scanInput,setScanInput]=useState('');
+  const [scanErr,setScanErr]=useState('');
+  const [visit,setVisit]=useState(null);
+  const [montant,setMontant]=useState('');
+  const [saving,setSaving]=useState(false);
+  const [txnErr,setTxnErr]=useState('');
+  const [savedReduction,setSavedReduction]=useState(null);
+
+  useEffect(()=>{
+    fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET,'x-admin-token':''},
+      body:JSON.stringify({action:'get_by_employee_token',token}),
+    })
+      .then(r=>r.json())
+      .then(d=>{if(d.data){setPartner(d.data);}else{setNotFound(true);}setLoading(false);})
+      .catch(()=>{setNotFound(true);setLoading(false);});
+  },[]);
+
+  async function verifyQR(){
+    let qrId=scanInput.trim();
+    if(!qrId)return;
+    try{const u=new URL(scanInput);const p=u.searchParams.get('id');if(p)qrId=p;}catch(e){}
+    setScanErr('');
+    try{
+      const{data:v,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
+      if(error)throw error;
+      if(!v){setScanErr('QR code introuvable.');return;}
+      if(new Date(v.expires_at)<new Date()){setScanErr('QR code expiré, le client peut en générer un nouveau.');return;}
+      if(v.partner_id!==partner.id){setScanErr("Ce QR code n'est pas destiné à cet établissement.");return;}
+      setVisit(v);setStep('amount');
+    }catch(e){setScanErr('Erreur lors de la vérification. Réessayez.');}
+  }
+
+  async function confirm(){
+    const m=parseFloat(montant),t=parseFloat(String(parseReduction(partner.reduction)));
+    if(isNaN(m)||m<=0||isNaN(t)||t<=0){setTxnErr('Montant invalide.');return;}
+    setSaving(true);setTxnErr('');
+    try{
+      const commActive=partner.commission_active===true;
+      let hotelCommPct=1;
+      if(commActive&&visit.hotel_slug){
+        const{data:hd}=await supabase.from('hotels').select('commission_active,commission_pct').eq('slug',visit.hotel_slug).maybeSingle();
+        if(hd)hotelCommPct=hd.commission_active!==false&&hd.commission_pct!=null?hd.commission_pct:0;
+      }
+      const montant_reduction=+(m*t/100).toFixed(2);
+      const commission_locally=commActive?+(m*0.04).toFixed(2):0;
+      const commission_hotel=commActive&&visit.hotel_slug?+(m*hotelCommPct/100).toFixed(2):0;
+      const montant_client=commActive?+(m-m*(t-5)/100).toFixed(2):+(m-montant_reduction).toFixed(2);
+      const{error}=await supabase.from('transactions').insert([{
+        visit_id:visit.id,qr_code_id:visit.qr_code_id,partner_id:partner.id,
+        client_name:visit.client_name,user_id:visit.user_id||null,hotel_slug:visit.hotel_slug||null,
+        montant_transaction:m,taux_reduction_applique:t,montant_reduction,
+        commission_locally,commission_hotel,montant_client,
+      }]);
+      if(error)throw error;
+      if(!visit.scanned)await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',visit.id);
+      setSavedReduction(montant_reduction);setStep('done');
+    }catch(e){setTxnErr('Erreur lors de l\'enregistrement. Réessayez.');}
+    setSaving(false);
+  }
+
+  function reset(){setStep('scan');setScanInput('');setScanErr('');setVisit(null);setMontant('');setTxnErr('');setSavedReduction(null);}
+
+  const base={fontFamily:"'DM Sans',sans-serif"};
+  const card={width:'100%',maxWidth:380,boxSizing:'border-box'};
+  const btnPrimary={width:'100%',padding:'18px',fontSize:16,fontWeight:700,background:'#6B1D1D',color:'#FAF4EC',border:'none',borderRadius:14,cursor:'pointer',...base};
+  const btnSecondary={width:'100%',padding:'14px',fontSize:14,background:'transparent',border:'1px solid #E8DDD0',borderRadius:14,cursor:'pointer',color:'#9B8B7A',marginTop:10,...base};
+
+  if(loading)return(<div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><style>{CSS}</style><span style={{...base,color:'#9B8B7A',fontSize:14}}>Chargement…</span></div>);
+  if(notFound)return(<div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}><style>{CSS}</style><div style={{fontSize:32,marginBottom:16}}>🔒</div><div style={{...base,fontSize:16,fontWeight:700,color:'#1C1208',marginBottom:8}}>Lien invalide</div><div style={{...base,fontSize:13,color:'#9B8B7A'}}>Ce lien d'accès employé n'existe pas ou a expiré.</div></div>);
+
+  return(
+    <div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 20px'}}>
+      <style>{CSS}</style>
+      <div style={{fontFamily:"'Canela Trial',serif",fontSize:26,color:'#6B1D1D',marginBottom:4,letterSpacing:'-0.5px'}}>locally</div>
+      <div style={{...base,fontSize:13,color:'#9B8B7A',marginBottom:40}}>{partner.nom}</div>
+
+      {step==='scan'&&(
+        <div style={card}>
+          <div style={{...base,fontSize:18,fontWeight:700,color:'#1C1208',marginBottom:6,textAlign:'center'}}>Scanner le code client</div>
+          <div style={{...base,fontSize:13,color:'#9B8B7A',textAlign:'center',marginBottom:24}}>Saisissez ou scannez le code QR du client</div>
+          <input
+            style={{width:'100%',padding:'16px',fontSize:16,border:'2px solid #E8DDD0',borderRadius:12,background:'#fff',textAlign:'center',letterSpacing:1,boxSizing:'border-box',marginBottom:12,outline:'none',...base}}
+            placeholder="Code ou URL du QR"
+            value={scanInput}
+            onChange={e=>setScanInput(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&verifyQR()}
+            autoFocus
+          />
+          {scanErr&&<div style={{...base,color:'#C0392B',fontSize:13,textAlign:'center',marginBottom:12}}>{scanErr}</div>}
+          <button style={{...btnPrimary,opacity:scanInput.trim()?1:.5}} onClick={verifyQR} disabled={!scanInput.trim()}>Vérifier →</button>
+        </div>
+      )}
+
+      {step==='amount'&&visit&&(
+        <div style={card}>
+          <div style={{...base,fontSize:13,fontWeight:500,color:'#2D6A4F',background:'rgba(45,106,79,.08)',border:'1px solid rgba(45,106,79,.2)',borderRadius:10,padding:'12px 16px',marginBottom:28,textAlign:'center'}}>
+            ✓ Client identifié : <strong>{visit.client_name}</strong>
+          </div>
+          <div style={{...base,fontSize:18,fontWeight:700,color:'#1C1208',marginBottom:6,textAlign:'center'}}>Montant de l'achat</div>
+          <div style={{...base,fontSize:13,color:'#9B8B7A',textAlign:'center',marginBottom:16}}>Réduction de {parseReduction(partner.reduction)}% sera appliquée</div>
+          <input
+            type="number"
+            inputMode="decimal"
+            style={{width:'100%',padding:'20px',fontSize:28,fontWeight:700,border:'2px solid #E8DDD0',borderRadius:12,background:'#fff',textAlign:'center',boxSizing:'border-box',marginBottom:12,outline:'none',...base}}
+            placeholder="0.00"
+            value={montant}
+            onChange={e=>setMontant(e.target.value)}
+            autoFocus
+          />
+          {txnErr&&<div style={{...base,color:'#C0392B',fontSize:13,textAlign:'center',marginBottom:12}}>{txnErr}</div>}
+          <button style={{...btnPrimary,opacity:montant&&!saving?1:.5}} onClick={confirm} disabled={!montant||saving}>
+            {saving?'Enregistrement…':'Valider la promotion →'}
+          </button>
+          <button style={btnSecondary} onClick={reset}>← Annuler</button>
+        </div>
+      )}
+
+      {step==='done'&&(
+        <div style={{...card,textAlign:'center'}}>
+          <div style={{fontSize:56,marginBottom:16}}>✓</div>
+          <div style={{...base,fontSize:22,fontWeight:700,color:'#2D6A4F',marginBottom:8}}>Promotion validée !</div>
+          {savedReduction!=null&&(
+            <div style={{...base,fontSize:15,color:'#7A6555',marginBottom:36}}>
+              Le client économise <strong style={{color:'#2D6A4F'}}>{Number(savedReduction).toFixed(2)} €</strong> chez {partner.nom}
+            </div>
+          )}
+          <button style={btnPrimary} onClick={reset}>Client suivant →</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
@@ -5838,6 +5999,7 @@ export default function App() {
     if(path.startsWith("/partner/"))return "partner";
     if(path.startsWith("/hotel/"))return "hotel";
     if(path.startsWith("/qr/"))return "qr";
+    if(path.startsWith("/valider/"))return "valider";
     if(path==="/carte")return "carte";
     if(path==="/bons-plans")return "bons-plans";
     return "home";
@@ -5887,6 +6049,7 @@ export default function App() {
       if(path.startsWith("/partner/")){setPage("partner");return;}
       if(path.startsWith("/hotel/")){setPage("hotel");return;}
       if(path.startsWith("/qr/")){setPage("qr");return;}
+      if(path.startsWith("/valider/")){setPage("valider");return;}
       if(path==="/carte"){setPage("carte");return;}
       if(path==="/bons-plans"){setPage("bons-plans");return;}
       if(path==="/"||path==="")setPage("home");
@@ -5914,6 +6077,7 @@ export default function App() {
   if(page==="bons-plans")return <BonsPlansPage selVille={selVille} onBack={()=>siteNav('/')}/>;
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/login');setPage("login");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
+  if(page==="valider")return <EmployeeView/>;
   const isParis = selVille === 'Paris';
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh",'--lp':isParis?'#1B2A4A':'#6B1D1D','--lp-rgb':isParis?'27,42,74':'107,29,29'}}>
