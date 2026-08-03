@@ -3267,13 +3267,42 @@ function PartnerView({onLogout}){
   function addDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];if(cr.length>=2)return h;return{...h,[day]:{...d,creneaux:[...cr,["",""]]}};});}
   function removeDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
 
-  async function downloadPrtQrCard(){
-    if(!prtQrCardRef.current)return;
-    const canvas=await html2canvas(prtQrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
-    const link=document.createElement('a');
-    link.download=`locally-acces-${slug}.png`;
-    link.href=canvas.toDataURL('image/png');
-    link.click();
+  async function downloadEmpQrPng(){
+    const src=document.getElementById('prt-emp-qr-dl');
+    if(!src)return;
+    const W=520,H=660;
+    const out=document.createElement('canvas');
+    out.width=W;out.height=H;
+    const ctx=out.getContext('2d');
+    ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,W,H);
+    // Header bordeaux
+    ctx.fillStyle='#6B1D1D';ctx.fillRect(0,0,W,112);
+    // Logo
+    ctx.fillStyle='#FAF4EC';ctx.font='italic bold 34px Georgia,"Times New Roman",serif';ctx.textAlign='center';
+    ctx.fillText('locally',W/2,58);
+    // Tagline
+    ctx.fillStyle='rgba(250,244,236,0.6)';ctx.font='11px Arial,sans-serif';
+    ctx.fillText('Le meilleur de Bordeaux, à portée de main.',W/2,82);
+    // Pill label
+    ctx.fillStyle='rgba(250,244,236,0.35)';ctx.font='bold 9px Arial,sans-serif';
+    ctx.fillText('ACCÈS EMPLOYÉ',W/2,103);
+    // QR
+    const qrSize=340;const qrX=(W-qrSize)/2;const qrY=142;
+    const img=new Image();
+    await new Promise(res=>{img.onload=res;img.src=src.toDataURL('image/png');});
+    ctx.drawImage(img,qrX,qrY,qrSize,qrSize);
+    // Partner name
+    ctx.fillStyle='#1C1208';ctx.font='600 22px Georgia,"Times New Roman",serif';ctx.textAlign='center';
+    ctx.fillText(partner?.nom||'',W/2,522);
+    // Footer
+    ctx.fillStyle='#6B1D1D';ctx.font='bold 12px Arial,sans-serif';
+    ctx.fillText('QR employé',W/2,554);
+    ctx.fillStyle='#9B8B7A';ctx.font='11px Arial,sans-serif';
+    ctx.fillText('Scanner pour valider les réductions clients',W/2,574);
+    const a=document.createElement('a');
+    a.href=out.toDataURL('image/png');
+    a.download=`qr-employe-${partner?.slug||'locally'}.png`;
+    a.click();
   }
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
@@ -3658,32 +3687,35 @@ function PartnerView({onLogout}){
               )}
             </div>
 
-            {/* ── QR COMPTOIR ── */}
-            <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
-              <div className="prt-section-label fb">QR code comptoir</div>
-              <div style={{marginBottom:14,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',lineHeight:1.6}}>
-                Imprimez cette carte et posez-la en caisse. En la scannant, vous arrivez directement sur votre page de connexion.
+            {/* ── QR EMPLOYÉ ── */}
+            {partner?.employee_token&&(
+              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28,marginTop:4}}>
+                <div className="prt-section-label fb">QR code employé</div>
+                <div style={{marginBottom:14,fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:300,color:'#7A6555',lineHeight:1.6}}>
+                  Imprimez cette carte et posez-la en caisse. Vos employés la scannent pour accéder à l'interface de validation sans mot de passe.
+                </div>
+                <div style={{background:'#ffffff',border:'1.5px solid #e8ddd6',borderRadius:20,padding:'36px 32px 28px',display:'inline-flex',flexDirection:'column',alignItems:'center',gap:0,boxShadow:'0 2px 20px rgba(107,29,29,.07)'}}>
+                  <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:26,fontWeight:600,color:'#1C1208',marginBottom:24,letterSpacing:'-.01em'}}>
+                    local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
+                  </div>
+                  <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
+                    <QRCodeSVG value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={170} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                  </div>
+                  <div style={{marginTop:20,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:220}}>
+                    Scanner pour valider les réductions clients
+                  </div>
+                  <div style={{marginTop:14,fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:'#1C1208',textAlign:'center'}}>
+                    {partner?.nom}
+                  </div>
+                </div>
+                <QRCodeCanvas value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={400} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="prt-emp-qr-dl"/>
+                <div style={{marginTop:12}}>
+                  <button onClick={downloadEmpQrPng} style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
+                    Télécharger en PNG
+                  </button>
+                </div>
               </div>
-              <div ref={prtQrCardRef} style={{background:'#ffffff',border:'1.5px solid #e8ddd6',borderRadius:20,padding:'36px 32px 28px',display:'inline-flex',flexDirection:'column',alignItems:'center',gap:0,boxShadow:'0 2px 20px rgba(107,29,29,.07)'}}>
-                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:26,fontWeight:600,color:'#1C1208',marginBottom:24,letterSpacing:'-.01em'}}>
-                  local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
-                </div>
-                <div style={{padding:10,background:'#fff',border:'1.5px solid #e8ddd6',borderRadius:12}}>
-                  <QRCodeSVG value={`${window.location.origin}/partner/${slug}`} size={170} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
-                </div>
-                <div style={{marginTop:20,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:300,color:'#7A6555',textAlign:'center',lineHeight:1.65,maxWidth:220}}>
-                  Scannez pour accéder à votre espace partenaire
-                </div>
-                <div style={{marginTop:14,fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:600,color:'#1C1208',textAlign:'center'}}>
-                  {partner?.nom}
-                </div>
-              </div>
-              <div style={{marginTop:12}}>
-                <button onClick={downloadPrtQrCard} style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
-                  Télécharger en PNG
-                </button>
-              </div>
-            </div>
+            )}
           </>
         )}
 
@@ -4027,29 +4059,6 @@ function PartnerView({onLogout}){
                 </div>
               )}
             </div>
-
-            {partner.employee_token&&(
-              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
-                <div className="prt-section-label fb">QR code employé</div>
-                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#7A6555',marginBottom:16,lineHeight:1.6}}>
-                  Imprimez ce QR et collez-le à la caisse. Vos employés le scannent pour accéder directement à l'écran de validation — sans mot de passe.
-                </div>
-                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:12}}>
-                  <div style={{background:'#fff',borderRadius:12,padding:16,display:'inline-flex'}}>
-                    <QRCodeSVG value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={160} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
-                  </div>
-                  <QRCodeCanvas value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={480} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="prt-emp-qr"/>
-                  <button className="prt-btn-secondary fb" onClick={()=>{
-                    const canvas=document.getElementById('prt-emp-qr');
-                    if(!canvas)return;
-                    const link=document.createElement('a');
-                    link.download=`qr-employe-${partner.slug||'locally'}.png`;
-                    link.href=canvas.toDataURL('image/png');
-                    link.click();
-                  }}>Télécharger le QR (PNG)</button>
-                </div>
-              </div>
-            )}
 
           </div>
         )}
