@@ -5842,6 +5842,7 @@ function EmployeeView(){
   const [saving,setSaving]=useState(false);
   const [txnErr,setTxnErr]=useState('');
   const [savedReduction,setSavedReduction]=useState(null);
+  const [showQr,setShowQr]=useState(false);
 
   useEffect(()=>{
     fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{
@@ -5911,7 +5912,29 @@ function EmployeeView(){
     <div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 20px'}}>
       <style>{CSS}</style>
       <div style={{fontFamily:"'Canela Trial',serif",fontSize:26,color:'#6B1D1D',marginBottom:4,letterSpacing:'-0.5px'}}>locally</div>
-      <div style={{...base,fontSize:13,color:'#9B8B7A',marginBottom:40}}>{partner.nom}</div>
+      <div style={{...base,fontSize:13,color:'#9B8B7A',marginBottom:24}}>{partner.nom}</div>
+
+      <div style={{width:'100%',maxWidth:380,marginBottom:32,boxSizing:'border-box'}}>
+        <button onClick={()=>setShowQr(s=>!s)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:'#fff',border:'1px solid #E8DDD0',borderRadius:showQr?'10px 10px 0 0':'10px',cursor:'pointer',...base,fontSize:13,fontWeight:600,color:'#7A6555'}}>
+          <span>Mon QR code d'accès</span>
+          <span style={{transition:'transform .2s',display:'inline-block',transform:showQr?'rotate(180deg)':'rotate(0deg)'}}>▾</span>
+        </button>
+        {showQr&&(
+          <div style={{background:'#fff',border:'1px solid #E8DDD0',borderTop:'none',borderRadius:'0 0 10px 10px',padding:'20px 16px',display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+            <div style={{...base,fontSize:12,color:'#9B8B7A',textAlign:'center'}}>Affichez ou imprimez ce QR pour y accéder rapidement</div>
+            <QRCodeSVG value={`https://www.mylocally.fr/valider/${token}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+            <QRCodeCanvas value={`https://www.mylocally.fr/valider/${token}`} size={360} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="emp-self-qr"/>
+            <button style={{...base,fontSize:13,fontWeight:600,color:'#6B1D1D',background:'transparent',border:'1px solid rgba(107,29,29,.3)',borderRadius:8,padding:'8px 20px',cursor:'pointer'}} onClick={()=>{
+              const canvas=document.getElementById('emp-self-qr');
+              if(!canvas)return;
+              const link=document.createElement('a');
+              link.download=`qr-acces-employe.png`;
+              link.href=canvas.toDataURL('image/png');
+              link.click();
+            }}>Télécharger le QR</button>
+          </div>
+        )}
+      </div>
 
       {step==='scan'&&(
         <div style={card}>
