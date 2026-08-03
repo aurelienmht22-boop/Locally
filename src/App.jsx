@@ -4028,6 +4028,29 @@ function PartnerView({onLogout}){
               )}
             </div>
 
+            {partner.employee_token&&(
+              <div style={{borderTop:'1px solid rgba(107,29,29,.1)',paddingTop:28}}>
+                <div className="prt-section-label fb">QR code employé</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#7A6555',marginBottom:16,lineHeight:1.6}}>
+                  Imprimez ce QR et collez-le à la caisse. Vos employés le scannent pour accéder directement à l'écran de validation — sans mot de passe.
+                </div>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:12}}>
+                  <div style={{background:'#fff',borderRadius:12,padding:16,display:'inline-flex'}}>
+                    <QRCodeSVG value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={160} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                  </div>
+                  <QRCodeCanvas value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={480} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="prt-emp-qr"/>
+                  <button className="prt-btn-secondary fb" onClick={()=>{
+                    const canvas=document.getElementById('prt-emp-qr');
+                    if(!canvas)return;
+                    const link=document.createElement('a');
+                    link.download=`qr-employe-${partner.slug||'locally'}.png`;
+                    link.href=canvas.toDataURL('image/png');
+                    link.click();
+                  }}>Télécharger le QR (PNG)</button>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 
@@ -5834,15 +5857,17 @@ function EmployeeView(){
   const [partner,setPartner]=useState(null);
   const [loading,setLoading]=useState(true);
   const [notFound,setNotFound]=useState(false);
-  const [step,setStep]=useState('scan');
-  const [scanInput,setScanInput]=useState('');
-  const [scanErr,setScanErr]=useState('');
-  const [visit,setVisit]=useState(null);
-  const [montant,setMontant]=useState('');
-  const [saving,setSaving]=useState(false);
+  const [txnStep,setTxnStep]=useState('scan');
+  const [txnScanMode,setTxnScanMode]=useState('camera');
+  const [txnManualId,setTxnManualId]=useState('');
+  const [txnVisit,setTxnVisit]=useState(null);
+  const [txnScanErr,setTxnScanErr]=useState('');
+  const [txnMontant,setTxnMontant]=useState('');
+  const [txnTaux,setTxnTaux]=useState('');
+  const [txnSaving,setTxnSaving]=useState(false);
   const [txnErr,setTxnErr]=useState('');
-  const [savedReduction,setSavedReduction]=useState(null);
-  const [showQr,setShowQr]=useState(false);
+  const txnQrRef=useRef(null);
+  const cameraActiveRef=useRef(false);
 
   useEffect(()=>{
     fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-fetch',{
@@ -5855,140 +5880,168 @@ function EmployeeView(){
       .catch(()=>{setNotFound(true);setLoading(false);});
   },[]);
 
-  async function verifyQR(){
-    let qrId=scanInput.trim();
-    if(!qrId)return;
-    try{const u=new URL(scanInput);const p=u.searchParams.get('id');if(p)qrId=p;}catch(e){}
-    setScanErr('');
+  useEffect(()=>{
+    if(txnStep!=='scan'||txnScanMode!=='camera'||!partner)return;
+    if(cameraActiveRef.current)return;
+    cameraActiveRef.current=true;
+    const qr=new Html5Qrcode('emp-qr-reader');
+    txnQrRef.current=qr;
+    qr.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:240}},
+      async(decoded)=>{try{await qr.stop();}catch(e){}cameraActiveRef.current=false;await txnVerifyQR(decoded);},
+      ()=>{}
+    ).catch(err=>{console.error('EmpCamera:',err);cameraActiveRef.current=false;});
+    return()=>{cameraActiveRef.current=false;try{if(qr.isScanning)qr.stop().catch(()=>{});}catch(e){}};
+  },[txnStep,txnScanMode,partner]);
+
+  async function txnVerifyQR(raw){
+    if(!partner)return;
+    let qrId=raw.trim();
+    try{const u=new URL(raw);const p=u.searchParams.get('id');if(p)qrId=p;}catch(e){}
+    setTxnScanErr('');
     try{
-      const{data:v,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
+      const{data:visit,error}=await supabase.from('visits').select('*').eq('qr_code_id',qrId).maybeSingle();
       if(error)throw error;
-      if(!v){setScanErr('QR code introuvable.');return;}
-      if(new Date(v.expires_at)<new Date()){setScanErr('QR code expiré, le client peut en générer un nouveau.');return;}
-      if(v.partner_id!==partner.id){setScanErr("Ce QR code n'est pas destiné à cet établissement.");return;}
-      setVisit(v);setStep('amount');
-    }catch(e){setScanErr('Erreur lors de la vérification. Réessayez.');}
+      if(!visit){setTxnScanErr('QR code introuvable.');return;}
+      if(new Date(visit.expires_at)<new Date()){setTxnScanErr('QR code expiré, le client peut en générer un nouveau gratuitement.');return;}
+      if(visit.partner_id!==partner.id){setTxnScanErr("Ce QR code n'est pas destiné à votre établissement.");return;}
+      setTxnVisit(visit);setTxnTaux(String(parseReduction(partner.reduction)));setTxnStep('amount');
+    }catch(e){setTxnScanErr('Erreur lors de la vérification. Réessayez.');}
   }
 
-  async function confirm(){
-    const m=parseFloat(montant),t=parseFloat(String(parseReduction(partner.reduction)));
-    if(isNaN(m)||m<=0||isNaN(t)||t<=0){setTxnErr('Montant invalide.');return;}
-    setSaving(true);setTxnErr('');
+  async function txnConfirm(){
+    if(!partner||!txnVisit)return;
+    const m=parseFloat(txnMontant),t=parseFloat(txnTaux);
+    if(isNaN(m)||m<=0||isNaN(t)||t<=0){setTxnErr('Montant ou taux invalide.');return;}
+    setTxnSaving(true);setTxnErr('');
     try{
       const commActive=partner.commission_active===true;
       let hotelCommPct=1;
-      if(commActive&&visit.hotel_slug){
-        const{data:hd}=await supabase.from('hotels').select('commission_active,commission_pct').eq('slug',visit.hotel_slug).maybeSingle();
+      if(commActive&&txnVisit.hotel_slug){
+        const{data:hd}=await supabase.from('hotels').select('commission_active,commission_pct').eq('slug',txnVisit.hotel_slug).maybeSingle();
         if(hd)hotelCommPct=hd.commission_active!==false&&hd.commission_pct!=null?hd.commission_pct:0;
       }
       const montant_reduction=+(m*t/100).toFixed(2);
       const commission_locally=commActive?+(m*0.04).toFixed(2):0;
-      const commission_hotel=commActive&&visit.hotel_slug?+(m*hotelCommPct/100).toFixed(2):0;
+      const commission_hotel=commActive&&txnVisit.hotel_slug?+(m*hotelCommPct/100).toFixed(2):0;
       const montant_client=commActive?+(m-m*(t-5)/100).toFixed(2):+(m-montant_reduction).toFixed(2);
       const{error}=await supabase.from('transactions').insert([{
-        visit_id:visit.id,qr_code_id:visit.qr_code_id,partner_id:partner.id,
-        client_name:visit.client_name,user_id:visit.user_id||null,hotel_slug:visit.hotel_slug||null,
-        montant_transaction:m,taux_reduction_applique:t,montant_reduction,
-        commission_locally,commission_hotel,montant_client,
+        visit_id:txnVisit.id,qr_code_id:txnVisit.qr_code_id,partner_id:partner.id,
+        client_name:txnVisit.client_name,user_id:txnVisit.user_id||null,hotel_slug:txnVisit.hotel_slug||null,
+        montant_transaction:m,taux_reduction_applique:t,montant_reduction,commission_locally,commission_hotel,montant_client,
       }]);
       if(error)throw error;
-      if(!visit.scanned)await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',visit.id);
-      setSavedReduction(montant_reduction);setStep('done');
+      if(!txnVisit.scanned)await supabase.from('visits').update({scanned:true,scanned_at:new Date().toISOString()}).eq('id',txnVisit.id);
+      setTxnStep('done');
     }catch(e){setTxnErr('Erreur lors de l\'enregistrement. Réessayez.');}
-    setSaving(false);
+    setTxnSaving(false);
   }
 
-  function reset(){setStep('scan');setScanInput('');setScanErr('');setVisit(null);setMontant('');setTxnErr('');setSavedReduction(null);}
+  function txnReset(){setTxnStep('scan');setTxnScanMode('camera');setTxnManualId('');setTxnVisit(null);setTxnScanErr('');setTxnMontant('');setTxnTaux('');}
 
   const base={fontFamily:"'DM Sans',sans-serif"};
-  const card={width:'100%',maxWidth:380,boxSizing:'border-box'};
-  const btnPrimary={width:'100%',padding:'18px',fontSize:16,fontWeight:700,background:'#6B1D1D',color:'#FAF4EC',border:'none',borderRadius:14,cursor:'pointer',...base};
-  const btnSecondary={width:'100%',padding:'14px',fontSize:14,background:'transparent',border:'1px solid #E8DDD0',borderRadius:14,cursor:'pointer',color:'#9B8B7A',marginTop:10,...base};
 
   if(loading)return(<div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><style>{CSS}</style><span style={{...base,color:'#9B8B7A',fontSize:14}}>Chargement…</span></div>);
   if(notFound)return(<div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24}}><style>{CSS}</style><div style={{fontSize:32,marginBottom:16}}>🔒</div><div style={{...base,fontSize:16,fontWeight:700,color:'#1C1208',marginBottom:8}}>Lien invalide</div><div style={{...base,fontSize:13,color:'#9B8B7A'}}>Ce lien d'accès employé n'existe pas ou a expiré.</div></div>);
 
+  const m=parseFloat(txnMontant)||0;
+  const t=parseFloat(txnTaux)||0;
+  const valid=m>0&&t>0;
+  const commActive=partner.commission_active===true;
+  const clientPays=valid?(commActive?+(m-m*(t-5)/100).toFixed(2):+(m-m*t/100).toFixed(2)):null;
+  const comm=valid&&commActive?+(m*0.05).toFixed(2):null;
+
   return(
-    <div style={{background:'#F7F3EE',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',padding:'40px 20px'}}>
+    <div style={{background:'#F7F3EE',minHeight:'100vh'}}>
       <style>{CSS}</style>
-      <div style={{fontFamily:"'Canela Trial',serif",fontSize:26,color:'#6B1D1D',marginBottom:4,letterSpacing:'-0.5px'}}>locally</div>
-      <div style={{...base,fontSize:13,color:'#9B8B7A',marginBottom:24}}>{partner.nom}</div>
-
-      <div style={{width:'100%',maxWidth:380,marginBottom:32,boxSizing:'border-box'}}>
-        <button onClick={()=>setShowQr(s=>!s)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px',background:'#fff',border:'1px solid #E8DDD0',borderRadius:showQr?'10px 10px 0 0':'10px',cursor:'pointer',...base,fontSize:13,fontWeight:600,color:'#7A6555'}}>
-          <span>Mon QR code d'accès</span>
-          <span style={{transition:'transform .2s',display:'inline-block',transform:showQr?'rotate(180deg)':'rotate(0deg)'}}>▾</span>
-        </button>
-        {showQr&&(
-          <div style={{background:'#fff',border:'1px solid #E8DDD0',borderTop:'none',borderRadius:'0 0 10px 10px',padding:'20px 16px',display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
-            <div style={{...base,fontSize:12,color:'#9B8B7A',textAlign:'center'}}>Affichez ou imprimez ce QR pour y accéder rapidement</div>
-            <QRCodeSVG value={`https://www.mylocally.fr/valider/${token}`} size={180} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
-            <QRCodeCanvas value={`https://www.mylocally.fr/valider/${token}`} size={360} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="emp-self-qr"/>
-            <button style={{...base,fontSize:13,fontWeight:600,color:'#6B1D1D',background:'transparent',border:'1px solid rgba(107,29,29,.3)',borderRadius:8,padding:'8px 20px',cursor:'pointer'}} onClick={()=>{
-              const canvas=document.getElementById('emp-self-qr');
-              if(!canvas)return;
-              const link=document.createElement('a');
-              link.download=`qr-acces-employe.png`;
-              link.href=canvas.toDataURL('image/png');
-              link.click();
-            }}>Télécharger le QR</button>
-          </div>
-        )}
+      <div className="prt-header">
+        <div className="prt-header-logo fd">local<em>ly</em></div>
+        <div className="prt-header-name fb">{partner.nom}</div>
       </div>
+      <div className="prt-body">
+        <div style={{maxWidth:520,display:'flex',flexDirection:'column',gap:20}}>
 
-      {step==='scan'&&(
-        <div style={card}>
-          <div style={{...base,fontSize:18,fontWeight:700,color:'#1C1208',marginBottom:6,textAlign:'center'}}>Scanner le code client</div>
-          <div style={{...base,fontSize:13,color:'#9B8B7A',textAlign:'center',marginBottom:24}}>Saisissez ou scannez le code QR du client</div>
-          <input
-            style={{width:'100%',padding:'16px',fontSize:16,border:'2px solid #E8DDD0',borderRadius:12,background:'#fff',textAlign:'center',letterSpacing:1,boxSizing:'border-box',marginBottom:12,outline:'none',...base}}
-            placeholder="Code ou URL du QR"
-            value={scanInput}
-            onChange={e=>setScanInput(e.target.value)}
-            onKeyDown={e=>e.key==='Enter'&&verifyQR()}
-            autoFocus
-          />
-          {scanErr&&<div style={{...base,color:'#C0392B',fontSize:13,textAlign:'center',marginBottom:12}}>{scanErr}</div>}
-          <button style={{...btnPrimary,opacity:scanInput.trim()?1:.5}} onClick={verifyQR} disabled={!scanInput.trim()}>Vérifier →</button>
-        </div>
-      )}
-
-      {step==='amount'&&visit&&(
-        <div style={card}>
-          <div style={{...base,fontSize:13,fontWeight:500,color:'#2D6A4F',background:'rgba(45,106,79,.08)',border:'1px solid rgba(45,106,79,.2)',borderRadius:10,padding:'12px 16px',marginBottom:28,textAlign:'center'}}>
-            ✓ Client identifié : <strong>{visit.client_name}</strong>
-          </div>
-          <div style={{...base,fontSize:18,fontWeight:700,color:'#1C1208',marginBottom:6,textAlign:'center'}}>Montant de l'achat</div>
-          <div style={{...base,fontSize:13,color:'#9B8B7A',textAlign:'center',marginBottom:16}}>Réduction de {parseReduction(partner.reduction)}% sera appliquée</div>
-          <input
-            type="number"
-            inputMode="decimal"
-            style={{width:'100%',padding:'20px',fontSize:28,fontWeight:700,border:'2px solid #E8DDD0',borderRadius:12,background:'#fff',textAlign:'center',boxSizing:'border-box',marginBottom:12,outline:'none',...base}}
-            placeholder="0.00"
-            value={montant}
-            onChange={e=>setMontant(e.target.value)}
-            autoFocus
-          />
-          {txnErr&&<div style={{...base,color:'#C0392B',fontSize:13,textAlign:'center',marginBottom:12}}>{txnErr}</div>}
-          <button style={{...btnPrimary,opacity:montant&&!saving?1:.5}} onClick={confirm} disabled={!montant||saving}>
-            {saving?'Enregistrement…':'Valider la promotion →'}
-          </button>
-          <button style={btnSecondary} onClick={reset}>← Annuler</button>
-        </div>
-      )}
-
-      {step==='done'&&(
-        <div style={{...card,textAlign:'center'}}>
-          <div style={{fontSize:56,marginBottom:16}}>✓</div>
-          <div style={{...base,fontSize:22,fontWeight:700,color:'#2D6A4F',marginBottom:8}}>Promotion validée !</div>
-          {savedReduction!=null&&(
-            <div style={{...base,fontSize:15,color:'#7A6555',marginBottom:36}}>
-              Le client économise <strong style={{color:'#2D6A4F'}}>{Number(savedReduction).toFixed(2)} €</strong> chez {partner.nom}
-            </div>
+          {txnStep==='scan'&&(
+            <>
+              <div className="prt-section-label fb">Identifier le client</div>
+              <div className="txn-mode-bar">
+                <button className={'txn-mode-btn fb'+(txnScanMode==='camera'?' on':'')} onClick={()=>{setTxnScanMode('camera');setTxnScanErr('');}}>📷 Scanner</button>
+                <button className={'txn-mode-btn fb'+(txnScanMode==='manual'?' on':'')} onClick={()=>{setTxnScanMode('manual');setTxnScanErr('');}}>✏ Saisir manuellement</button>
+              </div>
+              {txnScanMode==='camera'&&(
+                <div className="txn-card">
+                  <div className="prt-label fb">Pointez la caméra vers le QR code du client</div>
+                  <div className="txn-qr-wrap"><div id="emp-qr-reader"/></div>
+                </div>
+              )}
+              {txnScanMode==='manual'&&(
+                <div className="txn-card">
+                  <div className="prt-label fb">URL ou identifiant du QR code client</div>
+                  <div style={{display:'flex',gap:8}}>
+                    <input className="prt-input fb" value={txnManualId} onChange={e=>setTxnManualId(e.target.value)} placeholder="Collez l'URL ou l'identifiant UUID" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&txnManualId.trim()&&txnVerifyQR(txnManualId)}/>
+                    <button className="prt-btn-primary fb" style={{whiteSpace:'nowrap',paddingLeft:16,paddingRight:16}} onClick={()=>txnVerifyQR(txnManualId)} disabled={!txnManualId.trim()}>Vérifier</button>
+                  </div>
+                </div>
+              )}
+              {txnScanErr&&<div className="prt-err fb" style={{textAlign:'center',marginTop:4}}>{txnScanErr}</div>}
+            </>
           )}
-          <button style={btnPrimary} onClick={reset}>Client suivant →</button>
+
+          {txnStep==='amount'&&txnVisit&&(
+            <>
+              <div className="txn-client-chip">
+                <div className="txn-client-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(45,106,79,.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                  <div className="txn-client-name">{txnVisit.client_name}</div>
+                  <div className="txn-client-sub fb">QR validé · généré le {new Date(txnVisit.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+                </div>
+              </div>
+              <div className="txn-card">
+                <div className="prt-field">
+                  <div className="prt-label fb">Montant total de la transaction (€)</div>
+                  <input className="prt-input fb" type="number" min="0.01" step="0.01" value={txnMontant} onChange={e=>setTxnMontant(e.target.value)} placeholder="Ex : 47.50" style={{maxWidth:200}} autoFocus/>
+                </div>
+                <div className="prt-field">
+                  <div className="prt-label fb">Taux de réduction (%)</div>
+                  <input className="prt-input fb" type="number" min="1" max="100" step="0.5" value={txnTaux} onChange={e=>setTxnTaux(e.target.value)} placeholder="Ex : 15" style={{maxWidth:140}}/>
+                </div>
+                {valid&&(
+                  <div className="txn-calc-box">
+                    <div className="txn-calc-row"><span className="txn-calc-label fb">Montant initial</span><span className="txn-calc-val fd">{m.toFixed(2)} €</span></div>
+                    <div className="txn-calc-divider"/>
+                    <div className="txn-calc-row hilite"><span className="txn-calc-label fb">Le client paie</span><span className="txn-calc-val fd">{clientPays.toFixed(2)} €</span></div>
+                    {commActive&&<div className="txn-calc-row due"><span className="txn-calc-label fb">Vous devez à Locally</span><span className="txn-calc-val fd">{comm.toFixed(2)} €</span></div>}
+                  </div>
+                )}
+              </div>
+              {txnErr&&<div className="prt-err fb">{txnErr}</div>}
+              <div style={{display:'flex',gap:10}}>
+                <button className="prt-btn-secondary fb" onClick={txnReset}>Annuler</button>
+                <button className="prt-btn-primary fb" onClick={txnConfirm} disabled={txnSaving||!valid}>{txnSaving?'Enregistrement…':'Confirmer la transaction'}</button>
+              </div>
+            </>
+          )}
+
+          {txnStep==='done'&&txnVisit&&(()=>{
+            const dm=parseFloat(txnMontant),dt=parseFloat(txnTaux);
+            return(
+              <div className="txn-card" style={{alignItems:'center',textAlign:'center',paddingTop:32,paddingBottom:32}}>
+                <div className="txn-success-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(45,106,79,.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div className="prt-section-label fb" style={{justifyContent:'center',marginBottom:6}}>Transaction enregistrée</div>
+                <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:600,color:'#1C1208',marginBottom:6}}>{txnVisit.client_name}</div>
+                <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Montant initial : {dm.toFixed(2)} €</div>
+                <div className="prt-empty fb" style={{padding:0,marginBottom:6}}>Le client a payé : {commActive?(dm-dm*(dt-5)/100).toFixed(2):(dm-dm*dt/100).toFixed(2)} €</div>
+                {commActive&&<div className="prt-empty fb" style={{padding:0,marginBottom:24}}>Dû à Locally : {(dm*0.05).toFixed(2)} €</div>}
+                <button className="prt-btn-primary fb" onClick={txnReset}>Valider une autre transaction</button>
+              </div>
+            );
+          })()}
+
         </div>
-      )}
+      </div>
     </div>
   );
 }
