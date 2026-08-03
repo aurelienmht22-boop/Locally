@@ -1722,6 +1722,59 @@ function getMetierLabels(categorie){
   }
 }
 
+async function downloadHotelPoster(srcId, filename){
+  const src=document.getElementById(srcId);
+  if(!src)return;
+  const W=600,H=900;
+  const out=document.createElement('canvas');
+  out.width=W;out.height=H;
+  const ctx=out.getContext('2d');
+  function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+  // Header bordeaux
+  ctx.fillStyle='#6B1D1D';ctx.fillRect(0,0,W,140);
+  ctx.fillStyle='#FAF4EC';ctx.font='italic bold 44px Georgia,"Times New Roman",serif';ctx.textAlign='center';
+  ctx.fillText('locally',W/2,73);
+  ctx.fillStyle='#E8DDD0';ctx.font='13px Arial,Helvetica,sans-serif';
+  ctx.fillText('Le meilleur de Bordeaux, à portée de main.',W/2,101);
+  ctx.fillStyle='#E8DDD0';ctx.fillRect(0,128,W,1);
+  // Zone centrale crème
+  ctx.fillStyle='#FAF4EC';ctx.fillRect(0,140,W,620);
+  ctx.fillStyle='#1A0A0A';ctx.font='italic bold 30px Georgia,"Times New Roman",serif';ctx.textAlign='center';
+  ctx.fillText('Découvrez Bordeaux',W/2,202);
+  ctx.fillStyle='#6B1D1D';ctx.font='22px Georgia,"Times New Roman",serif';
+  ctx.fillText('à prix négociés',W/2,236);
+  ctx.fillStyle='#6B1D1D';ctx.fillRect(W/2-30,254,60,2);
+  ctx.fillStyle='#7A6555';ctx.font='12px Arial,Helvetica,sans-serif';
+  ctx.fillText('Restaurants · Bien-être · Activités · et plus',W/2,280);
+  // QR card avec ombre
+  const cX=110,cY=306,cW=380,cH=330;
+  ctx.fillStyle='rgba(224,216,208,0.7)';rr(cX+4,cY+5,cW,cH,18);ctx.fill();
+  ctx.fillStyle='#FFFFFF';rr(cX,cY,cW,cH,18);ctx.fill();
+  const qrS=264,qrX=cX+(cW-qrS)/2,qrY=cY+(cH-qrS)/2;
+  const img=new Image();
+  await new Promise(res=>{img.onload=res;img.src=src.toDataURL('image/png');});
+  ctx.drawImage(img,qrX,qrY,qrS,qrS);
+  // Scannez-moi + triangles
+  ctx.fillStyle='#6B1D1D';ctx.font='bold 12px Arial,Helvetica,sans-serif';ctx.textAlign='center';
+  const label='SCANNEZ-MOI';const lw=ctx.measureText(label).width;const scanY=680;
+  const tGap=14,tW=9,tH=14,cx=W/2;
+  const ltx=cx-lw/2-tGap-tW;
+  ctx.beginPath();ctx.moveTo(ltx,scanY-tH/2);ctx.lineTo(ltx+tW,scanY);ctx.lineTo(ltx,scanY+tH/2);ctx.closePath();ctx.fill();
+  const rtx=cx+lw/2+tGap;
+  ctx.beginPath();ctx.moveTo(rtx+tW,scanY-tH/2);ctx.lineTo(rtx,scanY);ctx.lineTo(rtx+tW,scanY+tH/2);ctx.closePath();ctx.fill();
+  ctx.fillText(label,cx,scanY+4);
+  // Bandeau bas bordeaux
+  ctx.fillStyle='#6B1D1D';ctx.fillRect(0,760,W,140);
+  ctx.fillStyle='rgba(250,244,236,0.15)';ctx.fillRect(W/3,780,1,60);ctx.fillRect(2*W/3,780,1,60);
+  ctx.fillStyle='#FAF4EC';ctx.font='bold 13px Arial,Helvetica,sans-serif';ctx.textAlign='center';
+  ctx.fillText('Gratuit',W/6,820);
+  ctx.fillText('Sans engagement',W/2,820);
+  ctx.fillText('Réductions exclusives',5*W/6,820);
+  ctx.fillStyle='#B0A090';ctx.font='11px Arial,Helvetica,sans-serif';
+  ctx.fillText('www.mylocally.fr',W/2,862);
+  const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download=filename;a.click();
+}
+
 function AdminView(){
   const [authed,setAuthed]=useState(()=>!!sessionStorage.getItem('admin_token'));
   const [pwd,setPwd]=useState('');
@@ -1924,22 +1977,7 @@ function AdminView(){
     window.open(`/${path}/${json.slug}`,'_blank');
   }
   async function downloadQrPng(qr){
-    const src=document.getElementById(`qr-cnv-${qr.id}`);
-    if(!src)return;
-    const out=document.createElement('canvas');
-    out.width=480;out.height=560;
-    const ctx=out.getContext('2d');
-    ctx.fillStyle='#FDFAF6';ctx.fillRect(0,0,480,560);
-    const img=new Image();
-    await new Promise(res=>{img.onload=res;img.src=src.toDataURL('image/png');});
-    ctx.drawImage(img,40,88,400,400);
-    ctx.fillStyle='#6B1D1D';ctx.font='italic bold 30px Georgia,"Times New Roman",serif';ctx.textAlign='center';
-    ctx.fillText('locally',240,52);
-    ctx.fillStyle='#7A6555';ctx.font='12px Arial,sans-serif';
-    ctx.fillText(`www.mylocally.fr/qr/${qr.code}`,240,514);
-    ctx.fillStyle='#9B8B7A';ctx.font='11px Arial,sans-serif';
-    ctx.fillText('Scannez pour découvrir vos avantages exclusifs',240,536);
-    const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download=`locally-qr-${qr.code}.png`;a.click();
+    await downloadHotelPoster(`qr-cnv-${qr.id}`,`locally-hotel-${qr.code}.png`);
   }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
@@ -4548,14 +4586,7 @@ function HotelView({onLogout}){
   useEffect(()=>{if(authed)loadStats(htlStatPeriod);},[htlStatPeriod]);
 
   async function downloadQrCard(){
-    if(!qrCardRef.current)return;
-    try{
-      const canvas=await html2canvas(qrCardRef.current,{scale:3,useCORS:true,backgroundColor:'#ffffff'});
-      const link=document.createElement('a');
-      link.download=`locally-qr-${slug}.png`;
-      link.href=canvas.toDataURL('image/png');
-      link.click();
-    }catch(e){console.error('downloadQrCard:',e);}
+    await downloadHotelPoster('htl-qr-dl',`locally-hotel-${slug}.png`);
   }
 
   async function saveHtlAccessCode(){
@@ -4708,6 +4739,9 @@ function HotelView({onLogout}){
 
             {tab==='qrcode'&&(
               <div>
+                <div style={{position:'absolute',opacity:0,pointerEvents:'none',left:'-9999px'}}>
+                  <QRCodeCanvas id="htl-qr-dl" value={`https://www.mylocally.fr/?hotel=${slug}`} size={400} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
+                </div>
                 <div ref={qrCardRef} style={{background:'#ffffff',border:'1.5px solid #e8ddd6',borderRadius:20,padding:'40px 32px 32px',display:'flex',flexDirection:'column',alignItems:'center',gap:0,maxWidth:340,boxShadow:'0 2px 24px rgba(107,29,29,.07)'}}>
                   <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:28,fontWeight:600,color:'#1C1208',marginBottom:28,letterSpacing:'-.01em'}}>
                     local<em style={{fontStyle:'italic',color:'rgba(28,18,8,.4)'}}>ly</em>
