@@ -5416,6 +5416,26 @@ function SiteFooter({ ville = 'Bordeaux' }){
   );
 }
 
+function BientotPage(){
+  return(
+    <div style={{background:'#6B1D1D',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 24px',boxSizing:'border-box'}}>
+      <style>{CSS}</style>
+      <div style={{textAlign:'center',maxWidth:480,width:'100%'}}>
+        <div style={{fontFamily:"'Times New Roman',Times,serif",fontStyle:'italic',fontWeight:700,fontSize:'clamp(42px,10vw,64px)',color:'#FAF4EC',letterSpacing:'-0.5px',lineHeight:1,marginBottom:40}}>
+          local<em>ly</em>
+        </div>
+        <div style={{width:48,height:2,background:'rgba(250,244,236,.35)',margin:'0 auto 40px'}}/>
+        <p style={{fontFamily:"'Cormorant Garamond','Times New Roman',serif",fontSize:'clamp(22px,5vw,30px)',fontWeight:600,color:'#FAF4EC',lineHeight:1.3,margin:'0 0 20px',letterSpacing:'0.01em'}}>
+          Nos meilleures adresses arrivent très prochainement
+        </p>
+        <p style={{fontFamily:"'DM Sans',Arial,sans-serif",fontSize:'clamp(13px,3.5vw,15px)',fontWeight:300,color:'rgba(250,244,236,.72)',lineHeight:1.7,margin:0}}>
+          On sélectionne rigoureusement les meilleurs commerces de la ville pour vous.<br/>Revenez très vite !
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function MentionsLegalesView({onHome}){
   return(
     <div style={{background:"#F7F3EE",minHeight:"100vh",padding:"80px 24px 64px",maxWidth:680,margin:"0 auto"}}>
@@ -6121,6 +6141,7 @@ export default function App() {
     if(path.startsWith("/valider/"))return "valider";
     if(path==="/carte")return "carte";
     if(path==="/bons-plans")return "bons-plans";
+    if(path==="/bientot")return "bientot";
     return "home";
   });
   const [activeCat,setActiveCat]=useState(null);
@@ -6171,6 +6192,7 @@ export default function App() {
       if(path.startsWith("/valider/")){setPage("valider");return;}
       if(path==="/carte"){setPage("carte");return;}
       if(path==="/bons-plans"){setPage("bons-plans");return;}
+      if(path==="/bientot"){setPage("bientot");return;}
       if(path==="/"||path==="")setPage("home");
     }
     window.addEventListener("popstate",onPopState);
@@ -6197,6 +6219,7 @@ export default function App() {
   if(page==="partner")return <PartnerView onLogout={()=>{window.history.pushState({},'','/login');setPage("login");}}/>;
   if(page==="hotel")return <HotelView onLogout={()=>setPage("login")}/>;
   if(page==="valider")return <EmployeeView/>;
+  if(page==="bientot")return <BientotPage/>;
   const isParis = selVille === 'Paris';
   return (
     <div style={{background:"#F7F3EE",minHeight:"100vh",'--lp':isParis?'#1B2A4A':'#6B1D1D','--lp-rgb':isParis?'27,42,74':'107,29,29'}}>
