@@ -5816,7 +5816,7 @@ function QrCodePage(){
       const{data}=await supabase.from('qr_codes').select('hotel_slug').eq('code',code).maybeSingle();
       if(!data){window.location.replace('/');return;}
       if(data.hotel_slug){window.location.replace(`/?hotel=${data.hotel_slug}`);return;}
-      setStatus('inactive');
+      window.location.replace('/bientot');
     })();
   },[]);
   if(status==='loading')return(
