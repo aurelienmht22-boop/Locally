@@ -3022,7 +3022,7 @@ function PartnerView({onLogout}){
   const [showSCode1,setShowSCode1]=useState(false);
   const [showSCode2,setShowSCode2]=useState(false);
   const [tab,setTab]=useState('profil');
-  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:'',ville:'Bordeaux'});
+  const [partnerForm,setPartnerForm]=useState({nom:'',description:'',reduction:'',telephone:'',google_maps:'',email:'',google_review_url:'',site_web:'',booking_url:'',ville:'Bordeaux',montant_minimum:'',offre_bonus:''});
   const [savingProfile,setSavingProfile]=useState(false);
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
@@ -3085,7 +3085,7 @@ function PartnerView({onLogout}){
       if(error)throw error;
       if(data){
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux'});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux',montant_minimum:data.montant_minimum!=null&&data.montant_minimum>0?String(data.montant_minimum):'',offre_bonus:data.offre_bonus||''});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
         const lastRead=localStorage.getItem(`msg_read_${data.id}`)||'1970-01-01';
@@ -3114,7 +3114,7 @@ function PartnerView({onLogout}){
     }
     try{
       const newAdresse=partnerForm.google_maps.trim();
-      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null,ville:partnerForm.ville||'Bordeaux'};
+      const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null,ville:partnerForm.ville||'Bordeaux',montant_minimum:parseFloat(partnerForm.montant_minimum)||0,offre_bonus:partnerForm.offre_bonus.trim()||null};
       const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       const prevCanPublish=cpHasPhoto&&(partner.description||'').trim().length>=20;
@@ -3289,7 +3289,7 @@ function PartnerView({onLogout}){
         const data=json.data;
         sessionStorage.setItem('partner_slug',slug);
         setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux'});
+        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux',montant_minimum:data.montant_minimum!=null&&data.montant_minimum>0?String(data.montant_minimum):'',offre_bonus:data.offre_bonus||''});
         setPartnerTags(data.tags||[]);
         setHoraires(data.horaires||{});
         setAuthed(true);
@@ -3600,6 +3600,18 @@ function PartnerView({onLogout}){
                     Commission Locally activée · <strong>{parseReduction(partnerForm.reduction)-5}%</strong> pour vos clients · <strong>5%</strong> pour Locally
                   </div>
                 )}
+              </div>
+              <div className="prt-field">
+                <div className="prt-label fb">Montant minimum d'achat <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(optionnel — 0 = pas de minimum)</span></div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <input className="prt-input fb" type="number" min="0" step="1" value={partnerForm.montant_minimum||''} onChange={e=>setPartnerForm(f=>({...f,montant_minimum:e.target.value}))} placeholder="0" style={{MozAppearance:'textfield',maxWidth:120}}/>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#7A6555'}}>€</span>
+                </div>
+              </div>
+              <div className="prt-field">
+                <div className="prt-label fb">Offre bonus <span style={{fontWeight:300,color:'#9B8B7A',fontSize:11}}>(optionnel — ex : "Boisson offerte dès 20€")</span></div>
+                <input className="prt-input fb" type="text" maxLength={100} value={partnerForm.offre_bonus||''} onChange={e=>setPartnerForm(f=>({...f,offre_bonus:e.target.value}))} placeholder="Dessert offert après 15h…"/>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(122,101,85,.35)',textAlign:'right',marginTop:4}}>{(partnerForm.offre_bonus||'').length}/100</div>
               </div>
               <div className="prt-field">
                 <div className="prt-label fb">Description</div>
@@ -4277,8 +4289,16 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
               <div className="gpp-info-label fb">Votre réduction</div>
               <div className="fb" style={{marginTop:6,fontSize:13,fontWeight:300,color:lp,display:'flex',alignItems:'center',gap:8}}>
                 <span style={{width:16,height:1,background:lp,display:'inline-block',flexShrink:0}}/>
-                Votre réduction : {fmtR(partner.reduction)}
+                {partner.montant_minimum>0
+                  ?`Réduction de ${fmtR(partner.reduction)} dès ${partner.montant_minimum}€ d'achat`
+                  :`Votre réduction : ${fmtR(partner.reduction)}`}
               </div>
+              {partner.offre_bonus&&(
+                <div style={{marginTop:10,display:'flex',alignItems:'flex-start',gap:8,background:'#FAF4EC',border:'1px solid rgba(107,29,29,.12)',borderRadius:10,padding:'10px 14px'}}>
+                  <span style={{fontSize:16,lineHeight:1.3,flexShrink:0}}>🎁</span>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:400,color:'#3D1F1F',lineHeight:1.5}}>{partner.offre_bonus}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -5539,7 +5559,7 @@ function ConfidentialiteView({onHome}){
 }
 
 function JoindreView({onHome}){
-  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:'',ville:'Bordeaux'});
+  const [form,setForm]=useState({nom:'',categorie:'',categorie_autre:'',google_maps:'',telephone:'',description:'',reduction:'',email:'',infos_complementaires:'',ville:'Bordeaux',montant_minimum:'',offre_bonus:''});
   const [noFixedAddress,setNoFixedAddress]=useState(false);
   const [loading,setLoading]=useState(false);
   const [sent,setSent]=useState(false);
@@ -5562,6 +5582,8 @@ function JoindreView({onHome}){
         telephone:form.telephone.trim(),
         description:form.description.trim(),
         reduction,
+        montant_minimum:parseFloat(form.montant_minimum)||0,
+        offre_bonus:form.offre_bonus.trim()||null,
         email:form.email.trim(),
         infos_complementaires:form.infos_complementaires.trim()||null,
         ville:form.ville||'Bordeaux',
@@ -5648,6 +5670,20 @@ function JoindreView({onHome}){
                   <span className="join-input-suffix fb">%</span>
                 </div>
                 <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(122,101,85,.55)',marginTop:6,lineHeight:1.5}}>Vous pourrez modifier ce taux à tout moment depuis votre espace partenaire.</div>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Montant minimum d'achat <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>— optionnel</span></div>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <input className="join-input fb" type="number" min="0" step="1" name="montant_minimum" value={form.montant_minimum} onChange={handleChange} placeholder="0" style={{MozAppearance:'textfield',maxWidth:120}}/>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#7A6555'}}>€</span>
+                </div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(122,101,85,.55)',marginTop:6,lineHeight:1.5}}>Laissez vide ou à 0 si votre réduction s'applique sans condition de montant.</div>
+              </div>
+              <div className="join-field">
+                <div className="join-label fb">Offre bonus <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>— optionnel</span></div>
+                <input className="join-input fb" type="text" name="offre_bonus" maxLength={100} value={form.offre_bonus} onChange={handleChange} placeholder="Ex : Boisson offerte dès 20€ d'achat, Dessert offert après 15h…"/>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:300,color:'rgba(122,101,85,.55)',marginTop:6,lineHeight:1.5}}>Un avantage supplémentaire affiché sur votre page publique (max 100 caractères).</div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:'rgba(122,101,85,.35)',textAlign:'right',marginTop:4}}>{form.offre_bonus.length}/100</div>
               </div>
               <div className="join-field">
                 <div className="join-label fb">Informations complémentaires <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(122,101,85,.45)',textTransform:'none',letterSpacing:0,fontWeight:300,marginLeft:4}}>— optionnel</span></div>
