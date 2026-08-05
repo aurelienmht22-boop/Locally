@@ -1974,6 +1974,12 @@ function AdminView(){
     const path=type==='hotel'?'hotel':'partner';
     sessionStorage.setItem(sk,json.slug);
     sessionStorage.setItem('impersonating','1');
+    if(type==='partner'&&selPartner){
+      try{
+        const{photo_url:_p,...safe}=selPartner;
+        localStorage.setItem('imp_partner',JSON.stringify({...safe,_imp_slug:json.slug}));
+      }catch(e){}
+    }
     window.open(`/${path}/${json.slug}`,'_blank');
   }
   async function downloadQrPng(qr){
@@ -3091,13 +3097,20 @@ function PartnerView({onLogout}){
     try{
       const{data,error}=await supabase.from('candidates').select('*').ilike('slug',slug).eq('status','approuve').maybeSingle();
       if(error)throw error;
-      if(data){
-        setPartner(data);
-        setPartnerForm({nom:data.nom||'',description:data.description||'',reduction:data.reduction!=null?String(data.reduction):'',telephone:data.telephone||'',google_maps:data.google_maps||'',email:data.email||'',google_review_url:data.google_review_url||'',site_web:data.site_web||'',booking_url:data.booking_url||'',ville:data.ville||'Bordeaux',montant_minimum:data.montant_minimum!=null&&data.montant_minimum>0?String(data.montant_minimum):'',offre_bonus:data.offre_bonus||''});
-        setPartnerTags(data.tags||[]);
-        setHoraires(data.horaires||{});
-        const lastRead=localStorage.getItem(`msg_read_${data.id}`)||'1970-01-01';
-        const{count}=await supabase.from('messages').select('*',{count:'exact',head:true}).eq('partner_id',data.id).eq('sender','admin').gt('created_at',lastRead);
+      let d=data;
+      if(!d&&sessionStorage.getItem('impersonating')==='1'){
+        try{
+          const imp=JSON.parse(localStorage.getItem('imp_partner')||'null');
+          if(imp&&imp._imp_slug===slug&&imp.id)d=imp;
+        }catch(e){}
+      }
+      if(d){
+        setPartner(d);
+        setPartnerForm({nom:d.nom||'',description:d.description||'',reduction:d.reduction!=null?String(d.reduction):'',telephone:d.telephone||'',google_maps:d.google_maps||'',email:d.email||'',google_review_url:d.google_review_url||'',site_web:d.site_web||'',booking_url:d.booking_url||'',ville:d.ville||'Bordeaux',montant_minimum:d.montant_minimum!=null&&d.montant_minimum>0?String(d.montant_minimum):'',offre_bonus:d.offre_bonus||''});
+        setPartnerTags(d.tags||[]);
+        setHoraires(d.horaires||{});
+        const lastRead=localStorage.getItem(`msg_read_${d.id}`)||'1970-01-01';
+        const{count}=await supabase.from('messages').select('*',{count:'exact',head:true}).eq('partner_id',d.id).eq('sender','admin').gt('created_at',lastRead);
         setUnreadAdmin(count||0);
       }
     }catch(e){console.error('loadPartner:',e);}
@@ -3483,7 +3496,7 @@ function PartnerView({onLogout}){
     setMenuForm(f=>({...f,photo_url:b64}));
   }
 
-  function logout(){sessionStorage.removeItem('partner_slug');onLogout();}
+  function logout(){sessionStorage.removeItem('partner_slug');sessionStorage.removeItem('impersonating');localStorage.removeItem('imp_partner');onLogout();}
 
   const pFmt=d=>d?new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 
@@ -3528,7 +3541,7 @@ function PartnerView({onLogout}){
   return(
     <div className="prt-wrap">
       <style>{CSS}</style>
-      {sessionStorage.getItem('impersonating')==='1'&&<div style={{background:'#6B1D1D',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,letterSpacing:'.04em',padding:'8px 20px',textAlign:'center',flexShrink:0}}>🔧 Mode admin — vue partenaire en lecture</div>}
+      {sessionStorage.getItem('impersonating')==='1'&&<div style={{background:'#6B1D1D',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,letterSpacing:'.04em',padding:'8px 20px',textAlign:'center',flexShrink:0}}>🔧 Mode admin — vue partenaire (modifications actives)</div>}
       <div className="prt-header">
         <div className="prt-logo-sm fd">local<em>ly</em></div>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
