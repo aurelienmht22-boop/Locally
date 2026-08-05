@@ -3375,12 +3375,10 @@ function PartnerView({onLogout}){
       if(!b64||!b64.startsWith('data:')){
         throw new Error('Lecture du fichier échouée (résultat: '+String(b64).slice(0,40)+')');
       }
-      const{error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
-      console.log('[photo] supabase update result error:',error,'partner.id:',partner.id);
+      const{data:patchData,error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id).select('photo_url').single();
+      console.log('[photo] PATCH result error:',error,'stored_len:',(patchData?.photo_url||'').length,'stored_prefix:',(patchData?.photo_url||'').slice(0,30));
       if(error)throw error;
-      const{data:chk}=await supabase.from('candidates').select('photo_url').eq('id',partner.id).maybeSingle();
-      console.log('[photo] post-patch check chk:',JSON.stringify(chk),'photo_url_len:',(chk?.photo_url||'').length);
-      if(!chk?.photo_url){setPhotoErr('Diagnostic: id='+partner.id+' chk='+JSON.stringify(chk));setPhotoUploading(false);return;}
+      if(!patchData?.photo_url){setPhotoErr('PATCH retourné: id='+partner.id+' photo_url_len='+(patchData?.photo_url||'').length+' b64_len='+b64.length);setPhotoUploading(false);return;}
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
         const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
