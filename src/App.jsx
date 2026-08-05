@@ -3353,7 +3353,9 @@ function PartnerView({onLogout}){
     setPhotoUploading(true);
     try{
       const b64=await toBase64(file);
+      console.log('[photo] file.size:',file.size,'b64.length:',b64?.length,'b64.prefix:',b64?.slice(0,30),'partner.id:',partner.id);
       const{error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
+      console.log('[photo] supabase update result error:',error);
       if(error)throw error;
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
         const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
