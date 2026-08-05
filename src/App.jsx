@@ -3127,7 +3127,7 @@ function PartnerView({onLogout}){
       }
       setInfoSaved(true);setTimeout(()=>setInfoSaved(false),3000);
       if(newAdresse&&newAdresse!==partner.google_maps)geocodePartner(partner.id,newAdresse).catch(()=>{});
-    }catch(e){setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
+    }catch(e){console.error('saveSettingsInfo error:',e);setInfoErr('Erreur lors de la sauvegarde. Réessayez.');}
     setSavingInfo(false);
   }
 
@@ -4129,7 +4129,8 @@ function PartnerView({onLogout}){
 //     conversation_initiation_client_data: { dynamic_variables: { script } },
 //   }),
 // });
-function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
+function GenericPartnerPage({partner:partnerProp,onBack,user,profile,onAuthRequired}){
+  const [partner,setPartner]=useState(partnerProp);
   const lp=partner?.ville==='Paris'?'#1B2A4A':'#6B1D1D';
   const lpA=(a)=>partner?.ville==='Paris'?`rgba(27,42,74,${a})`:`rgba(107,29,29,${a})`;
   const [menuItems,setMenuItems]=useState([]);
@@ -4143,6 +4144,11 @@ function GenericPartnerPage({partner,onBack,user,profile,onAuthRequired}){
   const [scannedConfirm,setScannedConfirm]=useState(null);
   const [googleRating,setGoogleRating]=useState(null);
   const sessionExpired=!!(profile?.session_expires_at&&new Date()>new Date(profile.session_expires_at));
+
+  useEffect(()=>{
+    supabase.from('candidates').select('*').eq('id',partnerProp.id).eq('status','approuve').maybeSingle()
+      .then(({data})=>{if(data)setPartner(data);});
+  },[partnerProp.id]);
 
   useEffect(()=>{
     const today=new Date().toISOString().slice(0,10);
