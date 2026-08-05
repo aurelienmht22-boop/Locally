@@ -3027,6 +3027,9 @@ function PartnerView({onLogout}){
   const [profileSaved,setProfileSaved]=useState(false);
   const [profileErr,setProfileErr]=useState('');
   const [reductionErr,setReductionErr]=useState('');
+  const [photoUploading,setPhotoUploading]=useState(false);
+  const [photoErr,setPhotoErr]=useState('');
+  const [photoSaved,setPhotoSaved]=useState(false);
   const [menuItems,setMenuItems]=useState([]);
   const [loadingMenu,setLoadingMenu]=useState(false);
   const [menuForm,setMenuForm]=useState(null);
@@ -3344,14 +3347,25 @@ function PartnerView({onLogout}){
   }
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
-    const b64=await toBase64(file);
-    await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
-    if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
-      await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
-      setPartner(p=>({...p,photo_url:b64,visible:true}));
-    }else{
-      setPartner(p=>({...p,photo_url:b64}));
+    setPhotoErr('');setPhotoSaved(false);
+    if(file.size>2*1024*1024){setPhotoErr('Photo trop lourde — merci de choisir une image de moins de 2 Mo.');return;}
+    setPhotoUploading(true);
+    try{
+      const b64=await toBase64(file);
+      const{error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
+      if(error)throw error;
+      if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
+        await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        setPartner(p=>({...p,photo_url:b64,visible:true}));
+      }else{
+        setPartner(p=>({...p,photo_url:b64}));
+      }
+      setPhotoSaved(true);setTimeout(()=>setPhotoSaved(false),3000);
+    }catch(err){
+      console.error('handlePhotoUpload error:',err);
+      setPhotoErr('Erreur lors de l\'enregistrement de la photo. Réessayez.');
     }
+    setPhotoUploading(false);
   }
 
   async function sendMessage(){
@@ -3564,11 +3578,13 @@ function PartnerView({onLogout}){
                   ?<img src={partner.photo_url} className="prt-photo-preview" alt=""/>
                   :<div className="prt-photo-placeholder fb">Aucune photo</div>
                 }
-                <label className="prt-photo-btn fb">
-                  {partner.photo_url?'Changer la photo':'Ajouter une photo'}
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:'none'}}/>
+                <label className="prt-photo-btn fb" style={{opacity:photoUploading?0.6:1,pointerEvents:photoUploading?'none':'auto'}}>
+                  {photoUploading?'Envoi…':partner.photo_url?'Changer la photo':'Ajouter une photo'}
+                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{display:'none'}} disabled={photoUploading}/>
                 </label>
               </div>
+              {photoSaved&&<div style={{marginTop:8,fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:500,color:'#15803D'}}>✓ Photo enregistrée</div>}
+              {photoErr&&<div className="prt-err fb" style={{marginTop:8,fontSize:12}}>{photoErr}</div>}
             </div>
 
             {/* ── INFOS DE BASE ── */}
