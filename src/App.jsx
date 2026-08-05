@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
-import { supabase } from "./lib/supabase";
+import { supabase, supabaseAnon } from "./lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
 import html2canvas from "html2canvas";
 
@@ -3135,12 +3135,12 @@ function PartnerView({onLogout}){
     try{
       const newAdresse=partnerForm.google_maps.trim();
       const payload={nom:partnerForm.nom.trim(),telephone:partnerForm.telephone.trim(),email:partnerForm.email.trim(),google_maps:newAdresse,reduction:parseInt(partnerForm.reduction)||null,description:partnerForm.description.trim(),google_review_url:partnerForm.google_review_url.trim(),site_web:partnerForm.site_web.trim()||null,booking_url:partnerForm.booking_url.trim()||null,ville:partnerForm.ville||'Bordeaux',montant_minimum:parseFloat(partnerForm.montant_minimum)||0,offre_bonus:partnerForm.offre_bonus.trim()||null};
-      const{error}=await supabase.from('candidates').update(payload).eq('id',partner.id);
+      const{error}=await supabaseAnon.from('candidates').update(payload).eq('id',partner.id);
       if(error)throw error;
       const prevCanPublish=cpHasPhoto&&(partner.description||'').trim().length>=20;
       const nextCanPublish=cpHasPhoto&&(payload.description||'').trim().length>=20;
       if(!prevCanPublish&&nextCanPublish&&partner.visible===false){
-        const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        const{error:visErr}=await supabaseAnon.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
         setPartner(p=>({...p,...payload,visible:!visErr}));
       }else{
@@ -3155,7 +3155,7 @@ function PartnerView({onLogout}){
   async function saveHoraires(){
     setSavingHoraires(true);setHorairesErr('');
     try{
-      const{error}=await supabase.from('candidates').update({horaires}).eq('id',partner.id);
+      const{error}=await supabaseAnon.from('candidates').update({horaires}).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,horaires}));
       setHorairesSaved(true);setTimeout(()=>setHorairesSaved(false),2500);
@@ -3165,7 +3165,7 @@ function PartnerView({onLogout}){
 
   async function saveSettingsTags(){
     setSavingTags(true);setTagsErr('');
-    const{error}=await supabase.from('candidates').update({tags:partnerTags}).eq('id',partner.id);
+    const{error}=await supabaseAnon.from('candidates').update({tags:partnerTags}).eq('id',partner.id);
     setSavingTags(false);
     if(error){setTagsErr('Erreur : '+error.message);return;}
     setPartner(p=>({...p,tags:partnerTags}));
@@ -3191,7 +3191,7 @@ function PartnerView({onLogout}){
     setSavingVisible(true);
     const newVal=partner.visible===false?true:false;
     try{
-      const{error}=await supabase.from('candidates').update({visible:newVal}).eq('id',partner.id);
+      const{error}=await supabaseAnon.from('candidates').update({visible:newVal}).eq('id',partner.id);
       if(error)throw error;
       setPartner(p=>({...p,visible:newVal}));
     }catch(e){console.error('toggleVisible:',e);}
@@ -3375,12 +3375,12 @@ function PartnerView({onLogout}){
       if(!b64||!b64.startsWith('data:')){
         throw new Error('Lecture du fichier échouée (résultat: '+String(b64).slice(0,40)+')');
       }
-      const{data:patchData,error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id).select('photo_url').single();
+      const{data:patchData,error}=await supabaseAnon.from('candidates').update({photo_url:b64}).eq('id',partner.id).select('photo_url').single();
       console.log('[photo] PATCH result error:',error,'stored_len:',(patchData?.photo_url||'').length,'stored_prefix:',(patchData?.photo_url||'').slice(0,30));
       if(error)throw error;
       if(!patchData?.photo_url){setPhotoErr('PATCH retourné: id='+partner.id+' photo_url_len='+(patchData?.photo_url||'').length+' b64_len='+b64.length);setPhotoUploading(false);return;}
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
-        const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        const{error:visErr}=await supabaseAnon.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
         setPartner(p=>({...p,photo_url:b64,visible:!visErr}));
       }else{
