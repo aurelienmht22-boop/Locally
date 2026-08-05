@@ -2969,13 +2969,12 @@ function AdminView(){
   );
 }
 
-function toBase64(file){
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=e=>res(e.target.result);
-    r.onerror=()=>rej(new Error('FileReader error: '+r.error));
-    r.readAsDataURL(file);
-  });
+async function toBase64(file){
+  const buf=await file.arrayBuffer();
+  const bytes=new Uint8Array(buf);
+  let bin='';
+  for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  return `data:${file.type||'image/jpeg'};base64,`+btoa(bin);
 }
 
 function parseReduction(r){
