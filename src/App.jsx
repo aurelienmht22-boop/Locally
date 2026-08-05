@@ -3123,8 +3123,9 @@ function PartnerView({onLogout}){
       const prevCanPublish=cpHasPhoto&&(partner.description||'').trim().length>=20;
       const nextCanPublish=cpHasPhoto&&(payload.description||'').trim().length>=20;
       if(!prevCanPublish&&nextCanPublish&&partner.visible===false){
-        await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
-        setPartner(p=>({...p,...payload,visible:true}));
+        const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        if(visErr)console.error('auto-publish visible error:',visErr);
+        setPartner(p=>({...p,...payload,visible:!visErr}));
       }else{
         setPartner(p=>({...p,...payload}));
       }
@@ -3355,8 +3356,9 @@ function PartnerView({onLogout}){
       const{error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
       if(error)throw error;
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
-        await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
-        setPartner(p=>({...p,photo_url:b64,visible:true}));
+        const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
+        if(visErr)console.error('auto-publish visible error:',visErr);
+        setPartner(p=>({...p,photo_url:b64,visible:!visErr}));
       }else{
         setPartner(p=>({...p,photo_url:b64}));
       }
