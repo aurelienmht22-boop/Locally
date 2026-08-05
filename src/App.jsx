@@ -3366,17 +3366,21 @@ function PartnerView({onLogout}){
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
     setPhotoErr('');setPhotoSaved(false);
+    if(!partner?.id){setPhotoErr('Profil non chargé — rechargez la page.');return;}
     if(file.size>2*1024*1024){setPhotoErr('Photo trop lourde — merci de choisir une image de moins de 2 Mo.');return;}
     setPhotoUploading(true);
     try{
       const b64=await toBase64(file);
-      console.log('[photo] file.size:',file.size,'b64.length:',b64?.length,'b64.prefix:',b64?.slice(0,30),'partner.id:',partner.id);
+      console.log('[photo] partner.id:',partner.id,'partner.slug:',partner.slug,'file.size:',file.size,'b64.length:',b64?.length,'b64.prefix:',b64?.slice(0,30));
       if(!b64||!b64.startsWith('data:')){
         throw new Error('Lecture du fichier échouée (résultat: '+String(b64).slice(0,40)+')');
       }
       const{error}=await supabase.from('candidates').update({photo_url:b64}).eq('id',partner.id);
-      console.log('[photo] supabase update result error:',error);
+      console.log('[photo] supabase update result error:',error,'partner.id:',partner.id);
       if(error)throw error;
+      const{data:chk}=await supabase.from('candidates').select('photo_url').eq('id',partner.id).maybeSingle();
+      console.log('[photo] post-patch check photo_url_len:',(chk?.photo_url||'').length,'prefix:',(chk?.photo_url||'').slice(0,30));
+      if(!chk?.photo_url)throw new Error('Photo non persistée en base (id:'+partner.id+') — contactez le support.');
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
         const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
