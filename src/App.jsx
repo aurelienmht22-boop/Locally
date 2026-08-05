@@ -3379,8 +3379,8 @@ function PartnerView({onLogout}){
       console.log('[photo] supabase update result error:',error,'partner.id:',partner.id);
       if(error)throw error;
       const{data:chk}=await supabase.from('candidates').select('photo_url').eq('id',partner.id).maybeSingle();
-      console.log('[photo] post-patch check photo_url_len:',(chk?.photo_url||'').length,'prefix:',(chk?.photo_url||'').slice(0,30));
-      if(!chk?.photo_url)throw new Error('Photo non persistée en base (id:'+partner.id+') — contactez le support.');
+      console.log('[photo] post-patch check chk:',JSON.stringify(chk),'photo_url_len:',(chk?.photo_url||'').length);
+      if(!chk?.photo_url){setPhotoErr('Diagnostic: id='+partner.id+' chk='+JSON.stringify(chk));setPhotoUploading(false);return;}
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
         const{error:visErr}=await supabase.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
