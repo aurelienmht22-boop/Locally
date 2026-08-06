@@ -1151,6 +1151,13 @@ const cardItem = {
 };
 
 const FILTER_CATS=['Tous','Restauration','Boulangerie','Bien-être','Activité','Sport','Autre'];
+
+function haversinKm(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
 function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeActive }) {
   const all=supabasePartners||[];
   const initCat=(()=>{
@@ -1160,11 +1167,28 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
   })();
   const [selCat,setSelCat]=useState(initCat);
   const [selTags,setSelTags]=useState([]);
+  const [refCoords,setRefCoords]=useState(null);
+  useEffect(()=>{
+    if(!navigator.geolocation)return fetchHotelCoords();
+    navigator.geolocation.getCurrentPosition(
+      pos=>setRefCoords({lat:pos.coords.latitude,lng:pos.coords.longitude}),
+      fetchHotelCoords,
+      {timeout:5000,maximumAge:60000}
+    );
+    async function fetchHotelCoords(){
+      const slug=sessionStorage.getItem('source_hotel')||localStorage.getItem('source_hotel');
+      if(!slug)return;
+      const{data}=await supabase.from('hotels').select('latitude,longitude').eq('slug',slug).maybeSingle();
+      if(data?.latitude&&data?.longitude)setRefCoords({lat:parseFloat(data.latitude),lng:parseFloat(data.longitude)});
+    }
+  },[]);
 
   const cats=FILTER_CATS;
   const byCat=selCat==='Tous'?all:all.filter(p=>p.categorie===selCat);
   const availTags=selCat!=='Tous'?(TAGS_PAR_CATEGORIE[selCat]||[]).filter(t=>byCat.some(p=>(p.tags||[]).includes(t))):[];
   const filtered=selTags.length===0?byCat:byCat.filter(p=>selTags.some(t=>(p.tags||[]).includes(t)));
+  const distKm=p=>refCoords&&p.latitude&&p.longitude?haversinKm(refCoords.lat,refCoords.lng,parseFloat(p.latitude),parseFloat(p.longitude)):null;
+  const sorted=refCoords?[...filtered].sort((a,b)=>{const da=distKm(a)??Infinity,db=distKm(b)??Infinity;return da-db;}):filtered;
   const total=filtered.length;
 
   const heroCat=selCat==='Tous'?null:CATEGORIES.find(c=>c.id===CATEGORIE_MAP[selCat]);
@@ -1214,11 +1238,12 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
           <div style={{textAlign:'center',padding:'48px 0',fontFamily:"'DM Sans',sans-serif",fontSize:14,color:'#9B8B7A'}}>Aucun partenaire pour ces filtres.</div>
         ):(
           <motion.div className="partners-grid" variants={cardContainer} initial="initial" animate="animate">
-            {filtered.map(p=>(
+            {sorted.map(p=>{const km=distKm(p);return(
               <motion.div key={p.id} className="pcard" variants={cardItem} onClick={()=>onNavigate('generic',p)}>
                 <div className="pcard-img" style={{background:'#1C1208'}}>
                   {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:null}
                   <div style={{position:'absolute',top:12,left:12,zIndex:2,background:'rgba(250,244,236,.92)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}}/>
+                  {km!=null&&km<=3&&<div style={{position:'absolute',top:10,right:10,zIndex:3,background:'rgba(107,29,29,.82)',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,letterSpacing:'.5px',borderRadius:999,padding:'3px 10px',backdropFilter:'blur(4px)'}}>À proximité</div>}
                   {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={'pcard-status '+st}><div className={'sdot '+st}/><span className="fb">{lbl}</span></div>);})()}
                 </div>
                 <div className="pcard-body">
@@ -1245,7 +1270,7 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
                   </div>
                 </div>
               </motion.div>
-            ))}
+            );})}
           </motion.div>
         )}
       </div>
@@ -6331,14 +6356,12 @@ export default function App() {
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
           <button className="nav-auth-name fb" onClick={()=>siteNav('/bons-plans')}>Endroits à visiter</button>
+          <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+            Carte
+          </button>
           {!authLoading&&(user&&profile
-            ?<>
-              <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-                Carte
-              </button>
-              <span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
-            </>
+            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
             :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
           )}
           <button className="nav-cta fb" onClick={()=>{
