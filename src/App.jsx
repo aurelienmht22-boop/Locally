@@ -3109,6 +3109,7 @@ function PartnerView({onLogout}){
   const [menuForm,setMenuForm]=useState(null);
   const [savingMenu,setSavingMenu]=useState(false);
   const [menuErr,setMenuErr]=useState('');
+  const [menuPhotoUploading,setMenuPhotoUploading]=useState(false);
   const [deletingId,setDeletingId]=useState(null);
   const [statVisits,setStatVisits]=useState([]);
   const [pageViews,setPageViews]=useState(0);
@@ -3435,20 +3436,19 @@ function PartnerView({onLogout}){
     setPhotoUploading(true);
     try{
       const b64=await toBase64(file);
-      console.log('[photo] partner.id:',partner.id,'partner.slug:',partner.slug,'file.size:',file.size,'b64.length:',b64?.length,'b64.prefix:',b64?.slice(0,30));
-      if(!b64||!b64.startsWith('data:')){
-        throw new Error('Lecture du fichier échouée (résultat: '+String(b64).slice(0,40)+')');
-      }
-      const{data:patchData,error}=await supabaseAnon.from('candidates').update({photo_url:b64}).eq('id',partner.id).select('photo_url').single();
-      console.log('[photo] PATCH result error:',error,'stored_len:',(patchData?.photo_url||'').length,'stored_prefix:',(patchData?.photo_url||'').slice(0,30));
+      if(!b64||!b64.startsWith('data:'))throw new Error('Lecture du fichier échouée');
+      const upRes=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/upload-photo',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},body:JSON.stringify({partner_id:partner.id,entity:'candidate',image_base64:b64})});
+      const upJson=await upRes.json();
+      if(!upRes.ok||upJson.error)throw new Error(upJson.error||String(upRes.status));
+      const photoUrl=upJson.url;
+      const{error}=await supabaseAnon.from('candidates').update({photo_url:photoUrl}).eq('id',partner.id);
       if(error)throw error;
-      if(!patchData?.photo_url){setPhotoErr('PATCH retourné: id='+partner.id+' photo_url_len='+(patchData?.photo_url||'').length+' b64_len='+b64.length);setPhotoUploading(false);return;}
       if(!cpHasPhoto&&cpHasDesc&&partner.visible===false){
         const{error:visErr}=await supabaseAnon.from('candidates').update({visible:true}).eq('id',partner.id);
         if(visErr)console.error('auto-publish visible error:',visErr);
-        setPartner(p=>({...p,photo_url:b64,visible:!visErr}));
+        setPartner(p=>({...p,photo_url:photoUrl,visible:!visErr}));
       }else{
-        setPartner(p=>({...p,photo_url:b64}));
+        setPartner(p=>({...p,photo_url:photoUrl}));
       }
       setPhotoSaved(true);setTimeout(()=>setPhotoSaved(false),3000);
     }catch(err){
@@ -3561,8 +3561,19 @@ function PartnerView({onLogout}){
 
   async function handleMenuPhoto(e){
     const file=e.target.files[0];if(!file)return;
-    const b64=await toBase64(file);
-    setMenuForm(f=>({...f,photo_url:b64}));
+    if(file.size>2*1024*1024){setMenuErr('Photo trop lourde — maximum 2 Mo.');return;}
+    setMenuErr('');setMenuPhotoUploading(true);
+    try{
+      const b64=await toBase64(file);
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/upload-photo',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},body:JSON.stringify({partner_id:partner.id,entity:'menu_item',image_base64:b64})});
+      const json=await res.json();
+      if(!res.ok||json.error)throw new Error(json.error||String(res.status));
+      setMenuForm(f=>({...f,photo_url:json.url}));
+    }catch(err){
+      console.error('handleMenuPhoto error:',err);
+      setMenuErr('Erreur lors du chargement de la photo. Réessayez.');
+    }
+    setMenuPhotoUploading(false);
   }
 
   function logout(){sessionStorage.removeItem('partner_slug');sessionStorage.removeItem('impersonating');localStorage.removeItem('imp_partner');onLogout();}
@@ -3904,9 +3915,9 @@ function PartnerView({onLogout}){
                 )}
                 <div className="prt-field">
                   <div className="prt-label fb">Photo (optionnel)</div>
-                  <label className="prt-photo-btn fb" style={{display:'inline-block'}}>
-                    {menuForm.photo_url?'Changer la photo':'Ajouter une photo'}
-                    <input type="file" accept="image/*" onChange={handleMenuPhoto} style={{display:'none'}}/>
+                  <label className="prt-photo-btn fb" style={{display:'inline-block',opacity:menuPhotoUploading?.9:1,pointerEvents:menuPhotoUploading?'none':'auto'}}>
+                    {menuPhotoUploading?'Chargement…':menuForm.photo_url?'Changer la photo':'Ajouter une photo'}
+                    <input type="file" accept="image/*" onChange={handleMenuPhoto} style={{display:'none'}} disabled={menuPhotoUploading}/>
                   </label>
                   {menuForm.photo_url&&<img src={menuForm.photo_url} style={{width:72,height:72,objectFit:'cover',borderRadius:8,display:'block',marginTop:10}} alt=""/>}
                 </div>

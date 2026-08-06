@@ -30,3 +30,9 @@ verify_jwt = false
 
 [functions.geocode-partner]
 verify_jwt = false
+
+[functions.upload-photo]
+verify_jwt = false
+
+[functions.migrate-photos]
+verify_jwt = false
