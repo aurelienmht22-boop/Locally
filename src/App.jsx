@@ -3025,11 +3025,14 @@ async function toBase64(file){
 }
 
 async function geocodePartner(id,adresse){
-  const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adresse)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`);
+  const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/geocode-partner',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY,'x-locally-secret':import.meta.env.VITE_LOCALLY_SECRET},
+    body:JSON.stringify({id,adresse}),
+  });
   const json=await res.json();
-  const loc=json.results?.[0]?.geometry?.location;
-  if(loc)await supabaseAnon.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
-  return loc||null;
+  if(!res.ok||json.error)return null;
+  return json.loc||null;
 }
 
 function parseReduction(r){

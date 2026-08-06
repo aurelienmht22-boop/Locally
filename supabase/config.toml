@@ -27,3 +27,6 @@ verify_jwt = false
 
 [functions.partner-menu]
 verify_jwt = false
+
+[functions.geocode-partner]
+verify_jwt = false
