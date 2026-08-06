@@ -173,19 +173,24 @@ Deno.serve(async (req) => {
     }
 
     else if (action === 'fetch_full_stats') {
-      const [hotelsRaw, partnersRaw, visitsRaw, txnsRaw] = await Promise.all([
+      const [hotelsRaw, partnersRaw, visitsRaw, txnsRaw, hotelScansRaw] = await Promise.all([
         sbGet(url, key, 'hotels?select=*&status=eq.approuve&order=nom.asc'),
         sbGet(url, key, 'candidates?select=*&status=eq.approuve&order=nom.asc'),
         sbGet(url, key, 'visits?select=id,partner_id,hotel_slug,scanned,created_at&limit=5000'),
         sbGet(url, key, 'transactions?select=partner_id,hotel_slug,montant_client,commission_locally,commission_hotel&limit=5000'),
+        sbGet(url, key, 'hotel_scans?select=hotel_slug'),
       ])
 
-      type HotelAgg = { qr_total: number; qr_scanned: number; last_activity: string | null; commission_total: number }
+      type HotelAgg = { scans_qr: number; qr_total: number; qr_scanned: number; last_activity: string | null; commission_total: number }
       type PartnerAgg = { visites: number; ca_total: number; commission_locally: number }
 
       const hotelAgg: Record<string, HotelAgg> = {}
       for (const h of hotelsRaw as Array<{ slug?: string }>) {
-        if (h.slug) hotelAgg[h.slug] = { qr_total: 0, qr_scanned: 0, last_activity: null, commission_total: 0 }
+        if (h.slug) hotelAgg[h.slug] = { scans_qr: 0, qr_total: 0, qr_scanned: 0, last_activity: null, commission_total: 0 }
+      }
+      for (const s of hotelScansRaw as Array<{ hotel_slug?: string }>) {
+        const slug = s.hotel_slug
+        if (slug && hotelAgg[slug]) hotelAgg[slug].scans_qr++
       }
       for (const v of visitsRaw as Array<{ hotel_slug?: string; scanned: boolean; created_at: string }>) {
         const s = v.hotel_slug

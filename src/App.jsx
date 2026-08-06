@@ -2362,18 +2362,20 @@ function AdminView(){
                 <div className="adm-section-label">Vue globale — Hôtels</div>
                 {(()=>{
                   const hs=fullStats?.hotels||[];
+                  const scansQr=hs.reduce((s,h)=>s+(h.scans_qr||0),0);
                   const qrTot=hs.reduce((s,h)=>s+(h.qr_total||0),0);
                   const qrSc=hs.reduce((s,h)=>s+(h.qr_scanned||0),0);
-                  const taux=qrTot>0?Math.round(qrSc/qrTot*100):0;
+                  const taux=scansQr>0?Math.round(qrTot/scansQr*100):0;
                   const comm=hs.reduce((s,h)=>s+(h.commission_total||0),0);
                   return(<>
-                    <div className="adm-global-grid" style={{marginBottom:8}}>
+                    <div className="adm-global-grid" style={{marginBottom:8,gridTemplateColumns:'repeat(4,1fr)'}}>
                       <div className="adm-global-card"><div className="adm-global-num fd">{hs.length}</div><div className="adm-global-label">Hôtels approuvés</div></div>
-                      <div className="adm-global-card"><div className="adm-global-num fd">{qrTot}</div><div className="adm-global-label">QR générés</div></div>
-                      <div className="adm-global-card"><div className="adm-global-num fd">{qrSc}</div><div className="adm-global-label">QR scannés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{scansQr}</div><div className="adm-global-label">Scans QR hôtel</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{qrTot}</div><div className="adm-global-label">QR partenaires générés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{qrSc}</div><div className="adm-global-label">QR partenaires scannés</div></div>
                     </div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:24}}>
-                      <div className="adm-global-card accent"><div className="adm-global-num fd">{qrTot>0?taux+'%':'—'}</div><div className="adm-global-label">Taux de conversion</div></div>
+                      <div className="adm-global-card accent"><div className="adm-global-num fd">{scansQr>0?taux+'%':'—'}</div><div className="adm-global-label">Taux scan→QR généré</div></div>
                       <div className="adm-global-card"><div className="adm-global-num fd">{comm.toFixed(0)}€</div><div className="adm-global-label">Commissions hôtels générées</div></div>
                     </div>
                   </>);
@@ -2401,7 +2403,7 @@ function AdminView(){
                 <div className="adm-stab-wrap">
                   <table className="adm-stab">
                     <thead><tr>
-                      {[['nom','Nom'],['ville','Ville'],['qr_total','QR générés'],['qr_scanned','QR scannés'],['taux_conversion','Taux conv.'],['last_activity','Dernière activité']].map(([col,lbl])=>(
+                      {[['nom','Nom'],['ville','Ville'],['scans_qr','Scans QR'],['qr_total','QR générés'],['qr_scanned','QR scannés'],['taux_conversion','Conv.'],['last_activity','Dernière activité']].map(([col,lbl])=>(
                         <th key={col} className={statsHSort.col===col?'s-act':''} onClick={()=>srtH(col)}>
                           {lbl}<span className="adm-stab-sort">{statsHSort.col===col?(statsHSort.dir==='desc'?'↓':'↑'):'↕'}</span>
                         </th>
@@ -2409,16 +2411,18 @@ function AdminView(){
                     </tr></thead>
                     <tbody>
                       {(fullStats?.hotels||[]).length===0
-                        ?<tr><td colSpan={6} className="adm-empty">Aucun hôtel approuvé</td></tr>
+                        ?<tr><td colSpan={7} className="adm-empty">Aucun hôtel approuvé</td></tr>
                         :stSort(fullStats?.hotels||[],statsHSort).map(h=>{
-                          const rate=h.taux_conversion||0;
+                          const scans=h.scans_qr||0;
+                          const rate=scans>0?Math.round((h.qr_total||0)/scans*100):0;
                           return(
                             <tr key={h.id} onClick={()=>openHotel(h)}>
                               <td className="td-name">{h.nom}</td>
                               <td>{h.ville||'—'}</td>
+                              <td className="td-num">{scans}</td>
                               <td className="td-num">{h.qr_total||0}</td>
                               <td className="td-num">{h.qr_scanned||0}</td>
-                              <td className={'td-pct '+(rate>=50?'td-pct-hi':rate>=20?'td-pct-mid':'td-pct-lo')}>{h.qr_total>0?rate+'%':'—'}</td>
+                              <td className={'td-pct '+(rate>=50?'td-pct-hi':rate>=20?'td-pct-mid':'td-pct-lo')}>{scans>0?rate+'%':'—'}</td>
                               <td>{h.last_activity?admFmt(h.last_activity):'Jamais'}</td>
                             </tr>
                           );
@@ -6234,7 +6238,15 @@ export default function App() {
   const [lieuxGratuits,setLieuxGratuits]=useState([]);
   const [selVille,setSelVille]=useState(null);
   useEffect(()=>{
-    if(pendingHotelSlug){localStorage.setItem('source_hotel',pendingHotelSlug);sessionStorage.setItem('source_hotel',pendingHotelSlug);}
+    if(pendingHotelSlug){
+      localStorage.setItem('source_hotel',pendingHotelSlug);
+      sessionStorage.setItem('source_hotel',pendingHotelSlug);
+      const dk=`hotel_scan_${pendingHotelSlug}_${new Date().toISOString().slice(0,13)}`;
+      if(!sessionStorage.getItem(dk)){
+        supabase.from('hotel_scans').insert({hotel_slug:pendingHotelSlug});
+        sessionStorage.setItem(dk,'1');
+      }
+    }
     supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
     supabase.from('lieux_gratuits').select('*').eq('actif',true).then(({data})=>setLieuxGratuits(data||[]));
     const hotelSlug=localStorage.getItem('source_hotel')||sessionStorage.getItem('source_hotel');
