@@ -4247,17 +4247,19 @@ function GenericPartnerPage({partner:partnerProp,onBack,user,profile,onAuthRequi
   },[visitData?.qr_code_id]);
 
   async function generateVisit(u=user,prof=profile){
-    if(!u||!prof)return;
     setVisitLoading(true);
     const qr_code_id=crypto.randomUUID();
     const expires_at=new Date(Date.now()+1*60*60*1000).toISOString();
-    const hotel_slug=sessionStorage.getItem('source_hotel')||null;
-    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:prof.prenom,user_id:u.id,expires_at,...(hotel_slug?{hotel_slug}:{})});
-    setVisitData({qr_code_id,expires_at,clientName:prof.prenom});setVisitLoading(false);
+    const hotel_slug=sessionStorage.getItem('source_hotel')||localStorage.getItem('source_hotel')||null;
+    const clientName=prof?.prenom||'Visiteur';
+    await supabase.from('visits').insert({qr_code_id,partner_id:partner.id,client_name:clientName,user_id:u?.id||null,expires_at,...(hotel_slug?{hotel_slug}:{})});
+    setVisitData({qr_code_id,expires_at,clientName});setVisitLoading(false);
   }
 
   function handleGenerateClick(){
+    const hotelSlug=sessionStorage.getItem('source_hotel')||localStorage.getItem('source_hotel');
     if(user&&profile)generateVisit();
+    else if(hotelSlug)generateVisit(null,null);
     else onAuthRequired((u,prof)=>generateVisit(u,prof));
   }
 
@@ -4455,10 +4457,8 @@ function GenericPartnerPage({partner:partnerProp,onBack,user,profile,onAuthRequi
                 <>
                   <div className="gpp-section-title fd">Votre <em>QR code</em></div>
                   <div style={{maxWidth:400}}>
-                    {user&&profile?(
+                    {user&&profile&&(
                       <div className="op-label fb" style={{marginBottom:16}}>Bonjour <strong>{profile.prenom}</strong></div>
-                    ):(
-                      <div className="op-label fb" style={{marginBottom:16,color:'#7A6555'}}>Connectez-vous pour générer votre QR code et profiter de votre réduction.</div>
                     )}
                     {sessionExpired?(
                       <div className="op-label fb" style={{color:'#B91C1C',lineHeight:1.5}}>Votre session a expiré. Scannez le QR code de votre chambre pour renouveler vos 24h.</div>
