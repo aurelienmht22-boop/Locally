@@ -1828,6 +1828,8 @@ function AdminView(){
   const [confirmPDisable,setConfirmPDisable]=useState(false);
   const [savingComm,setSavingComm]=useState(false);
   const [commSaved,setCommSaved]=useState(false);
+  const [geoLoading,setGeoLoading]=useState(false);
+  const [geoOk,setGeoOk]=useState(false);
   const [hotelMessages,setHotelMessages]=useState([]);
   const [loadingHM,setLoadingHM]=useState(false);
   const [unreadHotelMessages,setUnreadHotelMessages]=useState({});
@@ -2149,12 +2151,6 @@ function AdminView(){
     setSelPartner(p=>({...p,commission_active:val}));
     setPartners(ps=>ps.map(p=>p.id===selPartner.id?{...p,commission_active:val}:p));
     setSavingComm(false);setCommSaved(true);setTimeout(()=>setCommSaved(false),2500);
-  }
-  async function geocodePartner(id,adresse){
-    const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adresse)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`);
-    const json=await res.json();
-    const loc=json.results?.[0]?.geometry?.location;
-    if(loc)await supabase.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
   }
   async function updateStatus(id,status,slug){
     const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/admin-status',{
@@ -2687,7 +2683,29 @@ function AdminView(){
                 ].map(([k,v])=>(
                   <div key={k} className="adm-field">
                     <div className="adm-field-label">{k}</div>
-                    <div className="adm-field-val fb">{v||'—'}</div>
+                    {k==='Adresse'?(
+                      <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                        <span className="adm-field-val fb" style={{margin:0}}>{v||'—'}</span>
+                        {selPartner.latitude&&selPartner.longitude&&!geoOk&&(
+                          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:'rgba(247,243,238,.4)'}}>✓ géolocalisé</span>
+                        )}
+                        {v&&(
+                          <button onClick={async()=>{
+                            setGeoLoading(true);setGeoOk(false);
+                            try{
+                              const loc=await geocodePartner(selPartner.id,selPartner.google_maps);
+                              if(loc){setSelPartner(p=>({...p,latitude:loc.lat,longitude:loc.lng}));setGeoOk(true);setTimeout(()=>setGeoOk(false),4000);}
+                              else{alert('Géocodage échoué : adresse introuvable ou clé API non autorisée pour Geocoding API.');}
+                            }catch(e){alert('Erreur : '+e.message);}
+                            setGeoLoading(false);
+                          }} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:500,color:geoOk?'#4ADE80':'rgba(247,243,238,.7)',background:'rgba(247,243,238,.07)',border:'1px solid rgba(247,243,238,.18)',borderRadius:6,padding:'3px 10px',cursor:geoLoading?'wait':'pointer',whiteSpace:'nowrap'}}>
+                            {geoLoading?'…':geoOk?'✓ Géocodé':'📍 Regéocoder'}
+                          </button>
+                        )}
+                      </div>
+                    ):(
+                      <div className="adm-field-val fb">{v||'—'}</div>
+                    )}
                   </div>
                 ))}
                 <div style={{marginTop:8}}>
@@ -3004,6 +3022,14 @@ async function toBase64(file){
   let bin='';
   for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode(...bytes.subarray(i,i+8192));
   return `data:${file.type||'image/jpeg'};base64,`+btoa(bin);
+}
+
+async function geocodePartner(id,adresse){
+  const res=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adresse)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`);
+  const json=await res.json();
+  const loc=json.results?.[0]?.geometry?.location;
+  if(loc)await supabaseAnon.from('candidates').update({latitude:loc.lat,longitude:loc.lng}).eq('id',id);
+  return loc||null;
 }
 
 function parseReduction(r){
