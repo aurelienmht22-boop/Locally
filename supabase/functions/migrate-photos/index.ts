@@ -5,30 +5,44 @@ const corsHeaders = {
 
 const BUCKET = 'locally-photos'
 
-async function uploadBase64(storageUrl: string, key: string, path: string, dataUri: string): Promise<string | null> {
+async function uploadBase64(storageUrl: string, key: string, path: string, dataUri: string): Promise<{ url: string | null; detail: string }> {
   const match = dataUri.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9+.-]+);base64,(.+)$/)
-  if (!match) return null
+  if (!match) return { url: null, detail: 'regex_no_match: data URI ne correspond pas au format attendu' }
 
   const mimeType = match[1]
   const base64Data = match[2]
 
-  const binaryStr = atob(base64Data)
-  const bytes = new Uint8Array(binaryStr.length)
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+  let bytes: Uint8Array
+  try {
+    const binaryStr = atob(base64Data)
+    bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+  } catch (e) {
+    return { url: null, detail: `atob_failed: ${String(e)}` }
+  }
 
-  const res = await fetch(`${storageUrl}/storage/v1/object/${BUCKET}/${path}`, {
-    method: 'POST',
-    headers: {
-      'apikey': key,
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': mimeType,
-      'x-upsert': 'true',
-    },
-    body: bytes,
-  })
+  const uploadUrl = `${storageUrl}/storage/v1/object/${BUCKET}/${path}`
+  let res: Response
+  try {
+    res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': mimeType,
+        'x-upsert': 'true',
+      },
+      body: bytes,
+    })
+  } catch (e) {
+    return { url: null, detail: `fetch_failed: ${String(e)} url=${uploadUrl}` }
+  }
 
-  if (!res.ok) return null
-  return `${storageUrl}/storage/v1/object/public/${BUCKET}/${path}`
+  if (!res.ok) {
+    const body = await res.text()
+    return { url: null, detail: `storage_error: status=${res.status} url=${uploadUrl} mime=${mimeType} size=${bytes.length} body=${body}` }
+  }
+  return { url: `${storageUrl}/storage/v1/object/public/${BUCKET}/${path}`, detail: 'ok' }
 }
 
 Deno.serve(async (req) => {
@@ -71,9 +85,9 @@ Deno.serve(async (req) => {
 
         const ext = row.photo_url.includes('png') ? 'png' : row.photo_url.includes('webp') ? 'webp' : 'jpg'
         const path = `partners/${id}/photo.${ext}`
-        const publicUrl = await uploadBase64(url, key, path, row.photo_url)
+        const { url: publicUrl, detail: upDetail } = await uploadBase64(url, key, path, row.photo_url)
 
-        if (!publicUrl) { report.candidates.errors.push(`Upload échoué pour candidate ${id}`); continue }
+        if (!publicUrl) { report.candidates.errors.push(`Upload échoué candidate ${id}: ${upDetail}`); continue }
 
         const patchRes = await fetch(`${url}/rest/v1/candidates?id=eq.${encodeURIComponent(id)}`, {
           method: 'PATCH',
@@ -108,9 +122,9 @@ Deno.serve(async (req) => {
 
         const ext = row.photo_url.includes('png') ? 'png' : row.photo_url.includes('webp') ? 'webp' : 'jpg'
         const path = `menu/${partner_id}/${id}.${ext}`
-        const publicUrl = await uploadBase64(url, key, path, row.photo_url)
+        const { url: publicUrl, detail: upDetail } = await uploadBase64(url, key, path, row.photo_url)
 
-        if (!publicUrl) { report.menu_items.errors.push(`Upload échoué pour menu_item ${id}`); continue }
+        if (!publicUrl) { report.menu_items.errors.push(`Upload échoué menu_item ${id}: ${upDetail}`); continue }
 
         const patchRes = await fetch(`${url}/rest/v1/menu_items?id=eq.${encodeURIComponent(id)}`, {
           method: 'PATCH',
