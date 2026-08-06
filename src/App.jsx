@@ -3471,8 +3471,12 @@ function PartnerView({onLogout}){
   }
   async function fetchMenu(){
     setLoadingMenu(true);
-    const{data}=await supabase.from('menu_items').select('*').eq('partner_id',partner.id).order('created_at',{ascending:false});
-    setMenuItems(data||[]);setLoadingMenu(false);
+    try{
+      const res=await fetch('https://lsorbtjjyiseqryigezy.supabase.co/functions/v1/partner-menu',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+import.meta.env.VITE_SUPABASE_ANON_KEY},body:JSON.stringify({action:'fetch_items',partner_id:partner.id})});
+      const json=await res.json();
+      setMenuItems(json.items||[]);
+    }catch(e){console.error('fetchMenu error:',e);setMenuItems([]);}
+    setLoadingMenu(false);
   }
 
   function getPeriodRange(period){
@@ -3537,7 +3541,7 @@ function PartnerView({onLogout}){
         const json=await res.json();
         if(!res.ok||json.error)throw new Error(json.error||res.status);
       }else{
-        const{error}=await supabase.from('menu_items').insert([{...payload,partner_id:partner.id}]);
+        const{error}=await supabaseAnon.from('menu_items').insert([{...payload,partner_id:partner.id}]);
         if(error)throw error;
       }
       setMenuForm(null);await fetchMenu();

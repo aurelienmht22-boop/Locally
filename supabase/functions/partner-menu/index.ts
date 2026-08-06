@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   try {
     const { action, partner_id, item_id, payload } = await req.json()
 
-    if (!['update', 'delete'].includes(action) || !partner_id || !item_id) {
+    if (!action || !partner_id) {
       return new Response(JSON.stringify({ error: 'Paramètres invalides' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -28,6 +28,31 @@ Deno.serve(async (req) => {
     if (!Array.isArray(partners) || partners.length === 0) {
       return new Response(JSON.stringify({ error: 'Partenaire non autorisé' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // ── FETCH ITEMS ──────────────────────────────────────────────────────────
+    if (action === 'fetch_items') {
+      const res = await fetch(
+        `${url}/rest/v1/menu_items?partner_id=eq.${encodeURIComponent(partner_id)}&order=created_at.desc`,
+        { headers: getHeaders }
+      )
+      if (!res.ok) {
+        const err = await res.text()
+        return new Response(JSON.stringify({ error: 'Erreur lecture base', detail: err }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const items = await res.json()
+      return new Response(JSON.stringify({ items }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // ── UPDATE / DELETE need item_id ─────────────────────────────────────────
+    if (!item_id || !['update', 'delete'].includes(action)) {
+      return new Response(JSON.stringify({ error: 'Paramètres invalides' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
