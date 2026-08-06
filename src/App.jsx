@@ -815,6 +815,12 @@ button.chip.sel,button.chip.sel:hover{background:#1C1208;color:#F7F3EE;border-co
 .bp-preview-see-all{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--lp);background:none;border:none;cursor:pointer;letter-spacing:.06em;transition:opacity .2s;white-space:nowrap;padding:0;}
 .bp-preview-see-all:hover{opacity:.65;}
 @media(max-width:640px){.bp-wrap{padding:90px 20px 40px;}.bp-preview-wrap{padding:48px 20px;}.bp-preview-head{flex-direction:column;align-items:flex-start;}}
+.nav-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px 8px;color:#1C1208;align-items:center;justify-content:center;border-radius:8px;transition:background .15s;margin-left:4px;flex-shrink:0;}
+.nav-hamburger:hover{background:rgba(var(--lp-rgb),.07);}
+.nav-mobile-menu{position:fixed;top:76px;left:12px;right:12px;background:rgba(247,243,238,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:14px;border:1px solid rgba(var(--lp-rgb),.1);box-shadow:0 8px 32px rgba(28,18,8,.14);z-index:199;padding:8px;display:flex;flex-direction:column;}
+.nav-mobile-item{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:#1C1208;text-align:left;background:none;border:none;padding:13px 16px;border-radius:10px;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px;width:100%;}
+.nav-mobile-item:hover{background:rgba(var(--lp-rgb),.06);}
+@media(max-width:640px){.nav-hamburger{display:flex;}.nav-secondary{display:none !important;}}
 `;
 
 function HomePage({ onNavigate, supabasePartners, selVille, onVilleChange, activeVilles }) {
@@ -6255,6 +6261,7 @@ export default function App() {
   const{user,profile,authLoading,signOut,setUser:setAuthUser,setProfile:setAuthProfile}=useAuth();
   const[authModal,setAuthModal]=useState({open:false,tab:'login',onSuccess:null});
   const[sessionRenewed,setSessionRenewed]=useState(false);
+  const[navOpen,setNavOpen]=useState(false);
   const[pendingHotelSlug]=useState(()=>new URLSearchParams(window.location.search).get('hotel')||null);
   function openAuth(tab='login',onSuccess=null){setAuthModal({open:true,tab,onSuccess});}
   function handleAuthSuccess(u,prof){
@@ -6319,7 +6326,7 @@ export default function App() {
       setTimeout(()=>setSessionRenewed(false),5000);
     });
   },[user?.id]);
-  useEffect(()=>{window.scrollTo(0,0);},[page]);
+  useEffect(()=>{window.scrollTo(0,0);setNavOpen(false);},[page]);
   useEffect(()=>{
     if(page!=='renouveler'&&window.location.pathname==='/renouveler'){
       window.history.replaceState({},'','/');
@@ -6384,15 +6391,25 @@ export default function App() {
           {page==="generic"&&<li><a onClick={()=>setPage("category")}>{activePartner?.categorie}</a></li>}
         </ul>
         <div style={{display:'flex',alignItems:'center',gap:4}}>
-          <button className="nav-auth-name fb" onClick={()=>siteNav('/bons-plans')}>Endroits à visiter</button>
-          <button className="nav-auth-name fb" onClick={()=>siteNav('/carte')}>
+          <button className="nav-auth-name fb nav-secondary" onClick={()=>siteNav('/bons-plans')}>Endroits à visiter</button>
+          <button className="nav-auth-name fb nav-secondary" onClick={()=>siteNav('/carte')}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
             Carte
           </button>
-          {!authLoading&&(user&&profile
-            ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
-            :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
-          )}
+          <span className="nav-secondary">
+            {!authLoading&&(user&&profile
+              ?<span className="nav-auth-name" onClick={()=>siteNav('/compte')}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>{profile.prenom}</span>
+              :<button className="nav-auth-btn fb" onClick={()=>openAuth('login')}>Se connecter</button>
+            )}
+          </span>
+          <button className="nav-hamburger" aria-label="Menu" onClick={()=>setNavOpen(o=>!o)}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {navOpen
+                ?<><line x1="4" y1="4" x2="16" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="16" y1="4" x2="4" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></>
+                :<><rect y="4" width="20" height="2" rx="1" fill="currentColor"/><rect y="9" width="20" height="2" rx="1" fill="currentColor"/><rect y="14" width="20" height="2" rx="1" fill="currentColor"/></>
+              }
+            </svg>
+          </button>
           <button className="nav-cta fb" onClick={()=>{
             if(page==="home"){document.getElementById("categories")?.scrollIntoView({behavior:"smooth"});}
             else setPage("home");
@@ -6401,6 +6418,24 @@ export default function App() {
           </button>
         </div>
       </nav>
+      {navOpen&&<div style={{position:'fixed',inset:0,zIndex:198}} onClick={()=>setNavOpen(false)}/>}
+      {navOpen&&(
+        <div className="nav-mobile-menu">
+          <button className="nav-mobile-item fb" onClick={()=>{siteNav('/bons-plans');setNavOpen(false);}}>Endroits à visiter</button>
+          <button className="nav-mobile-item fb" onClick={()=>{siteNav('/carte');setNavOpen(false);}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+            Carte
+          </button>
+          <div style={{height:1,background:'rgba(var(--lp-rgb),.08)',margin:'4px 8px'}}/>
+          {!authLoading&&(user&&profile
+            ?<button className="nav-mobile-item fb" onClick={()=>{siteNav('/compte');setNavOpen(false);}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              Mon compte — {profile.prenom}
+            </button>
+            :<button className="nav-mobile-item fb" onClick={()=>{openAuth('login');setNavOpen(false);}}>Se connecter</button>
+          )}
+        </div>
+      )}
       {user&&profile?.session_expires_at&&<div style={{position:'fixed',top:78,left:16,right:16,zIndex:199}}><SessionBar profile={profile} renewed={sessionRenewed} onRenew={()=>siteNav('/renouveler')}/></div>}
       {page==="dashboard"&&<DashboardPage/>}
       {page==="home"&&<HomePage onNavigate={navigate} supabasePartners={supabasePartners} selVille={selVille} onVilleChange={setSelVille} activeVilles={[...new Set(supabasePartners.map(p=>p.ville).filter(Boolean))]}/>}
