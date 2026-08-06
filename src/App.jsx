@@ -6241,10 +6241,12 @@ export default function App() {
     if(pendingHotelSlug){
       localStorage.setItem('source_hotel',pendingHotelSlug);
       sessionStorage.setItem('source_hotel',pendingHotelSlug);
-      const dk=`hotel_scan_${pendingHotelSlug}_${new Date().toISOString().slice(0,13)}`;
+      const dk=`hotel_scan_${pendingHotelSlug}_${new Date().toISOString().slice(0,10)}`;
       if(!sessionStorage.getItem(dk)){
-        supabase.from('hotel_scans').insert({hotel_slug:pendingHotelSlug});
         sessionStorage.setItem(dk,'1');
+        supabaseAnon.from('hotel_scans').insert({hotel_slug:pendingHotelSlug}).then(({error})=>{
+          if(error)console.error('[hotel_scans] insert error:',error);
+        });
       }
     }
     supabase.from('candidates').select('*').eq('status','approuve').eq('visible',true).then(({data})=>setSupabasePartners(data||[]));
