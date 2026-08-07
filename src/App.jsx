@@ -1753,6 +1753,29 @@ function getMetierLabels(categorie){
   }
 }
 
+async function downloadPng(canvas,filename){
+  const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+  if(!blob)return;
+  // Web Share API with file — best for mobile + Chromebook
+  try{
+    if(navigator.canShare){
+      const file=new File([blob],filename,{type:'image/png'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:filename});
+        return;
+      }
+    }
+  }catch(e){
+    if(e.name==='AbortError')return; // user dismissed share sheet
+  }
+  // Blob URL fallback — works on desktop
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 async function downloadHotelPoster(srcId, filename){
   const src=document.getElementById(srcId);
   if(!src)return;
@@ -1803,7 +1826,7 @@ async function downloadHotelPoster(srcId, filename){
   ctx.fillText('Réductions exclusives',5*W/6,820);
   ctx.fillStyle='#B0A090';ctx.font='11px Arial,Helvetica,sans-serif';
   ctx.fillText('www.mylocally.fr',W/2,862);
-  const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download=filename;a.click();
+  await downloadPng(out,filename);
 }
 
 function AdminView(){
@@ -2827,13 +2850,10 @@ function AdminView(){
                       <div style={{display:'flex',justifyContent:'center',background:'#fff',borderRadius:8,padding:10,marginTop:4}}>
                         <QRCodeCanvas value={`https://www.mylocally.fr/valider/${selPartner.employee_token}`} size={130} fgColor="#1C1208" bgColor="#ffffff" level="M" id={`emp-qr-${selPartner.id}`}/>
                       </div>
-                      <button className="adm-sbtn fb" style={{fontSize:11,padding:'6px 12px'}} onClick={()=>{
+                      <button className="adm-sbtn fb" style={{fontSize:11,padding:'6px 12px'}} onClick={async()=>{
                         const canvas=document.getElementById(`emp-qr-${selPartner.id}`);
                         if(!canvas)return;
-                        const link=document.createElement('a');
-                        link.download=`qr-employe-${selPartner.slug||selPartner.id}.png`;
-                        link.href=canvas.toDataURL('image/png');
-                        link.click();
+                        await downloadPng(canvas,`qr-employe-${selPartner.slug||selPartner.id}.png`);
                       }}>Télécharger le QR</button>
                     </div>
                   )}
@@ -3424,9 +3444,7 @@ function PartnerView({onLogout}){
     ctx.fillStyle='#9B8B7A';ctx.font='11px Arial,sans-serif';
     ctx.fillText('Scanner pour valider les réductions clients',W/2,574);
     const a=document.createElement('a');
-    a.href=out.toDataURL('image/png');
-    a.download=`qr-employe-${partner?.slug||'locally'}.png`;
-    a.click();
+    await downloadPng(out,`qr-employe-${partner?.slug||'locally'}.png`);
   }
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
