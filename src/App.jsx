@@ -2892,10 +2892,24 @@ function AdminView(){
                         <QRCodeCanvas value={`https://www.mylocally.fr/valider/${selPartner.employee_token}`} size={130} fgColor="#1C1208" bgColor="#ffffff" level="M" id={`emp-qr-${selPartner.id}`}/>
                       </div>
                       <button className="adm-sbtn fb" style={{fontSize:11,padding:'6px 12px'}} onClick={async()=>{
-                        const canvas=document.getElementById(`emp-qr-${selPartner.id}`);
-                        if(!canvas)return;
-                        await downloadPng(canvas,`qr-employe-${selPartner.slug||selPartner.id}.png`);
-                      }}>Télécharger le QR</button>
+                        const W=1748,H=1240,pad=80;
+                        const out=document.createElement('canvas');
+                        out.width=W;out.height=H;
+                        const ctx=out.getContext('2d');
+                        ctx.fillStyle='#FAF4EC';ctx.fillRect(0,0,W,H);
+                        ctx.fillStyle='#6B1D1D';ctx.font='italic 110px Georgia,"Times New Roman",serif';
+                        ctx.textAlign='center';ctx.textBaseline='top';
+                        ctx.fillText('locally',W/2,pad);
+                        const qrSize=Math.min(H-pad-130-40-pad,W-pad*2);
+                        const qrDataUrl=await QRCode.toDataURL(
+                          `https://www.mylocally.fr/valider/${selPartner.employee_token}`,
+                          {color:{dark:'#6B1D1D',light:'#FFFFFF'},width:qrSize,margin:1,errorCorrectionLevel:'M'}
+                        );
+                        const qrImg=new Image();
+                        await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
+                        ctx.drawImage(qrImg,Math.round((W-qrSize)/2),pad+130+40,qrSize,qrSize);
+                        await downloadPng(out,`qr-comptoir-${selPartner.slug||selPartner.id}.png`);
+                      }}>Télécharger carte comptoir</button>
                     </div>
                   )}
                   <button className="adm-sbtn adm-s-reject fb" style={{marginLeft:'auto'}} onClick={()=>setConfirmPDisable(true)}>Désactiver</button>
