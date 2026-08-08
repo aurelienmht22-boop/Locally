@@ -1846,6 +1846,27 @@ async function downloadHotelPoster(slug, qrUrl){
   console.log('CANVAS',canvas.width,canvas.height);
   console.log('QR',qrX,qrY,qrSize);
   ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
+  const preview=document.createElement('div');
+  preview.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
+  const previewImg=document.createElement('img');
+  previewImg.src=canvas.toDataURL();
+  previewImg.style.cssText='max-height:80vh;max-width:90vw;border-radius:8px';
+  const btnOk=document.createElement('button');
+  btnOk.textContent='✓ Télécharger';
+  btnOk.style.cssText='padding:12px 32px;background:#C9A84C;border:none;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer';
+  const btnCancel=document.createElement('button');
+  btnCancel.textContent='✕ Annuler';
+  btnCancel.style.cssText='padding:12px 32px;background:#444;color:white;border:none;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer';
+  const btns=document.createElement('div');
+  btns.style.cssText='display:flex;gap:12px';
+  btns.appendChild(btnCancel);btns.appendChild(btnOk);
+  preview.appendChild(previewImg);preview.appendChild(btns);
+  document.body.appendChild(preview);
+  const confirmed=await new Promise(res=>{
+    btnOk.onclick=()=>{document.body.removeChild(preview);res(true);};
+    btnCancel.onclick=()=>{document.body.removeChild(preview);res(false);};
+  });
+  if(!confirmed)return;
   await downloadPng(canvas,`affiche-${slug}.png`);
 }
 
