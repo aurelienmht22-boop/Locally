@@ -1840,8 +1840,8 @@ async function downloadHotelPoster(slug, qrUrl){
   const qrDataUrl=await QRCode.toDataURL(qrUrl,{color:{dark:'#6B1D1D',light:'#FFFFFF'},width:400,margin:1,errorCorrectionLevel:'M'});
   const qrImg=new Image();
   await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
-  const qrSize=148;
-  ctx.drawImage(qrImg,canvas.width-qrSize-36,canvas.height-qrSize-78,qrSize,qrSize);
+  const qrSize=138;
+  ctx.drawImage(qrImg,canvas.width-qrSize-48,canvas.height-qrSize-92,qrSize,qrSize);
   await downloadPng(canvas,`affiche-${slug}.png`);
 }
 
