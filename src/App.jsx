@@ -2477,13 +2477,15 @@ function AdminView(){
                 <div className="adm-section-label">Vue globale — Partenaires</div>
                 {(()=>{
                   const ps=fullStats?.partners||[];
+                  const qrCrees=ps.reduce((s,p)=>s+(p.qr_crees||0),0);
                   const vis=ps.reduce((s,p)=>s+(p.visites||0),0);
                   const ca=ps.reduce((s,p)=>s+(p.ca_total||0),0);
                   const comm=ps.reduce((s,p)=>s+(p.commission_locally||0),0);
                   return(
-                    <div className="adm-global-grid" style={{marginBottom:24,gridTemplateColumns:'repeat(4,1fr)'}}>
+                    <div className="adm-global-grid" style={{marginBottom:24,gridTemplateColumns:'repeat(5,1fr)'}}>
                       <div className="adm-global-card"><div className="adm-global-num fd">{ps.length}</div><div className="adm-global-label">Partenaires approuvés</div></div>
-                      <div className="adm-global-card"><div className="adm-global-num fd">{vis}</div><div className="adm-global-label">Total visites</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{qrCrees}</div><div className="adm-global-label">QR créés</div></div>
+                      <div className="adm-global-card"><div className="adm-global-num fd">{vis}</div><div className="adm-global-label">Visites</div></div>
                       <div className="adm-global-card accent"><div className="adm-global-num fd">{ca.toFixed(0)}€</div><div className="adm-global-label">CA total généré</div></div>
                       <div className="adm-global-card"><div className="adm-global-num fd">{comm.toFixed(0)}€</div><div className="adm-global-label">Commissions Locally</div></div>
                     </div>
@@ -2529,7 +2531,7 @@ function AdminView(){
                 <div className="adm-stab-wrap">
                   <table className="adm-stab">
                     <thead><tr>
-                      {[['nom','Nom'],['categorie','Catégorie'],['ville','Ville'],['visites','Visites'],['ca_total','CA généré'],['commission_locally','Commission']].map(([col,lbl])=>(
+                      {[['nom','Nom'],['categorie','Catégorie'],['ville','Ville'],['qr_crees','QR créés'],['visites','Visites'],['ca_total','CA généré'],['commission_locally','Commission']].map(([col,lbl])=>(
                         <th key={col} className={statsPSort.col===col?'s-act':''} onClick={()=>srtP(col)}>
                           {lbl}<span className="adm-stab-sort">{statsPSort.col===col?(statsPSort.dir==='desc'?'↓':'↑'):'↕'}</span>
                         </th>
@@ -2537,12 +2539,13 @@ function AdminView(){
                     </tr></thead>
                     <tbody>
                       {(fullStats?.partners||[]).length===0
-                        ?<tr><td colSpan={6} className="adm-empty">Aucun partenaire approuvé</td></tr>
+                        ?<tr><td colSpan={7} className="adm-empty">Aucun partenaire approuvé</td></tr>
                         :stSort(fullStats?.partners||[],statsPSort).map(p=>(
                           <tr key={p.id} onClick={()=>openPartner(p)}>
                             <td className="td-name">{p.nom}</td>
                             <td><span className="adm-stab-tag">{p.categorie||'—'}</span></td>
                             <td>{p.ville||'—'}</td>
+                            <td className="td-num">{p.qr_crees||0}</td>
                             <td className="td-num">{p.visites||0}</td>
                             <td className="td-num">{(p.ca_total||0).toFixed(0)}€</td>
                             <td className="td-num">{(p.commission_locally||0).toFixed(0)}€</td>

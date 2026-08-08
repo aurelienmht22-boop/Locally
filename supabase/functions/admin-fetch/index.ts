@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       ])
 
       type HotelAgg = { scans_qr: number; qr_total: number; qr_scanned: number; last_activity: string | null; commission_total: number }
-      type PartnerAgg = { visites: number; ca_total: number; commission_locally: number }
+      type PartnerAgg = { qr_crees: number; visites: number; ca_total: number; commission_locally: number }
 
       const hotelAgg: Record<string, HotelAgg> = {}
       for (const h of hotelsRaw as Array<{ slug?: string }>) {
@@ -207,11 +207,14 @@ Deno.serve(async (req) => {
 
       const partnerAgg: Record<string, PartnerAgg> = {}
       for (const p of partnersRaw as Array<{ id: string }>) {
-        partnerAgg[p.id] = { visites: 0, ca_total: 0, commission_locally: 0 }
+        partnerAgg[p.id] = { qr_crees: 0, visites: 0, ca_total: 0, commission_locally: 0 }
       }
-      for (const v of visitsRaw as Array<{ partner_id?: string }>) {
+      for (const v of visitsRaw as Array<{ partner_id?: string; scanned?: boolean }>) {
         const pid = v.partner_id
-        if (pid && partnerAgg[pid]) partnerAgg[pid].visites++
+        if (pid && partnerAgg[pid]) {
+          partnerAgg[pid].qr_crees++
+          if (v.scanned) partnerAgg[pid].visites++
+        }
       }
       for (const t of txnsRaw as Array<{ partner_id?: string; montant_client?: number; commission_locally?: number }>) {
         const pid = t.partner_id
@@ -229,7 +232,7 @@ Deno.serve(async (req) => {
       })
       const partners = stripCode(partnersRaw).map((p) => {
         const rp = p as Record<string, unknown>
-        return { ...rp, ...(partnerAgg[rp.id as string] ?? { visites: 0, ca_total: 0, commission_locally: 0 }) }
+        return { ...rp, ...(partnerAgg[rp.id as string] ?? { qr_crees: 0, visites: 0, ca_total: 0, commission_locally: 0 }) }
       })
 
       result = { hotels, partners }
