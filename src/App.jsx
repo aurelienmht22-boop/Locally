@@ -1842,9 +1842,9 @@ async function downloadHotelPoster(slug, qrUrl){
   await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
   const scaleX=canvas.width/724;
   const scaleY=canvas.height/1024;
-  const qrSize=Math.round(200*scaleX);
-  const qrX=Math.round(450*scaleX);
-  const qrY=Math.round(740*scaleY);
+  const qrSize=Math.round(191*scaleX);
+  const qrX=Math.round(465*scaleX);
+  const qrY=Math.round(785*scaleY);
   ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
   await downloadPng(canvas,`affiche-${slug}.png`);
 }
