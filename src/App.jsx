@@ -145,6 +145,7 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 .hero-badge{display:inline-flex;align-items:center;gap:10px;margin-bottom:44px;background:rgba(var(--lp-rgb),.055);border:1px solid rgba(var(--lp-rgb),.12);border-radius:100px;padding:8px 18px;width:fit-content;}
 .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--lp);animation:ripple 2.5s ease-in-out infinite;flex-shrink:0;}
 @keyframes ripple{0%{box-shadow:0 0 0 0 rgba(var(--lp-rgb),.45);}70%{box-shadow:0 0 0 9px rgba(var(--lp-rgb),0);}100%{box-shadow:0 0 0 0 rgba(var(--lp-rgb),0);}}
+@keyframes prox-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.45);}50%{opacity:.85;}70%{box-shadow:0 0 0 6px rgba(34,197,94,0);}}
 .badge-txt{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lp);font-weight:500;}
 .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(58px,9vw,118px);font-weight:600;line-height:.92;color:#1C1208;margin-bottom:44px;position:relative;z-index:1;max-width:14ch;}
 .hero-title em{font-style:italic;color:var(--lp);position:relative;}
@@ -1250,12 +1251,13 @@ function CategoryPage({ categoryId, onBack, onNavigate, supabasePartners, villeA
                 <div className="pcard-img" style={{background:'#1C1208'}}>
                   {p.photo_url?<img src={p.photo_url} alt={p.nom} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:null}
                   <div style={{position:'absolute',top:12,left:12,zIndex:2,background:'rgba(250,244,236,.92)',borderRadius:10,width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}}/>
-                  {km!=null&&km<=3&&<div style={{position:'absolute',top:10,right:10,zIndex:3,background:'rgba(107,29,29,.82)',color:'#F7F3EE',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,letterSpacing:'.5px',borderRadius:999,padding:'3px 10px',backdropFilter:'blur(4px)'}}>À proximité</div>}
+                  {km!=null&&km<=3&&<div style={{position:'absolute',top:10,right:10,zIndex:3,background:'#22c55e',color:'#fff',fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,letterSpacing:'.5px',borderRadius:999,padding:'3px 10px',animation:'prox-pulse 2s ease-in-out infinite'}}>À proximité</div>}
                   {(()=>{const st=getOpenStatus(p.horaires);if(!st)return null;const lbl=st==='open'?'Ouvert':st==='soon'?'Ferme bientôt':'Fermé';return(<div className={'pcard-status '+st}><div className={'sdot '+st}/><span className="fb">{lbl}</span></div>);})()}
                 </div>
                 <div className="pcard-body">
                   <div className="pcard-cat fb">{p.categorie}</div>
                   <div className="pcard-name fd">{p.nom}</div>
+                  {km!=null&&km>3&&<div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:400,color:'#9B8B7A',marginTop:2}}>{km.toFixed(1).replace('.',',')} km</div>}
                   {p.google_rating!=null&&(
                     <div style={{display:'flex',alignItems:'center',gap:4,marginTop:3,marginBottom:2}}>
                       <span style={{color:'#C9A84C',fontSize:11,lineHeight:1,letterSpacing:'.5px'}}>{'★'.repeat(Math.round(p.google_rating))}{'☆'.repeat(5-Math.round(p.google_rating))}</span>
@@ -5906,6 +5908,7 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
   const partnersRef=useRef(partners);
   const lieuxRef=useRef(lieuxGratuits);
   const onNavRef=useRef(onNavigatePartner);
+  const refCoordsRef=useRef(null);
   partnersRef.current=partners;
   lieuxRef.current=lieuxGratuits;
   onNavRef.current=onNavigatePartner;
@@ -5915,21 +5918,30 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
     markersRef.current.forEach(m=>m.remove());
     markersRef.current=[];
     window.__locally_nav=(id)=>{const p=(partnersRef.current||[]).find(x=>x.id===id);if(p)onNavRef.current('generic',p);};
+    const rc=refCoordsRef.current;
     (pts||[]).filter(p=>p.latitude&&p.longitude).forEach(p=>{
       const r=p.reduction!=null?p.reduction+'%':'';
+      const km=rc?haversinKm(rc.lat,rc.lng,parseFloat(p.latitude),parseFloat(p.longitude)):null;
+      const nearby=km!=null&&km<=3;
       const svgWhite=(ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre'])
         .replace(/stroke="#6B1D1D"/g,'stroke="white"')
         .replace(/width="24" height="24"/,'width="18" height="18"');
+      const pinColor=nearby?'#22c55e':'#6B1D1D';
+      const pulseStyle=nearby?`animation:prox-pulse 2s ease-in-out infinite;`:'';
       const catIcon=L.divIcon({
-        html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#6B1D1D;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(107,29,29,.4)">${svgWhite}</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #6B1D1D;margin-top:-1px"></div></div>`,
+        html:`<div style="display:flex;flex-direction:column;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:${pinColor};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(107,29,29,.4);${pulseStyle}">${svgWhite}</div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${pinColor};margin-top:-1px"></div></div>`,
         iconSize:[36,44],iconAnchor:[18,44],popupAnchor:[0,-48],className:'',
       });
+      const distBadge=nearby
+        ?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.05em;color:#fff;background:#22c55e;border-radius:999px;padding:2px 8px;margin-bottom:8px">À proximité</span>`
+        :km!=null?`<span style="font-size:11px;color:#9B8B7A;margin-bottom:4px;display:block">${km.toFixed(1).replace('.',',')} km</span>`:'';
       const m=L.marker([parseFloat(p.latitude),parseFloat(p.longitude)],{icon:catIcon}).addTo(map).bindPopup(
         `<div style="font-family:'DM Sans',sans-serif;min-width:190px;padding:4px 2px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="flex-shrink:0;background:#FAF4EC;border:1px solid rgba(107,29,29,.1);border-radius:8px;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center">${ICONE_PAR_CATEGORIE[p.categorie]||ICONE_PAR_CATEGORIE['Autre']}</span>
             <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:#1C1208;line-height:1.1">${escapeHtml(p.nom)}</div>
           </div>
+          ${distBadge}
           <div style="font-size:11px;color:#9B8B7A;margin-bottom:${r?'4px':'12px'}">${escapeHtml(p.categorie)}</div>
           ${r?`<div style="font-size:12px;font-weight:500;color:#6B1D1D;margin-bottom:12px">${escapeHtml(r)}</div>`:''}
           <button onclick="window.__locally_nav('${escapeHtml(p.id)}')" style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:#1C1208;color:#F7F3EE;border:none;border-radius:7px;padding:8px 14px;cursor:pointer;width:100%">Voir ce partenaire →</button>
@@ -5976,6 +5988,10 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
       }).addTo(map);
       placePartnerMarkers(map,L,partnersRef.current);
       placeLieuxMarkers(map,L,lieuxRef.current);
+      const applyRefCoords=(lat,lng)=>{
+        refCoordsRef.current={lat,lng};
+        placePartnerMarkers(map,L,partnersRef.current);
+      };
       navigator.geolocation?.getCurrentPosition(pos=>{
         const{latitude,longitude}=pos.coords;
         map.setView([latitude,longitude],15);
@@ -5983,7 +5999,13 @@ function CartePage({partners,lieuxGratuits,user,profile,onNavigatePartner,onBack
           html:`<div style="width:14px;height:14px;background:#2563EB;border:2.5px solid white;border-radius:50%;box-shadow:0 0 0 5px rgba(37,99,235,.18)"></div>`,
           iconSize:[14,14],iconAnchor:[7,7],className:'',
         })}).addTo(map).bindPopup('<span style="font-family:\'DM Sans\',sans-serif;font-size:13px">Vous êtes ici</span>');
-      },()=>{});
+        applyRefCoords(latitude,longitude);
+      },async()=>{
+        const slug=sessionStorage.getItem('source_hotel')||localStorage.getItem('source_hotel');
+        if(!slug)return;
+        const{data}=await supabase.from('hotels').select('latitude,longitude').eq('slug',slug).maybeSingle();
+        if(data?.latitude&&data?.longitude)applyRefCoords(parseFloat(data.latitude),parseFloat(data.longitude));
+      });
     }
     if(window.L){initMap();return;}
     if(!document.querySelector('#leaflet-css')){
