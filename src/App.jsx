@@ -3453,39 +3453,32 @@ function PartnerView({onLogout}){
   function removeDaySlot(day){setHoraires(h=>{const d={...(h[day]||{ouvert:false,creneaux:[["",""]]})};const cr=Array.isArray(d.creneaux)?d.creneaux:[["",""]];return{...h,[day]:{...d,creneaux:cr.slice(0,1)}};});}
 
   async function downloadEmpQrPng(){
-    const src=document.getElementById('prt-emp-qr-dl');
-    if(!src)return;
-    const W=520,H=660;
+    if(!partner?.employee_token)return;
+    // A6 paysage 148×105mm à 300dpi
+    const W=1748,H=1240;
+    const pad=80;
     const out=document.createElement('canvas');
     out.width=W;out.height=H;
     const ctx=out.getContext('2d');
-    ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,W,H);
-    // Header bordeaux
-    ctx.fillStyle='#6B1D1D';ctx.fillRect(0,0,W,112);
-    // Logo
-    ctx.fillStyle='#FAF4EC';ctx.font='italic bold 34px Georgia,"Times New Roman",serif';ctx.textAlign='center';
-    ctx.fillText('locally',W/2,58);
-    // Tagline
-    ctx.fillStyle='rgba(250,244,236,0.6)';ctx.font='11px Arial,sans-serif';
-    ctx.fillText('Le meilleur de Bordeaux, à portée de main.',W/2,82);
-    // Pill label
-    ctx.fillStyle='rgba(250,244,236,0.35)';ctx.font='bold 9px Arial,sans-serif';
-    ctx.fillText('ACCÈS EMPLOYÉ',W/2,103);
-    // QR
-    const qrSize=340;const qrX=(W-qrSize)/2;const qrY=142;
-    const img=new Image();
-    await new Promise(res=>{img.onload=res;img.src=src.toDataURL('image/png');});
-    ctx.drawImage(img,qrX,qrY,qrSize,qrSize);
-    // Partner name
-    ctx.fillStyle='#1C1208';ctx.font='600 22px Georgia,"Times New Roman",serif';ctx.textAlign='center';
-    ctx.fillText(partner?.nom||'',W/2,522);
-    // Footer
-    ctx.fillStyle='#6B1D1D';ctx.font='bold 12px Arial,sans-serif';
-    ctx.fillText('QR employé',W/2,554);
-    ctx.fillStyle='#9B8B7A';ctx.font='11px Arial,sans-serif';
-    ctx.fillText('Scanner pour valider les réductions clients',W/2,574);
-    const a=document.createElement('a');
-    await downloadPng(out,`qr-employe-${partner?.slug||'locally'}.png`);
+    // Fond beige
+    ctx.fillStyle='#FAF4EC';ctx.fillRect(0,0,W,H);
+    // "locally" en haut centré
+    ctx.fillStyle='#6B1D1D';ctx.font='italic 110px Georgia,"Times New Roman",serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('locally',W/2,pad);
+    // QR bordeaux centré, prend la majorité de l'espace restant
+    const textH=130,gap=40;
+    const qrSize=Math.min(H-pad-textH-gap-pad,W-pad*2);
+    const qrX=Math.round((W-qrSize)/2);
+    const qrY=pad+textH+gap;
+    const qrDataUrl=await QRCode.toDataURL(
+      `https://www.mylocally.fr/valider/${partner.employee_token}`,
+      {color:{dark:'#6B1D1D',light:'#FFFFFF'},width:qrSize,margin:1,errorCorrectionLevel:'M'}
+    );
+    const qrImg=new Image();
+    await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
+    ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
+    await downloadPng(out,`qr-comptoir-${partner?.slug||'locally'}.png`);
   }
   async function handlePhotoUpload(e){
     const file=e.target.files[0];if(!file)return;
@@ -3938,7 +3931,6 @@ function PartnerView({onLogout}){
                     {partner?.nom}
                   </div>
                 </div>
-                <QRCodeCanvas value={`https://www.mylocally.fr/valider/${partner.employee_token}`} size={400} fgColor="#1C1208" bgColor="#ffffff" level="M" style={{display:'none'}} id="prt-emp-qr-dl"/>
                 <div style={{marginTop:12}}>
                   <button onClick={downloadEmpQrPng} style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,background:'#1C1208',color:'#F7F3EE',padding:'11px 22px',borderRadius:9,border:'none',cursor:'pointer',letterSpacing:'.015em'}}>
                     Télécharger en PNG
