@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
+import QRCode from "qrcode";
 import { supabase, supabaseAnon } from "./lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
 import html2canvas from "html2canvas";
@@ -1776,7 +1777,7 @@ async function downloadPng(canvas,filename){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-async function downloadHotelPoster(srcId, filename){
+async function drawPosterCanvas(srcId, filename){
   const src=document.getElementById(srcId);
   if(!src)return;
   const W=600,H=900;
@@ -1827,6 +1828,21 @@ async function downloadHotelPoster(srcId, filename){
   ctx.fillStyle='#B0A090';ctx.font='11px Arial,Helvetica,sans-serif';
   ctx.fillText('www.mylocally.fr',W/2,862);
   await downloadPng(out,filename);
+}
+
+async function downloadHotelPoster(slug, qrUrl){
+  const img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src='/affiche-hotel.jpg';});
+  const canvas=document.createElement('canvas');
+  canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(img,0,0);
+  const qrDataUrl=await QRCode.toDataURL(qrUrl,{color:{dark:'#6B1D1D',light:'#FFFFFF'},width:400,margin:1,errorCorrectionLevel:'M'});
+  const qrImg=new Image();
+  await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
+  const qrSize=148;
+  ctx.drawImage(qrImg,canvas.width-qrSize-36,canvas.height-qrSize-78,qrSize,qrSize);
+  await downloadPng(canvas,`affiche-${slug}.png`);
 }
 
 function AdminView(){
@@ -2039,7 +2055,8 @@ function AdminView(){
     window.open(`/${path}/${json.slug}`,'_blank');
   }
   async function downloadQrPng(qr){
-    await downloadHotelPoster(`qr-cnv-${qr.id}`,`locally-hotel-${qr.code}.png`);
+    if(!qr.hotel_slug){alert('Assignez d\'abord ce QR à un hôtel avant de télécharger l\'affiche.');return;}
+    await downloadHotelPoster(qr.hotel_slug,`https://www.mylocally.fr/?hotel=${qr.hotel_slug}`);
   }
   async function saveHotelAccess(){
     setSavingHotelAccess(true);setHotelAccessErr('');
@@ -2532,10 +2549,6 @@ function AdminView(){
                     const hotelNom=qr.hotel_slug?(qrHotels.find(h=>h.slug===qr.hotel_slug)?.nom||qr.hotel_slug):null;
                     return(
                       <div key={qr.id} style={{display:'flex',alignItems:'center',gap:14,padding:'14px 18px',background:'rgba(247,243,238,.025)',border:'1px solid rgba(247,243,238,.055)',borderRadius:10,flexWrap:'wrap'}}>
-                        {/* Canvas caché pour export PNG */}
-                        <div style={{position:'absolute',opacity:0,pointerEvents:'none',left:'-9999px'}}>
-                          <QRCodeCanvas id={`qr-cnv-${qr.id}`} value={qrUrl} size={400} fgColor="#1C1208" bgColor="#ffffff" includeMargin/>
-                        </div>
                         {/* Miniature QR */}
                         <div style={{background:'#fff',borderRadius:6,padding:5,flexShrink:0,lineHeight:0}}>
                           <QRCodeSVG value={qrUrl} size={48} fgColor="#1C1208" bgColor="#ffffff" level="M"/>
@@ -4751,7 +4764,7 @@ function HotelView({onLogout}){
   useEffect(()=>{if(authed)loadStats(htlStatPeriod);},[htlStatPeriod]);
 
   async function downloadQrCard(){
-    await downloadHotelPoster('htl-qr-dl',`locally-hotel-${slug}.png`);
+    await drawPosterCanvas('htl-qr-dl',`locally-hotel-${slug}.png`);
   }
 
   async function saveHtlAccessCode(){
