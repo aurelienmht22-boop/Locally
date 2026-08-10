@@ -1858,7 +1858,7 @@ async function downloadHotelPoster(slug, qrUrl){
   // 4. QR code (unchanged)
   const QR_SIZE_RATIO=0.18;
   const QR_X_RATIO=0.755;
-  const QR_Y_RATIO=0.810;
+  const QR_Y_RATIO=0.812;
 
   const qrDataUrl=await QRCode.toDataURL(qrUrl,{color:{dark:'#6B1D1D',light:'#FFFFFF'},width:400,margin:1,errorCorrectionLevel:'M'});
   const qrImg=new Image();
