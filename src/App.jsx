@@ -1832,21 +1832,36 @@ async function drawPosterCanvas(srcId, filename){
   await downloadPng(out,filename);
 }
 
+const POSTER_PHOTOS={
+  bordeaux:'https://lsorbtjjyiseqryigezy.supabase.co/storage/v1/object/sign/Photo%20flyer%20locally/bordeauxdejours.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8zNjI1NGEzZC05YjU1LTRlZjAtOTFjYy1jY2RmZDY0NjZkY2UiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJQaG90byBmbHllciBsb2NhbGx5L2JvcmRlYXV4ZGVqb3Vycy5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg2MzkzMzU0LCJleHAiOjE4ODEwMDEzNTR9.6E-L6oaLR5eOwZ93CKksAhDykfqRIG8f-PxY0-O3dLc',
+};
+
 async function downloadHotelPoster(slug, qrUrl){
-  const img=new Image();
-  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src='/affiche-hotel.jpg';});
+  // 1. Load base template (fond + layout)
+  const tmpl=new Image();
+  tmpl.crossOrigin='anonymous';
+  await new Promise((resolve,reject)=>{tmpl.onload=resolve;tmpl.onerror=reject;tmpl.src='/affiche-hotel.jpg';});
   const canvas=document.createElement('canvas');
-  canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+  canvas.width=tmpl.naturalWidth;canvas.height=tmpl.naturalHeight;
   const ctx=canvas.getContext('2d');
-  ctx.drawImage(img,0,0);
+
+  // 2. Draw city photo as full-bleed background (no base64 re-encoding)
+  const cityUrl=POSTER_PHOTOS['bordeaux'];
+  const cityImg=new Image();
+  cityImg.crossOrigin='anonymous';
+  await new Promise((resolve,reject)=>{cityImg.onload=resolve;cityImg.onerror=reject;cityImg.src=cityUrl;});
+  ctx.drawImage(cityImg,0,0,canvas.width,canvas.height);
+
+  // 3. Draw template layout on top
+  ctx.drawImage(tmpl,0,0);
+
+  // 4. QR code (unchanged)
   const qrDataUrl=await QRCode.toDataURL(qrUrl,{color:{dark:'#6B1D1D',light:'#FFFFFF'},width:400,margin:1,errorCorrectionLevel:'M'});
   const qrImg=new Image();
   await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
   const qrSize=Math.round(169*canvas.width/864*0.8861);
   const qrX=canvas.width-qrSize-Math.round(canvas.width*0.0685);
   const qrY=Math.round(969*canvas.height/1222);
-  console.log('CANVAS',canvas.width,canvas.height);
-  console.log('QR',qrX,qrY,qrSize);
   ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
   const preview=document.createElement('div');
   preview.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
