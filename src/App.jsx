@@ -1856,12 +1856,18 @@ async function downloadHotelPoster(slug, qrUrl){
   ctx.drawImage(tmpl,0,0);
 
   // 4. QR code (unchanged)
+  const QR_SIZE_RATIO=0.16;
+  const QR_X_RATIO=0.62;
+  const QR_Y_RATIO=0.76;
+
   const qrDataUrl=await QRCode.toDataURL(qrUrl,{color:{dark:'#6B1D1D',light:'#FFFFFF'},width:400,margin:1,errorCorrectionLevel:'M'});
   const qrImg=new Image();
   await new Promise(res=>{qrImg.onload=res;qrImg.src=qrDataUrl;});
-  const qrSize=Math.round(169*canvas.width/864*0.8861);
-  const qrX=canvas.width-qrSize-Math.round(canvas.width*0.0685);
-  const qrY=Math.round(969*canvas.height/1222);
+  const qrSize=Math.round(canvas.width*QR_SIZE_RATIO);
+  const qrX=Math.round(canvas.width*QR_X_RATIO);
+  const qrY=Math.round(canvas.height*QR_Y_RATIO);
+  console.log('CANVAS',canvas.width,canvas.height);
+  console.log('QR',qrX,qrY,qrSize);
   ctx.drawImage(qrImg,qrX,qrY,qrSize,qrSize);
   const preview=document.createElement('div');
   preview.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
