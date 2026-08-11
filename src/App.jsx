@@ -1840,7 +1840,7 @@ async function downloadHotelPoster(slug, qrUrl){
   // 1. Load base template (fond + layout)
   const tmpl=new Image();
   tmpl.crossOrigin='anonymous';
-  await new Promise((resolve,reject)=>{tmpl.onload=resolve;tmpl.onerror=reject;tmpl.src='/affiche_hotel_v2.png';});
+  await new Promise((resolve,reject)=>{tmpl.onload=resolve;tmpl.onerror=reject;tmpl.src='/affichelocallyV3.png';});
   const canvas=document.createElement('canvas');
   canvas.width=tmpl.naturalWidth;canvas.height=tmpl.naturalHeight;
   const ctx=canvas.getContext('2d');
