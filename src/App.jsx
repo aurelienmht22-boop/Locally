@@ -122,6 +122,10 @@ function FadeUp({children,delay=0,style={}}) {
   return <div ref={ref} style={{opacity:v?1:0,transform:v?"none":"translateY(22px)",transition:`opacity .65s ease ${delay}s,transform .65s ease ${delay}s`,...style}}>{children}</div>;
 }
 
+// Passer à false pour réactiver tout le site public
+const SITE_PAUSED = true;
+const PAUSE_ALLOWED_PAGES = ["login","admin","partner","hotel","valider","dashboard","reset-password","mentions","confidentialite","bientot"];
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 :root{--lp:#6B1D1D;--lp-rgb:107,29,29;}
@@ -5653,18 +5657,19 @@ function SiteFooter({ ville = 'Bordeaux' }){
 
 function BientotPage(){
   return(
-    <div style={{background:'#6B1D1D',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 24px',boxSizing:'border-box'}}>
+    <div style={{background:'#FAF4EC',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 24px',boxSizing:'border-box'}}>
       <style>{CSS}</style>
       <div style={{textAlign:'center',maxWidth:480,width:'100%'}}>
-        <div style={{fontFamily:"'Times New Roman',Times,serif",fontStyle:'italic',fontWeight:700,fontSize:'clamp(42px,10vw,64px)',color:'#FAF4EC',letterSpacing:'-0.5px',lineHeight:1,marginBottom:40}}>
-          local<em>ly</em>
+        <div style={{fontFamily:"Georgia,'Times New Roman',serif",fontStyle:'italic',fontWeight:700,fontSize:'clamp(42px,10vw,64px)',color:'#6B1D1D',letterSpacing:'-0.5px',lineHeight:1,marginBottom:40}}>
+          locally
         </div>
-        <div style={{width:48,height:2,background:'rgba(250,244,236,.35)',margin:'0 auto 40px'}}/>
-        <p style={{fontFamily:"'Cormorant Garamond','Times New Roman',serif",fontSize:'clamp(22px,5vw,30px)',fontWeight:600,color:'#FAF4EC',lineHeight:1.3,margin:'0 0 20px',letterSpacing:'0.01em'}}>
-          Nos meilleures adresses arrivent très prochainement
+        <div style={{width:48,height:2,background:'rgba(107,29,29,.3)',margin:'0 auto 40px'}}/>
+        <p style={{fontFamily:"Georgia,'Times New Roman',serif",fontSize:'clamp(22px,5vw,30px)',fontWeight:600,color:'#6B1D1D',lineHeight:1.3,margin:'0 0 20px'}}>
+          Locally fait une pause
         </p>
-        <p style={{fontFamily:"'DM Sans',Arial,sans-serif",fontSize:'clamp(13px,3.5vw,15px)',fontWeight:300,color:'rgba(250,244,236,.72)',lineHeight:1.7,margin:0}}>
-          On sélectionne rigoureusement les meilleurs commerces de la ville pour vous.<br/>Revenez très vite !
+        <p style={{fontFamily:"'DM Sans',Arial,sans-serif",fontSize:'clamp(14px,3.5vw,16px)',fontWeight:400,color:'rgba(107,29,29,.8)',lineHeight:1.7,margin:0}}>
+          Le service est temporairement suspendu.<br/>Merci à nos partenaires et à tous ceux qui nous ont fait confiance.<br/><br/>
+          <a href="mailto:contact@mylocally.fr" style={{color:'#6B1D1D',textDecoration:'underline'}}>contact@mylocally.fr</a>
         </p>
       </div>
     </div>
@@ -6485,6 +6490,7 @@ export default function App() {
     if(pageId==='generic'){setActivePartner(partnerObj);setPage('generic');}
     else setPage(pageId);
   }
+  if(SITE_PAUSED&&!PAUSE_ALLOWED_PAGES.includes(page)){try{if(window.location.pathname!=="/bientot")window.history.replaceState({},"","/bientot");}catch(e){}return <BientotPage/>;}
   if(page==="login")return <LoginView onLogin={p=>{setPage(p);}}/>;
   if(page==="rejoindre")return <JoindreView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
   if(page==="mentions")return <MentionsLegalesView onHome={()=>{window.history.pushState({},'','/');setPage("home");}}/>;
